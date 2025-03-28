@@ -6,14 +6,14 @@ import pandas as pd
 import pathlib
 import sqlite3
 
-import gene_mapper
+import mmc_gene_mapper
 
 
 
 def create_database(db_name, clobber=False):
 
-    data_dir = pathlib.Path(gene_mapper.__file__).parent / 'data'
-    db_dir = pathlib.Path(gene_mapper.__file__).parent / 'db_files'
+    data_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'data'
+    db_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'db_files'
     assert data_dir.is_dir()
     assert db_dir.is_dir()
     gene_info_path = data_dir / 'gene_info'
