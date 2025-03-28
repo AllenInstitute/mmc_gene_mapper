@@ -68,15 +68,6 @@ def _create_database(
 def ingest_gene_info(conn, data_path):
     print('=======INGESTING GENE INFO=======')
     cursor = conn.cursor()
-    #data = pd.read_csv(
-    #    data_path,
-    #    delimiter='\t',
-    #    dtype={
-    #        '#tax_id': int,
-    #        'GeneId': int,
-    #        'Symbol': str
-    #    })
-    #n_rows = len(data)
     chunk_size = 5000000
     query = """
     INSERT INTO NCBI_genes (
@@ -93,7 +84,6 @@ def ingest_gene_info(conn, data_path):
                 src.readline().strip().split()[:3]
                 for ii in range(chunk_size)
             ]
-            #chunk = data.iloc[i0:i0+chunk_size]
             values = [
                 (int(row[0]), int(row[1]), row[2])
                 for row in chunk
