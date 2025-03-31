@@ -2,6 +2,33 @@ import pathlib
 import sqlite3
 
 
+def get_species_taxon(
+        db_path,
+        species_name):
+    does_path_exist(db_path)
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        results = cursor.execute(
+            """
+            SELECT
+                id
+            FROM
+                NCBI_species
+            WHERE
+                name=?
+            """,
+            (species_name,)
+        ).fetchall()
+    if len(results) > 1:
+        raise RuntimeError(
+            f"{len(results)} species match name {name}\n"
+            f"{results}"
+        )
+    elif len(results) == 0:
+        return None
+    return results[0][0]
+
+
 def ncbi_to_ensembl(
         db_path,
         ncbi_id_list,
