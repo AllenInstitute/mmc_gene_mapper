@@ -3,6 +3,7 @@ Define generic FTP download utils
 """
 import ftplib
 import json
+import pathlib
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 
@@ -25,6 +26,13 @@ def download_files_from_ftp(
         path to JSON file where metadata characterizing this
         download will be written
     """
+    for dst in file_dst_mapping.values():
+        dst = pathlib.Path(dst)
+        if dst.exists():
+            raise RuntimeError(
+                f"{dst} already exists"
+            )
+
     metadata = {
         'host': ftp_host,
         'files': list(file_dst_mapping.keys()),

@@ -3,11 +3,51 @@ import json
 import pandas as pd
 import pathlib
 import sqlite3
+import time
 
 import mmc_gene_mapper
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.query_db.query as db_query
+import mmc_gene_mapper.download.ftp_utils as ftp_utils
+
+
+def update_ncbi_data(
+        db_name,
+        data_dir):
+
+    t0 = time.time()
+    data_dir = pathlib.Path(data_dir)
+    if data_dir.exists():
+        if not data_dir.is_dir():
+            raise RuntimeError(
+                f"{data_dir} is not a dir"
+            )
+    else:
+        data_dir.mkdir(parents=True)
+
+
+    host = 'ftp.ncbi.nlm.nih.gov'
+    mapping = {
+        'gene/DATA/gene_info.gz': data_dir/'gene_info.gz',
+        'gene/DATA/gene2ensembl.gz': data_dir/'gene2ensembl.gz',
+        'gene/DATA/gene_orthologs.gz': data_dir/'gene_orthologs.gz'
+    }
+    metadata_dst = data_dir/'metadata.json'
+
+    ftp_utils.download_files_from_ftp(
+        ftp_host=host,
+        file_dst_mapping=mapping,
+        metadata_dst=metadata_dst
+    )
+
+    ingest_ncbi_data(
+        db_name=db_name,
+        data_dir=data_dir,
+        clobber=True
+    )
+    dur = (time.time()-t0)/60.0
+    print(f'SUCCESS; WHOLE PROCESS TOOK {dur:.2e} minutes')
 
 
 def ingest_ncbi_data(
