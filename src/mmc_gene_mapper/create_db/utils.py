@@ -195,27 +195,63 @@ def create_tables(conn):
 def create_indexes(conn):
     print('=======CREATING INDEXES=======')
     cursor = conn.cursor()
-    conn.execute(
+    create_gene_index(cursor)
+    create_ensembl_index(cursor)
+    create_ortholog_index(cursor)
+
+
+def create_gene_index(cursor):
+    idx_name = "symbol_idx"
+    cursor.execute(
+        f"""
+        DROP INDEX IF EXISTS {idx_name}
         """
-        CREATE INDEX symbol_idx ON NCBI_genes
+    )
+    cursor.execute(
+        f"""
+        CREATE INDEX {idx_name} ON NCBI_genes
         (species_taxon, symbol)
         """
     )
-    conn.execute(
+
+def create_ensembl_index(cursor):
+    idx_name = "ncbi_idx"
+    cursor.execute(
+        f"""
+        DROP INDEX IF EXISTS {idx_name}
         """
-        CREATE INDEX ncbi_idx ON NCBI_to_ENSEMBL
+    )
+    cursor.execute(
+        f"""
+        CREATE INDEX {idx_name} ON NCBI_to_ENSEMBL
         (species_taxon, NCBI_id)
         """
     )
-    conn.execute(
+
+    idx_name = "ensembl_idx"
+    cursor.execute(
+        f"""
+        DROP INDEX IF EXISTS {idx_name}
         """
-        CREATE INDEX ensembl_idx on NCBI_to_ENSEMBL
+    )
+    cursor.execute(
+        f"""
+        CREATE INDEX {idx_name} on NCBI_to_ENSEMBL
         (species_taxon, ENSEMBL_id)
         """
     )
-    conn.execute(
+
+
+def create_ortholog_index(cursor):
+    idx_name = "ortholog_idx"
+    cursor.execute(
+        f"""
+        DROP INDEX IF EXISTS {idx_name}
         """
-        CREATE INDEX ortholog_idx on orthologs
+    )
+    cursor.execute(
+        f"""
+        CREATE INDEX {idx_name} on orthologs
         (species0, species1, gene0)
         """
     )
