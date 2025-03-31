@@ -6,6 +6,7 @@ import sqlite3
 import time
 
 import mmc_gene_mapper
+import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.query_db.query as db_query
@@ -85,10 +86,10 @@ def _ingest_ncbi_data(
         clobber=False,
         citation_name='NCBI'):
 
-    assert_is_file(ensembl_path)
-    assert_is_file(ortholog_path)
-    assert_is_file(gene_info_path)
-    assert_is_file(metadata_path)
+    file_utils.assert_is_file(ensembl_path)
+    file_utils.assert_is_file(ortholog_path)
+    file_utils.assert_is_file(gene_info_path)
+    file_utils.assert_is_file(metadata_path)
 
     db_exists = False
     db_path = pathlib.Path(db_path)
@@ -257,11 +258,3 @@ def ingest_orthologs(
         ]
         cursor.executemany(query, values)
         conn.commit()
-
-
-def assert_is_file(file_path):
-    file_path = pathlib.Path(file_path)
-    if not file_path.is_file():
-        raise RuntimeError(
-            f"{file_path} is not a file"
-        )

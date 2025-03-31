@@ -7,6 +7,13 @@ import pathlib
 import tempfile
 
 
+def assert_is_file(file_path):
+    file_path = pathlib.Path(file_path)
+    if not file_path.is_file():
+        raise RuntimeError(
+            f"{file_path} is not a file"
+        )
+
 def clean_up(target_path):
     """
     Recursively clean up and remove the directory at
