@@ -6,9 +6,13 @@ import sqlite3
 import mmc_gene_mapper
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.create_db.utils as db_utils
+import mmc_gene_mapper.query_db.query as db_query
 
 
-def create_database(db_name, clobber=False):
+def ingest_ncbi_data(
+        db_name,
+        data_dir,
+        clobber=False):
 
     data_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'data'
     db_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'db_files'
@@ -17,46 +21,66 @@ def create_database(db_name, clobber=False):
     gene_info_path = data_dir / 'gene_info'
     ortholog_path = data_dir / 'gene_orthologs'
     ensembl_path = data_dir / 'gene2ensembl'
+    metadata_path = data_dir / 'metadata.json'
 
     db_path = db_dir / db_name
 
-    _create_database(
+    _ingest_ncbi_data(
         db_path=db_path,
         gene_info_path=gene_info_path,
         ensembl_path=ensembl_path,
         ortholog_path=ortholog_path,
-        clobber=clobber
+        metadata_path=metadata_path,
+        clobber=clobber,
+        citation_name='NCBI'
     )
 
-def _create_database(
+def _ingest_ncbi_data(
         db_path,
         gene_info_path,
         ortholog_path,
         ensembl_path,
+        metadata_path,
         clobber=False,
-        citation_tag='NCBI'):
+        citation_name='NCBI'):
+
     assert ensembl_path.is_file()
     assert ortholog_path.is_file()
     assert gene_info_path.is_file()
+    assert metadata_path.is_file()
 
+    db_exists = False
     db_path = pathlib.Path(db_path)
     if db_utils.check_existence(db_path):
-        if clobber:
-            db_path.unlink()
-        else:
-            print(f'{db_path} exists; returning')
-            return
+        db_exists = True
 
-    metadata_dict = {
-        'downloaded_on': timestamp.get_timestamp()
-    }
+    with open(metadata_path, 'rb') as src:
+        metadata_dict = json.load(src)
 
     with sqlite3.connect(db_path) as conn:
-        db_utils.create_tables(conn)
+        if not db_exists:
+            db_utils.create_tables(conn)
+
+        pre_existing_citation = db_query.get_citation(
+           conn=conn,
+           name=citation_name
+        )
+
+        if pre_existing_citation is not None:
+            if not clobber:
+                raise RuntimeError(
+                    f"citation {citation_name} already exists; "
+                    "run with clobber=True to overwrite"
+                )
+            else:
+                db_utils.delete_citation(
+                    conn=conn,
+                    name=citation_name
+                )
 
         citation_idx = db_utils.insert_citation(
             conn=conn,
-            name='NCBI',
+            name=citation_name,
             metadata_dict=metadata_dict
         )
 

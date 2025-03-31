@@ -101,6 +101,10 @@ def get_citation(conn, name):
         raise ValueError(
             f"More than one citation corresponding to {name}"
         )
+
+    if len(results) == 0:
+        return None
+
     return {
         "name": results[0][0],
         "idx": results[0][1],

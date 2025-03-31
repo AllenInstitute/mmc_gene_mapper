@@ -5,6 +5,7 @@ Utilities for creating the gene mapper database
 import json
 import pathlib
 import sqlite3
+import time
 
 
 def create_tables(conn):
@@ -166,6 +167,63 @@ def insert_citation(
     )
     return citation_idx
 
+
+def delete_citation(conn, name):
+    t0 = time.time()
+    print(f'=======DELETING CITATION {name}=======')
+    cursor = conn.cursor()
+    pre_existing = cursor.execute(
+        """
+        SELECT
+            id
+        FROM
+            citation
+        WHERE name=?
+        """,
+        (name,)
+    ).fetchall()
+
+    if len(pre_existing) != 1:
+        raise ValueError(
+            f"{len(pre_existing)} citations with name {name}; "
+            "expected exactly one"
+        )
+
+    target_idx = pre_existing[0][0]
+
+    for idx_name in ("symbol_idx",
+                     "ncbi_idx",
+                     "ncbi_ensembl_idx",
+                     "ncbi_ortholog_idx"):
+        cursor.execute(
+            f"DROP INDEX IF EXISTS {idx_name}"
+        )
+
+    print("    DELETED INDEXES")
+
+    for table_name in ('NCBI_genes',
+                       'NCBI_to_ENSEMBL',
+                       'NCBI_orthologs'):
+        cursor.execute(
+            f"""
+            DELETE FROM {table_name}
+            WHERE citation=?
+            """,
+            (target_idx,)
+        )
+        print(f"    DELETED FROM {table_name}")
+
+    cursor.execute(
+        """
+        DELETE FROM citation
+        WHERE id=?
+        """,
+        (target_idx, )
+    )
+
+    conn.commit()
+    dur = time.time() - t0
+    print(f"    DELETING TOOK {dur:.2e} seconds")
 
 def check_existence(db_path):
     db_path = pathlib.Path(db_path)
