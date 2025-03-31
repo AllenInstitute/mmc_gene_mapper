@@ -1,3 +1,4 @@
+import gzip
 import json
 import pandas as pd
 import pathlib
@@ -44,10 +45,10 @@ def _ingest_ncbi_data(
         clobber=False,
         citation_name='NCBI'):
 
-    assert ensembl_path.is_file()
-    assert ortholog_path.is_file()
-    assert gene_info_path.is_file()
-    assert metadata_path.is_file()
+    assert_is_file(ensembl_path)
+    assert_is_file(ortholog_path)
+    assert_is_file(gene_info_path)
+    assert_is_file(metadata_path)
 
     db_exists = False
     db_path = pathlib.Path(db_path)
@@ -104,6 +105,7 @@ def _ingest_ncbi_data(
 
 def ingest_gene_info(conn, data_path, citation_idx):
     print('=======INGESTING GENE INFO=======')
+    data_path = pathlib.Path(data_path)
     cursor = conn.cursor()
     chunk_size = 5000000
     query = """
@@ -115,13 +117,25 @@ def ingest_gene_info(conn, data_path, citation_idx):
     ) VALUES (?, ?, ?, ?)
     """
     i0 = 0
-    with open(data_path, 'r') as src:
+    if data_path.suffix == '.gz':
+        open_fn = gzip.open
+        mode = 'rb'
+    else:
+        open_fn = open
+        mode = 'r'
+
+    with open_fn(data_path, mode=mode) as src:
         header = src.readline()
         while True:
             chunk = [
                 src.readline().strip().split()[:3]
                 for ii in range(chunk_size)
             ]
+            if mode == 'rb':
+                chunk = [
+                    row.decode('utf-8') for row in chunk
+                ]
+
             values = [
                 (int(row[0]), int(row[1]), row[2], citation_idx)
                 for row in chunk
@@ -204,3 +218,10 @@ def ingest_orthologs(
         cursor.executemany(query, values)
         conn.commit()
 
+
+def assert_is_file(file_path):
+    file_path = pathlib.Path(file_path)
+    if not file_path.is_file():
+        raise RuntimeError(
+            f"{file_path} is not a file"
+        )
