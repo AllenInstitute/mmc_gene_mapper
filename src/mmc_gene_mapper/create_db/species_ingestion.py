@@ -11,20 +11,20 @@ import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.download.ftp_utils as ftp_utils
 
 
-def ingest_species_data(
+def download_and_ingest_species_data(
         db_path,
         tmp_dir):
 
     tmp_dir = tempfile.mkdtemp(dir=tmp_dir)
     try:
-        _ingest_species_data(
+        _download_and_ingest_species_data(
             db_path=db_path,
             tmp_dir=tmp_dir
         )
     finally:
         file_utils.clean_up(tmp_dir)
 
-def _ingest_species_data(
+def _download_and_ingest_species_data(
         db_path,
         tmp_dir):
 
@@ -40,8 +40,8 @@ def _ingest_species_data(
 
     host = 'ftp.ncbi.nih.gov'
     mapping = {
-        'taxonomy/new_taxdump/new_taxdump.tar.gz': tar_path,
-        'taxonomy/new_taxdump/new_tax_dump.tar.gz.md5': md5_path
+        'pub/taxonomy/new_taxdump/new_taxdump.tar.gz': tar_path,
+        'pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5': md5_path
     }
 
     ftp_utils.download_files_from_ftp(
@@ -74,7 +74,7 @@ def _ingest_species_data(
         )
 
     with tarfile.open(tar_path, mode='r') as src:
-        src.extract('names.dmp', filter='data')
+        src.extract('names.dmp', path=tmp_dir, filter='data')
 
     if not name_path.is_file():
         raise RuntimeError(
