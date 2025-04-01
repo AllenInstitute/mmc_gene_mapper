@@ -12,17 +12,26 @@ def get_species_taxon(
     does_path_exist(db_path)
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
-        results = cursor.execute(
-            """
-            SELECT
-                id
-            FROM
-                NCBI_species
-            WHERE
-                name=?
-            """,
-            (species_name,)
-        ).fetchall()
+        result = _get_species_taxon(
+            cursor=cursor,
+            species_name=species_name)
+    return result
+
+def _get_species_taxon(
+        cursor,
+        species_name):
+    results = cursor.execute(
+       """
+       SELECT
+           id
+       FROM
+           NCBI_species
+       WHERE
+           name=?
+       """,
+       (species_name,)
+   ).fetchall()
+
     if len(results) > 1:
         raise RuntimeError(
             f"{len(results)} species match name {name}\n"
