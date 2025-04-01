@@ -40,7 +40,7 @@ def ncbi_to_ensembl(
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
-        citation = get_citation(
+        citation = db_utils.get_citation(
             conn=conn,
             name=citation
         )
@@ -82,7 +82,7 @@ def ensembl_to_ncbi(
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
-        citation = get_citation(
+        citation = db_utils.get_citation(
             conn=conn,
             name=citation
         )
@@ -150,7 +150,7 @@ def get_ncbi_orthologs(
     chunk_size = 500
 
     with sqlite3.connect(db_path) as conn:
-        citation = get_citation(
+        citation = db_utils.get_citation(
             conn=conn,
             name=citation
         )
@@ -204,35 +204,6 @@ def species_to_taxon(db_path, species):
             species_name=species
         )
     return result
-
-
-def get_citation(conn, name):
-
-    cursor = conn.cursor()
-
-    results = cursor.execute(
-        """
-        SELECT name, id, metadata
-        FROM citation
-        WHERE name=?
-        """,
-        (name,)
-    ).fetchall()
-
-    if len(results) > 1:
-        raise ValueError(
-            f"More than one citation corresponding to {name}"
-        )
-
-    if len(results) == 0:
-        return None
-
-    return {
-        "name": results[0][0],
-        "idx": results[0][1],
-        "metadata": results[0][2]
-    }
-
 
 
 def does_path_exist(db_path):

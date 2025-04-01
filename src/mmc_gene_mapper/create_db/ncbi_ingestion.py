@@ -103,27 +103,11 @@ def _ingest_ncbi_data(
         if not db_exists:
             db_utils.create_tables(conn)
 
-        pre_existing_citation = db_query.get_citation(
-           conn=conn,
-           name=citation_name
-        )
-
-        if pre_existing_citation is not None:
-            if not clobber:
-                raise RuntimeError(
-                    f"citation {citation_name} already exists; "
-                    "run with clobber=True to overwrite"
-                )
-            else:
-                db_utils.delete_citation(
-                    conn=conn,
-                    name=citation_name
-                )
-
-        citation_idx = db_utils.insert_citation(
+        citation_idx = db_utils.insert_unique_citation(
             conn=conn,
-            name=citation_name,
-            metadata_dict=metadata_dict
+            citation_name=citation_name,
+            metadata_dict=metadata_dict,
+            clobber=clobber
         )
 
         ingest_gene_info(

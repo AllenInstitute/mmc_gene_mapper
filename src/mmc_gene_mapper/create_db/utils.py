@@ -78,6 +78,20 @@ def create_gene_index(cursor):
         """
     )
 
+    idx_name = "gene_species_idx"
+    cursor.execute(
+        f"""
+        DROP INDEX IF EXISTS {idx_name}
+        """
+    )
+    cursor.execute(
+        f"""
+        CREATE INDEX {idx_name} ON NCBI_genes
+        (citation, species_taxon, NCBI_id)
+        """
+    )
+
+
 def create_ensembl_index(cursor):
     idx_name = "ncbi_idx"
     cursor.execute(
@@ -119,6 +133,39 @@ def create_ncbi_ortholog_index(cursor):
         (citation, species0, species1, gene0)
         """
     )
+
+
+def insert_unique_citation(
+        conn,
+        name,
+        metadata_dict,
+        clobber=False):
+    """
+    If citation already exists, delete it.
+    """
+    pre_existing_citation = get_citation(
+       conn=conn,
+       name=name
+    )
+
+    if pre_existing_citation is not None:
+        if not clobber:
+            raise RuntimeError(
+                f"citation {citation_name} already exists; "
+                "run with clobber=True to overwrite"
+            )
+        else:
+            delete_citation(
+                conn=conn,
+                name=name
+            )
+
+    citation_idx = insert_citation(
+        conn=conn,
+        name=name,
+        metadata_dict=metadata_dict
+    )
+    return citation_idx
 
 
 def insert_citation(
@@ -224,6 +271,35 @@ def delete_citation(conn, name):
     conn.commit()
     dur = time.time() - t0
     print(f"    DELETING TOOK {dur:.2e} seconds")
+
+
+def get_citation(conn, name):
+
+    cursor = conn.cursor()
+
+    results = cursor.execute(
+        """
+        SELECT name, id, metadata
+        FROM citation
+        WHERE name=?
+        """,
+        (name,)
+    ).fetchall()
+
+    if len(results) > 1:
+        raise ValueError(
+            f"More than one citation corresponding to {name}"
+        )
+
+    if len(results) == 0:
+        return None
+
+    return {
+        "name": results[0][0],
+        "idx": results[0][1],
+        "metadata": results[0][2]
+    }
+
 
 def check_existence(db_path):
     db_path = pathlib.Path(db_path)
