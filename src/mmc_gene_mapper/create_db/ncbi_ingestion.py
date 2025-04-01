@@ -126,7 +126,8 @@ def _ingest_ncbi_data(
         ingest_gene_info(
             conn=conn,
             data_path=gene_info_path,
-            authority_idx=auth_idx
+            authority_idx=auth_idx,
+            citation_idx=citation_idx,
         )
         ingest_gene_to_ensembl(
             conn=conn,
@@ -142,7 +143,7 @@ def _ingest_ncbi_data(
         data_utils.create_data_indexes(conn)
             
 
-def ingest_gene_info(conn, data_path, authority_idx):
+def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     print('=======INGESTING GENE INFO=======')
     data_path = pathlib.Path(data_path)
     cursor = conn.cursor()
@@ -153,8 +154,9 @@ def ingest_gene_info(conn, data_path, authority_idx):
         species_taxon,
         id,
         symbol,
-        identifier
-    ) VALUES (?, ?, ?, ?, ?)
+        identifier,
+        citation
+    ) VALUES (?, ?, ?, ?, ?, ?)
     """
     i0 = 0
     if data_path.suffix == '.gz':
@@ -182,7 +184,8 @@ def ingest_gene_info(conn, data_path, authority_idx):
                  int(row[0]),
                  int(row[1]),
                  row[2],
-                 f'NCBIGene:{row[1]}')
+                 f'NCBIGene:{row[1]}',
+                 citation_idx)
                 for row in chunk
                 if len(row) > 0
             ]

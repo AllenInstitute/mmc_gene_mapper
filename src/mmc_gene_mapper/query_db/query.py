@@ -46,6 +46,11 @@ def get_equivalent_genes(
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
+        citation = metadata_utils.get_citation(
+            conn=conn,
+            name=citation
+        )
+
         input_auth = metadata_utils.get_authority(
             conn=conn,
             name=input_authority
@@ -67,6 +72,8 @@ def get_equivalent_genes(
                 gene1
             FROM gene_equivalence
             WHERE
+                citation=?
+            AND
                 authority0=?
             AND
                 authority1=?
@@ -77,7 +84,10 @@ def get_equivalent_genes(
             """
             chunk = cursor.execute(
                 query,
-                (input_auth, output_auth, species_taxon)).fetchall()
+                (citation['idx'],
+                 input_auth,
+                 output_auth,
+                 species_taxon)).fetchall()
             for row in chunk:
                 if row[0] not in results:
                     results[row[0]] = []

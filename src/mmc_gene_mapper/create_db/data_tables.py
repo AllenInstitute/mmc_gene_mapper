@@ -15,7 +15,8 @@ def create_data_tables(conn):
             id INTEGER,
             species_taxon INTEGER,
             symbol STRING,
-            identifier STRING
+            identifier STRING,
+            citation INTEGER
         )
         """
     )
@@ -54,6 +55,7 @@ def create_data_indexes(conn):
         idx_name="gene_idx",
         table_name="gene",
         column_tuple=(
+            "citation",
             "authority",
             "species_taxon",
             "symbol"
@@ -65,6 +67,7 @@ def create_data_indexes(conn):
         idx_name="gene_equivalence_idx",
         table_name="gene_equivalence",
         column_tuple=(
+            "citation",
             "species_taxon",
             "authority0",
             "authority1",
