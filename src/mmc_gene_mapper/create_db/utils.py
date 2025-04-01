@@ -14,15 +14,6 @@ def create_tables(conn):
 
     cursor.execute(
         """
-        CREATE TABLE NCBI_species (
-            id INTEGER,
-            name STRING
-        )
-        """
-    )
-
-    cursor.execute(
-        """
         CREATE TABLE NCBI_genes (
             species_taxon INTEGER,
             NCBI_id INTEGER,

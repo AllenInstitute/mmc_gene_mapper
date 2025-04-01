@@ -56,13 +56,13 @@ def ingest_ncbi_data(
         data_dir,
         clobber=False):
 
-    data_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'data'
+    data_dir = pathlib.Path(data_dir)
     db_dir = pathlib.Path(mmc_gene_mapper.__file__).parent / 'db_files'
     assert data_dir.is_dir()
     assert db_dir.is_dir()
-    gene_info_path = data_dir / 'gene_info'
-    ortholog_path = data_dir / 'gene_orthologs'
-    ensembl_path = data_dir / 'gene2ensembl'
+    gene_info_path = data_dir / 'gene_info.gz'
+    ortholog_path = data_dir / 'gene_orthologs.gz'
+    ensembl_path = data_dir / 'gene2ensembl.gz'
     metadata_path = data_dir / 'metadata.json'
 
     db_path = db_dir / db_name
@@ -174,7 +174,8 @@ def ingest_gene_info(conn, data_path, citation_idx):
             ]
             if mode == 'rb':
                 chunk = [
-                    row.decode('utf-8') for row in chunk
+                    [el.decode('utf-8') for el in row]
+                    for row in chunk
                 ]
 
             values = [
@@ -182,9 +183,12 @@ def ingest_gene_info(conn, data_path, citation_idx):
                 for row in chunk
                 if len(row) > 0
             ]
+
             if len(values) == 0:
                 break
+
             print(f'    chunk {i0:.2e}, {i0+len(values):.2e}')
+
             i0 += len(chunk)
             cursor.executemany(query, values)
             conn.commit()

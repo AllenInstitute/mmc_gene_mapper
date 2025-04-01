@@ -1,9 +1,9 @@
 """
 Define generic FTP download utils
 """
-import ftplib
 import json
 import pathlib
+import subprocess
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 
@@ -40,12 +40,27 @@ def download_files_from_ftp(
     }
     metadata_str = json.dumps(metadata, indent=2)
 
-    host = ftplib.FTP(ftp_host)
-    host.login()
     for src in file_dst_mapping:
         print(f'=======DOWNLOADING {src}=======')
-        with open(file_dst_mapping[src], 'wb') as dst:
-            host.retrbinary(f'RETR {src}', dst.write)
+        src_url = (
+            f'https://{ftp_host}/{src}'
+        )
+        dst = pathlib.Path(file_dst_mapping[src])
+        dst_url = (
+            f'{str(dst.resolve().absolute())}'
+        )
+        process_args=[
+            "wget",
+            src_url,
+            "-O",
+            dst_url
+        ]
+        process = subprocess.Popen(args=process_args)
+        return_code = process.wait()
+        if return_code != 0:
+            raise RuntimeError(
+                f"subprocess {args} returned code {return_code}"
+            )
 
     with open(metadata_dst, 'w') as dst:
         dst.write(metadata_str)

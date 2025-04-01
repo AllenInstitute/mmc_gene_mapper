@@ -1,3 +1,4 @@
+import json
 import pathlib
 import sqlite3
 
@@ -109,6 +110,100 @@ def ensembl_to_ncbi(
                     results[row[1]] = []
                 results[row[1]].append(row[0])
     return results
+
+
+def get_ncbi_orthologs(
+        db_path,
+        src_species,
+        src_genes,
+        dst_species,
+        citation):
+    """
+    Parameters
+    ----------
+    db_path:
+        path to the database file
+    src_species:
+        string or int indicating the species of the
+        specified genes
+    dst_genes:
+        list of ints indicating the NCBI IDs of the
+        sepcified genes
+    dst_species:
+        string or int indicating the species in which you
+        want to find ortholog genes
+    citation:
+        string indicating the source of the ortholog
+        assignments you want to use
+    """
+    does_path_exist(db_path)
+
+    src_taxon = species_to_taxon(
+        db_path=db_path,
+        species=src_species)
+
+    dst_taxon = species_to_taxon(
+        db_path=db_path,
+        species=dst_species)
+
+    results = dict()
+    chunk_size = 500
+
+    with sqlite3.connect(db_path) as conn:
+        citation = get_citation(
+            conn=conn,
+            name=citation
+        )
+
+        cursor = conn.cursor()
+
+        for i0 in range(0, len(src_genes), chunk_size):
+            values = tuple(src_genes[i0:i0+chunk_size])
+            raw = cursor.execute(
+                f"""
+                SELECT
+                    gene0,
+                    gene1
+                FROM
+                    NCBI_orthologs
+                WHERE
+                    citation=?
+                AND
+                    species0=?
+                AND
+                    species1=?
+                AND
+                    gene0 IN {values}
+                """,
+                (citation['idx'], src_taxon, dst_taxon)
+            )
+            for row in raw:
+                if row[0] not in results:
+                    results[row[0]] = []
+                results[row[0]].append(row[1])
+
+    return {
+        'metadata': {
+            'provenance': json.loads(citation['metadata']),
+            'src_species_taxon': src_taxon,
+            'dst_species_taxon': dst_taxon
+        },
+        'mapping': results
+    }
+
+
+def species_to_taxon(db_path, species):
+    if isinstance(species, int):
+        return species
+
+    try:
+        result = int(species)
+    except ValueError:
+        result = get_species_taxon(
+            db_path=db_path,
+            species_name=species
+        )
+    return result
 
 
 def get_citation(conn, name):
