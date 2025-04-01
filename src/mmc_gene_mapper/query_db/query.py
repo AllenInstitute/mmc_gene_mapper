@@ -3,6 +3,9 @@ import pathlib
 import sqlite3
 
 
+import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
+
+
 def get_species_taxon(
         db_path,
         species_name):
@@ -40,7 +43,7 @@ def ncbi_to_ensembl(
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
-        citation = db_utils.get_citation(
+        citation = metadata_utils.get_citation(
             conn=conn,
             name=citation
         )
@@ -82,7 +85,7 @@ def ensembl_to_ncbi(
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
-        citation = db_utils.get_citation(
+        citation = metadata_utils.get_citation(
             conn=conn,
             name=citation
         )
@@ -150,7 +153,7 @@ def get_ncbi_orthologs(
     chunk_size = 500
 
     with sqlite3.connect(db_path) as conn:
-        citation = db_utils.get_citation(
+        citation = metadata_utils.get_citation(
             conn=conn,
             name=citation
         )
