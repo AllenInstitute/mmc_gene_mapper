@@ -47,34 +47,31 @@ def insert_orthologs(
 
     # map genes to species
     gene_to_species = dict()
-    chunk_size = 10000
-    n_pairs = len(pair_list)
-    for i0 in range(0, n_pairs, chunk_size):
-        chunk = pair_list[i0:i0+chunk_size]
-        for pair_idx in (0, 1):
-            gene_values = tuple([pair[pair_idx] for pair in chunk])
+    getter = cursor.execute(
+        """
+        SELECT
+            NCBI_id,
+            species_taxon
+        FROM NCBI_genes
+        WHERE
+            citation=?
+        """,
+        (src_citation['idx'],)
+    )
 
-            raw_mapping = cursor.execute(
-                f"""
-                SELECT
-                    NCBI_id,
-                    species_taxon
-                FROM NCBI_genes
-                WHERE
-                    citation=?
-                AND
-                    NCBI_id IN {gene_values}
-                """,
-                (src_citation['idx'],)
-            ).fetchall()
-            for row in raw_mapping:
-                if row[0] in gene_to_species:
-                    if gene_to_species[row[0]] != row[1]:
-                        raise ValueError(
-                            f"Multiple species for gene {row[0]}"
-                        )
-                else:
-                    gene_to_species[row[0]] = row[1]
+    while True:
+        chunk = getter.fetchmany(1000000)
+        if len(chunk) == 0:
+            break
+        for row in chunk:
+            if row[0] in gene_to_species:
+                if gene_to_species[row[0]] != row[1]:
+                    raise ValueError(
+                        f"Multiple species for gene {row[0]}"
+                    )
+            else:
+                gene_to_species[row[0]] = row[1]
+
     print("    GOT GENE TO SPECIES MAP")
 
     # insert data into ortholog table
