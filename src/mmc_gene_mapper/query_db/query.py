@@ -85,8 +85,9 @@ def get_equivalent_genes(
     return results
 
 
-def get_ncbi_orthologs(
+def get_orthologs(
         db_path,
+        authority,
         src_species,
         src_genes,
         dst_species,
@@ -96,6 +97,9 @@ def get_ncbi_orthologs(
     ----------
     db_path:
         path to the database file
+    authority:
+        string indicating according to what authority
+        (NCBI or ENSEMBL) we want orthologs
     src_species:
         string or int indicating the species of the
         specified genes
@@ -128,6 +132,11 @@ def get_ncbi_orthologs(
             name=citation
         )
 
+        authority_idx = metadata_utils.get_authority(
+            conn=conn,
+            name=authority
+        )["idx"]
+
         cursor = conn.cursor()
 
         for i0 in range(0, len(src_genes), chunk_size):
@@ -138,8 +147,10 @@ def get_ncbi_orthologs(
                     gene0,
                     gene1
                 FROM
-                    NCBI_orthologs
+                    gene_ortholog
                 WHERE
+                    authority=?
+                AND
                     citation=?
                 AND
                     species0=?
@@ -148,7 +159,10 @@ def get_ncbi_orthologs(
                 AND
                     gene0 IN {values}
                 """,
-                (citation['idx'], src_taxon, dst_taxon)
+                (authority_idx,
+                 citation['idx'],
+                 src_taxon,
+                 dst_taxon)
             )
             for row in raw:
                 if row[0] not in results:
