@@ -48,6 +48,16 @@ def ncbi_to_ensembl(
             name=citation
         )
 
+        ncbi_idx = metadata_utils.get_authority(
+            conn=conn,
+            name='NCBI'
+        )["idx"]
+
+        ensembl_idx = metadata_utils.get_authority(
+            conn=conn,
+            name='ENSEMBL'
+        )["idx"]
+
         cursor = conn.cursor()
         for i0 in range(0, len(ncbi_id_list), chunk_size):
             values = [
@@ -55,19 +65,21 @@ def ncbi_to_ensembl(
             ]
             query=f"""
             SELECT
-                NCBI_id,
-                ENSEMBL_id
-            FROM NCBI_to_ENSEMBL
+                gene0,
+                gene1
+            FROM gene_equivalence
             WHERE
-                citation=?
+                authority0=?
+            AND
+                authority1=?
             AND
                 species_taxon=?
             AND
-                NCBI_id IN {tuple(values)}
+                gene0 IN {tuple(values)}
             """
             chunk = cursor.execute(
                 query,
-                (citation['idx'], species_taxon)).fetchall()
+                (ncbi_idx, ensembl_idx, species_taxon)).fetchall()
             for row in chunk:
                 if row[0] not in results:
                     results[row[0]] = []
