@@ -226,7 +226,7 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
     )
     VALUES (?, ?, ?, ?, ?, ?)
     """
-
+    uploaded_pairs = set()
     for i0 in range(0, n_rows, chunk_size):
         chunk = data.iloc[i0:i0+chunk_size].to_dict(orient='records')
         values = []
@@ -239,6 +239,12 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
                 continue
 
             ncbi_gene_id = int(row['GeneID'])
+
+            pair = (ncbi_gene_id, ensembl_gene_id)
+            if pair in uploaded_pairs:
+                continue
+            uploaded_pairs.add(pair)
+
             taxon_id = int(row['#tax_id'])
 
             values.append(

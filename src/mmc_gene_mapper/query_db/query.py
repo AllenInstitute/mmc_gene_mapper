@@ -33,35 +33,33 @@ def get_species_taxon(
     return results[0][0]
 
 
-def ncbi_to_ensembl(
+def get_equivalent_genes(
         db_path,
-        ncbi_id_list,
+        input_id_list,
+        input_authority,
+        output_authority,
         species_taxon,
         chunk_size=100,
         citation="NCBI"):
+
     does_path_exist(db_path)
     results = dict()
     with sqlite3.connect(db_path) as conn:
 
-        citation = metadata_utils.get_citation(
+        input_auth = metadata_utils.get_authority(
             conn=conn,
-            name=citation
-        )
-
-        ncbi_idx = metadata_utils.get_authority(
-            conn=conn,
-            name='NCBI'
+            name=input_authority
         )["idx"]
 
-        ensembl_idx = metadata_utils.get_authority(
+        output_auth = metadata_utils.get_authority(
             conn=conn,
-            name='ENSEMBL'
+            name=output_authority
         )["idx"]
 
         cursor = conn.cursor()
-        for i0 in range(0, len(ncbi_id_list), chunk_size):
+        for i0 in range(0, len(input_id_list), chunk_size):
             values = [
-                int(ii) for ii in ncbi_id_list[i0:i0+chunk_size]
+                int(ii) for ii in input_id_list[i0:i0+chunk_size]
             ]
             query=f"""
             SELECT
@@ -79,51 +77,11 @@ def ncbi_to_ensembl(
             """
             chunk = cursor.execute(
                 query,
-                (ncbi_idx, ensembl_idx, species_taxon)).fetchall()
+                (input_auth, output_auth, species_taxon)).fetchall()
             for row in chunk:
                 if row[0] not in results:
                     results[row[0]] = []
                 results[row[0]].append(row[1])
-    return results
-
-
-def ensembl_to_ncbi(
-        db_path,
-        ensembl_id_list,
-        species_taxon,
-        chunk_size=100,
-        citation="NCBI"):
-    does_path_exist(db_path)
-    results = dict()
-    with sqlite3.connect(db_path) as conn:
-
-        citation = metadata_utils.get_citation(
-            conn=conn,
-            name=citation
-        )
-
-        cursor = conn.cursor()
-        for i0 in range(0, len(ensembl_id_list), chunk_size):
-            values = ensembl_id_list[i0:i0+chunk_size]
-            query=f"""
-            SELECT
-                NCBI_id,
-                ENSEMBL_id
-            FROM NCBI_to_ENSEMBL
-            WHERE
-                citation=?
-            AND
-                species_taxon=?
-            AND
-                ENSEMBL_id IN {tuple(values)}
-            """
-            chunk = cursor.execute(
-                query,
-                (citation['idx'], species_taxon)).fetchall()
-            for row in chunk:
-                if row[0] not in results:
-                    results[row[1]] = []
-                results[row[1]].append(row[0])
     return results
 
 
