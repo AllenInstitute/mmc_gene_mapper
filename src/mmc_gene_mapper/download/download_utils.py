@@ -6,61 +6,65 @@ import pathlib
 import subprocess
 
 import mmc_gene_mapper.utils.timestamp as timestamp
+import mmc_gene_mapper.utils.file_utils as file_utils
 
 
-
-def download_files_from_ftp(
-        ftp_host,
-        file_dst_mapping,
-        metadata_dst):
+def download_file(
+        host,
+        src_path,
+        dst_path,
+        clobber=False):
     """
     Parameters
     ----------
-    ftp_host:
+    host:
         string. The name of the FTP host from which to download
         the files
-    file_dst_mapping:
-        a dict mapping the names of the files on the FTP host to
-        their destinations on the local drive
-    metadata_dst:
-        path to JSON file where metadata characterizing this
-        download will be written
+    src_path:
+        path within the host of the file being downloaded
+    dst_path:
+        path on local machine where we will be saving the file
+    clobber:
+        whether or not to overwrite existing file
+
+    Returns
+    -------
+    metadata describing downloaded file
     """
-    for dst in file_dst_mapping.values():
-        dst = pathlib.Path(dst)
-        if dst.exists():
+    dst_path = pathlib.Path(dst_path)
+    if dst_path.exists():
+        if clobber:
+            file_utils.clean_up(dst_path)
+        else:
             raise RuntimeError(
                 f"{dst} already exists"
             )
 
     metadata = {
-        'host': ftp_host,
-        'files': list(file_dst_mapping.keys()),
-        'downloaded_on': timestamp.get_timestamp()
+        'host': host,
+        'src_path': src_path,
+        'downloaded_on': timestamp.get_timestamp(),
+        'local_path': str(dst_path.resolve().absolute())
     }
-    metadata_str = json.dumps(metadata, indent=2)
+    json.dumps(metadata, indent=2)
 
-    for src in file_dst_mapping:
-        print(f'=======DOWNLOADING {src}=======')
-        src_url = (
-            f'https://{ftp_host}/{src}'
+    print(f'=======DOWNLOADING {src_path}=======')
+    src_url = (
+        f'https://{host}/{src_path}'
+    )
+    dst_url = (
+        f'{str(dst_path.resolve().absolute())}'
+    )
+    process_args=[
+        "wget",
+        src_url,
+        "-O",
+        dst_url
+    ]
+    process = subprocess.Popen(args=process_args)
+    return_code = process.wait()
+    if return_code != 0:
+        raise RuntimeError(
+            f"subprocess {args} returned code {return_code}"
         )
-        dst = pathlib.Path(file_dst_mapping[src])
-        dst_url = (
-            f'{str(dst.resolve().absolute())}'
-        )
-        process_args=[
-            "wget",
-            src_url,
-            "-O",
-            dst_url
-        ]
-        process = subprocess.Popen(args=process_args)
-        return_code = process.wait()
-        if return_code != 0:
-            raise RuntimeError(
-                f"subprocess {args} returned code {return_code}"
-            )
-
-    with open(metadata_dst, 'w') as dst:
-        dst.write(metadata_str)
+    return metadata
