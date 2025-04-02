@@ -94,10 +94,6 @@ def ingest_species_table(
     with open(data_path, "r") as src:
         for line in src:
             params = [el.strip() for el in line.split('|')]
-            if params[3] != 'scientific name':
-                if 'common name' not in params[3]:
-                    continue
-
             species.append((int(params[0]), params[1]))
 
     table_name = "NCBI_species"
