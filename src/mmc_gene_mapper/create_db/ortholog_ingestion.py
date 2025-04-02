@@ -56,14 +56,18 @@ def insert_orthologs(
         name='NCBI'
     )
 
-
     cursor = conn.cursor()
 
-    species_set = sorted(set(species0_list).union(set(species1_list)))
+    species_set = sorted(
+        set([p[2] for p in pair_list]).union(
+            set([p[3] for p in pair_list])
+        )
+    )
     species_taxon_lookup = {
         s: query_utils._get_species_taxon(
                 cursor=cursor,
-                species_name=s)
+                species_name=s,
+                strict=True)
         for s in species_set
     }
 
@@ -94,10 +98,6 @@ def insert_orthologs(
             for pair in pair_list
         ]
 
-        for v in values:
-            assert v[2] is not None
-            assert v[4] is not None
-
         cursor.executemany(
             """
             INSERT INTO gene_ortholog (
@@ -107,11 +107,11 @@ def insert_orthologs(
                 species1,
                 gene1,
                 citation
-            ) VALUES (?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?)
             """,
             values
         )
 
-    data_utils.create_indexes(conn)
+    data_utils.create_data_indexes(conn)
     dur = (time.time()-t0)/60.0
     print(f"=======ORTHOLOG INGESTION TOOK {dur:.2e} minutes=======")

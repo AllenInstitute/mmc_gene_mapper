@@ -19,7 +19,8 @@ def get_species_taxon(
 
 def _get_species_taxon(
         cursor,
-        species_name):
+        species_name,
+        strict=False):
     results = cursor.execute(
        """
        SELECT
@@ -38,6 +39,10 @@ def _get_species_taxon(
             f"{results}"
         )
     elif len(results) == 0:
+        if strict:
+            raise RuntimeError(
+                f"no species match for {species_name}"
+            )
         return None
     return results[0][0]
 
