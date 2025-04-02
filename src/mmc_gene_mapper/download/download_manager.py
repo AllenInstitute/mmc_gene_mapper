@@ -132,4 +132,4 @@ class DownloadManager(object):
                 "Even after forced download, more than one record for "
                 f"host: {host}, src_path: {src_path}"
             )
-        return record
+        return record[0]
