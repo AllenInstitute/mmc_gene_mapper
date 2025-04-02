@@ -50,6 +50,12 @@ def create_data_tables(conn):
 
 def create_data_indexes(conn):
     cursor = conn.cursor()
+    create_gene_index(cursor)
+    create_gene_equivalence_index(cursor)
+    create_gene_ortholog_index(cursor)
+
+
+def create_gene_index(cursor):
     db_utils.create_index(
         cursor=cursor,
         idx_name="gene_idx",
@@ -62,6 +68,8 @@ def create_data_indexes(conn):
         )
     )
 
+
+def create_gene_equivalence_index(cursor):
     db_utils.create_index(
         cursor=cursor,
         idx_name="gene_equivalence_idx",
@@ -75,6 +83,8 @@ def create_data_indexes(conn):
         )
     )
 
+
+def create_gene_ortholog_index(cursor):
     db_utils.create_index(
         cursor=cursor,
         idx_name="gene_ortholog_idx",
