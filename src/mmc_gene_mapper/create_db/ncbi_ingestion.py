@@ -13,7 +13,7 @@ import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.query_db.query as db_query
-import mmc_gene_mapper.download.ftp_utils as ftp_utils
+import mmc_gene_mapper.download.download_utils as download_utils
 
 
 def update_ncbi_data(
@@ -41,7 +41,7 @@ def update_ncbi_data(
         }
         metadata_dst = data_dir/'metadata.json'
 
-        ftp_utils.download_files_from_ftp(
+        download_utils.download_files_from_ftp(
             ftp_host=host,
             file_dst_mapping=mapping,
             metadata_dst=metadata_dst

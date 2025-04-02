@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 
 import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.download.ftp_utils as ftp_utils
+import mmc_gene_mapper.download.download_utils as download_utils
 
 
 def download_and_ingest_species_data(
@@ -44,7 +44,7 @@ def _download_and_ingest_species_data(
         'pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5': md5_path
     }
 
-    ftp_utils.download_files_from_ftp(
+    download_utils.download_files_from_ftp(
         ftp_host=host,
         file_dst_mapping=mapping,
         metadata_dst=metadata_dst
