@@ -71,7 +71,7 @@ class DownloadManager(object):
         )
         if len(pre_existing) == 0:
             force_download = True
-        elif len(pre_existing) == 1:
+        elif len(pre_existing) == 1 and not force_download:
             record = pre_existing[0]
             local_path = pathlib.Path(
                 record['local_path']
