@@ -8,13 +8,15 @@ import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 def get_species_taxon(
         db_path,
-        species_name):
+        species_name,
+        strict=False):
     does_path_exist(db_path)
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         result = _get_species_taxon(
             cursor=cursor,
-            species_name=species_name)
+            species_name=species_name,
+            strict=strict)
     return result
 
 def _get_species_taxon(

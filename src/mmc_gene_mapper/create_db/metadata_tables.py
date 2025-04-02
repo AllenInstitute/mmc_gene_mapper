@@ -39,7 +39,17 @@ def get_citation(
         strict=False):
 
     cursor = conn.cursor()
+    return _get_citation(
+        cursor=cursor,
+        name=name,
+        strict=strict
+    )
 
+
+def _get_citation(
+        cursor,
+        name,
+        strict=False):
     results = cursor.execute(
         """
         SELECT name, id, metadata
@@ -137,7 +147,7 @@ def insert_unique_citation(
     if pre_existing_citation is not None:
         if not clobber:
             raise RuntimeError(
-                f"citation {citation_name} already exists; "
+                f"citation {name} already exists; "
                 "run with clobber=True to overwrite"
             )
         else:
@@ -160,6 +170,16 @@ def get_authority(
         strict=False):
 
     cursor = conn.cursor()
+    return _get_authority(
+        cursor=cursor,
+        name=name,
+        strict=strict)
+
+
+def _get_authority(
+        cursor,
+        name,
+        strict=False):
 
     results = cursor.execute(
         """
