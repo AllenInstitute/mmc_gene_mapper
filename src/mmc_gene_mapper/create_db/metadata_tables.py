@@ -33,7 +33,10 @@ def create_metadata_tables(conn):
     )
 
 
-def get_citation(conn, name):
+def get_citation(
+        conn,
+        name,
+        strict=False):
 
     cursor = conn.cursor()
 
@@ -52,6 +55,10 @@ def get_citation(conn, name):
         )
 
     if len(results) == 0:
+        if strict:
+            raise ValueError(
+                f"No citation corresponding to name {name}"
+            )
         return None
 
     return {
@@ -147,7 +154,10 @@ def insert_unique_citation(
     return citation_idx
 
 
-def get_authority(conn, name):
+def get_authority(
+        conn,
+        name,
+        strict=False):
 
     cursor = conn.cursor()
 
@@ -166,6 +176,10 @@ def get_authority(conn, name):
         )
 
     if len(results) == 0:
+        if strict:
+            raise ValueError(
+                f"No authority corresponding to name {name}"
+            )
         return None
 
     return {
