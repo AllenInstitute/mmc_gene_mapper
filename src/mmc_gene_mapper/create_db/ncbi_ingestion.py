@@ -42,9 +42,9 @@ def ingest_ncbi_data(
         metadata_dict[fname] = record
 
 
-    ensembl_path = metadata_dict['gene2ensembl.gz']['local_path']
-    ortholog_path = metadata_dict['gene_orthologs.gz']['local_path']
-    gene_info_path = metadata_dict['gene_info.gz']['local_path']
+    ensembl_path = metadata_dict['gene2ensembl.gz'].pop('local_path')
+    ortholog_path = metadata_dict['gene_orthologs.gz'].pop('local_path')
+    gene_info_path = metadata_dict['gene_info.gz'].pop('local_path')
 
     _ingest_ncbi_data(
         db_path=db_path,
