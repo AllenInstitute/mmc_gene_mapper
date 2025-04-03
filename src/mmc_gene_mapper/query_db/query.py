@@ -2,7 +2,6 @@ import json
 import pathlib
 import sqlite3
 
-
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
@@ -47,6 +46,134 @@ def _get_species_taxon(
             )
         return None
     return results[0][0]
+
+
+def get_citation_from_bibliography(
+        cursor,
+        authority_idx,
+        species_taxon):
+    raw = cursor.execute(
+        """
+        SELECT
+            citation
+        FROM
+            species_bibliography
+        WHERE
+            species_taxon=?
+        AND
+            authority=?
+        """,
+        (species_taxon, authority_idx)
+    ).fetchall()
+
+    results = set([r[0] for r in raw])
+
+    if len(results) != 1:
+        full_authority = cursor.execute(
+            """
+            SELECT
+                name
+            FROM authority
+            WHERE id=?
+            """,
+            (authority,)
+        )
+        raise RuntimeError(
+            f"There are {results} citations associated "
+            f"with authority={full_authority}, "
+            f"species_taxon={species_taxon}; "
+            "unclear how to proceed"
+        )
+    citation_idx = results.pop()
+    raw = cursor.execute(
+        """
+        SELECT
+            name,
+            metadata,
+            id
+        FROM citation
+        WHERE id=?
+        """,
+        (citation_idx,)
+    ).fetchall()
+    assert len(raw) == 1
+    return {
+        "name": raw[0][0],
+        "metadata": json.loads(raw[0][1]),
+        "idx": raw[0][2]
+    }
+
+
+def symbols_to_gene_identifiers(
+        db_path,
+        symbol_list,
+        authority,
+        species_taxon,
+        chunk_size=100):
+
+    results = {
+        symbol: []
+        for symbol in symbol_list
+    }
+
+    with sqlite3.connect(db_path) as conn:
+
+        full_authority = metadata_utils.get_authority(
+            conn=conn,
+            name=authority
+        )
+        authority_idx = full_authority["idx"]
+
+        cursor = conn.cursor()
+
+        # get citation idx
+        full_citation = get_citation_from_bibliography(
+            cursor=cursor,
+            authority_idx=authority_idx,
+            species_taxon=species_taxon
+        )
+
+        citation_idx = full_citation["idx"]
+
+        n_symbols = len(symbol_list)
+        for i0 in range(0, n_symbols, chunk_size):
+            values = symbol_list[i0:i0+chunk_size]
+            n_values = len(values)
+
+            query = """
+                SELECT
+                    symbol,
+                    identifier
+                FROM gene
+                WHERE
+                    citation=?
+                AND
+                    authority=?
+                AND
+                    species_taxon=?
+                AND
+                    symbol IN (
+                """
+            query += ",".join(['?']*n_values)
+            query += ")"
+            raw = cursor.execute(
+                query,
+                (citation_idx,
+                 authority_idx,
+                 species_taxon,
+                 *values)
+            )
+            for row in raw:
+                symbol = row[0]
+                identifier = row[1]
+                results[symbol].append(identifier)
+        return {
+            'metadata': {
+                'authority': full_authority,
+                'citation': full_citation
+            },
+            'mapping': results
+        }
 
 
 def get_equivalent_genes(
