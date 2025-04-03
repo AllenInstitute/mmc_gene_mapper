@@ -3,6 +3,7 @@ Define the class to actually do gene mapping
 """
 import json
 import pathlib
+import shutil
 import sqlite3
 import tempfile
 
@@ -143,10 +144,27 @@ class MMCGeneMapper(object):
 
         if not self.db_path.is_file():
 
+
+            tmp_db_path = file_utils.mkstemp_clean(
+                dir=tmp_dir,
+                suffix='.db',
+                delete=True
+            )
+
             mapper_utils.create_mapper_database(
-                db_path=self.db_path,
+                db_path=tmp_db_path,
                 download_manager=self.download_mgr,
                 data_file_spec=data_file_spec,
                 tmp_dir=tmp_dir,
                 force_download=force_download
+            )
+
+            mapper_utils.create_bibliography_table(
+                tmp_db_path
+            )
+
+            print(f'=======COPYING TMP FILE TO {self.db_path}=======')
+            shutil.move(
+                src=tmp_db_path,
+                dst=self.db_path
             )

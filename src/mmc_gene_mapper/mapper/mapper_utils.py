@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.ncbi_ingestion as ncbi_ingestion
@@ -63,3 +64,65 @@ def create_mapper_database(
     # only after all data has been ingested
     with sqlite3.connect(db_path) as conn:
         data_utils.create_data_indexes(conn)
+
+
+def create_bibliography_table(
+        db_path):
+    """
+    Create species_bibliography which lists all
+    combinations of authority, citation, species in the
+    gene table.
+    """
+    print("=======CREATING BIBLIOGRAPHY TABLE=======")
+    table_name = "species_bibliography"
+    index_name = "species_bibliography_idx"
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        db_utils.delete_index(
+            cursor=cursor,
+            idx_name=index_name
+        )
+        cursor.execute(
+            f"""
+            DROP TABLE IF EXISTS {table_name}
+            """
+        )
+        cursor.execute(
+            f"""
+            CREATE TABLE {table_name} (
+                authority INTEGER,
+                citation INTEGER,
+                species_taxon INTEGER
+            )
+            """
+        )
+        raw = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species_taxon
+            FROM gene
+            GROUP BY
+                authority,
+                citation,
+                species_taxon
+            """
+        ).fetchall()
+        cursor.executemany(
+            f"""
+            INSERT INTO {table_name} (
+                authority,
+                citation,
+                species_taxon
+            )
+            VALUES (?, ?, ?)
+            """,
+            raw
+        )
+        db_utils.create_index(
+            cursor=cursor,
+            idx_name=index_name,
+            table_name=table_name,
+            column_tuple=("species_taxon", "authority")
+        )
