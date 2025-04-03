@@ -11,31 +11,34 @@ def int_from_identifier(identifier):
     return int(result[0])
 
 
-def detect_gene_identifiers(
+def characterize_gene_identifiers(
         gene_id_list):
     """
     Take a list of gene identifiers.
 
-    If we think they are identifiers return the
-    authority we think they belong to.
+    Return a list indicating if genes are
+        ['NCBI', 'ENSEMBL', or 'symbol']
 
-    If we think they are symbols, return None
-
-    Must make the same choice for all identifiers
     """
-    try:
-        [int_from_identifier(ii) for ii in gene_id_list]
-    except ValueError:
-        return None
-
-    ncbi_start = [
-        ii.startswith('NCBI') for ii in gene_id_list
-    ]
-    if all(ncbi_start):
-        return 'NCBI'
-    ens_start = [
-        ii.startswith('ENS') for ii in gene_id_list
-    ]
-    if all(ens_start):
-        return 'ENSEMBL'
-    return None
+    int_pattern = re.compile('[0-9]+')
+    ens_prefix_pattern = re.compile('ENS[A-Z]+')
+    ncbi_prefix_pattern = re.compile('NCBI[A-Za-z]*[:]?')
+    result = []
+    for gene_id in gene_id_list:
+        ival = int_pattern.findall(gene_id)
+        if len(ival) > 0:
+            ival = ival[0]
+        else:
+            ival = ''
+        ens_prefix = ens_prefix_pattern.match(gene_id)
+        ncbi_prefix = ncbi_prefix_pattern.match(gene_id)
+        if ens_prefix is not None:
+            if gene_id == f'{ens_prefix.group(0)}{ival}':
+                result.append('ENSEMBL')
+                continue
+        elif ncbi_prefix is not None:
+            if gene_id == f'{ncbi_prefix.group(0)}{ival}':
+                result.append('NCBI')
+                continue
+        result.append('symbol')
+    return result

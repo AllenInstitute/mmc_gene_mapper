@@ -1,12 +1,36 @@
+import numpy as np
+
 import mmc_gene_mapper.utils.str_utils as str_utils
 
 
-def test_detect_gene_identifiers():
+def test_characterize_gene_identifiers():
 
-    assert str_utils.detect_gene_identifiers(['a', 'b', 'c']) is None
-    assert str_utils.detect_gene_identifiers(
-        ['NCBIGene:011', 'NCBIGene:9191', 'NCBIGene:223']) == 'NCBI'
-    assert str_utils.detect_gene_identifiers(
-        ['ENSMUSG0001', 'ENSG88881', 'ENST888111']) == 'ENSEMBL'
-    assert str_utils.detect_gene_identifiers(
-        ['ENSMUST0091', 'NCBIGene:99']) is None
+    values = [
+       'a',
+       '112321',
+       'NCBI:5513',
+       'ENSMUSG00998811',
+       'ENST778881123',
+       'ENST78132b',
+       'NCBIGene:7781',
+       'NCBIGene::7777123'
+    ]
+    expected = [
+        'symbol',
+        'symbol',
+        'NCBI',
+        'ENSEMBL',
+        'ENSEMBL',
+        'symbol',
+        'NCBI',
+        'symbol'
+    ]
+
+    actual = str_utils.characterize_gene_identifiers(
+        values
+    )
+
+    np.testing.assert_array_equal(
+        actual,
+        expected
+    )
