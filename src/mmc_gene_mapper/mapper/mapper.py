@@ -43,6 +43,41 @@ class MMCGeneMapper(object):
             )
         )
 
+
+        tmp_dir = pathlib.Path(
+            tempfile.mkdtemp(
+                dir=dst_dir,
+                prefix='scratch_'
+            )
+        )
+        try:
+            self._initialize(
+                dst_dir=dst_dir,
+                tmp_dir=tmp_dir,
+                db_path=db_path,
+                data_file_spec=data_file_spec,
+                clobber=clobber,
+                force_download=force_download
+            )
+        finally:
+
+            file_utils.clean_up(tmp_dir)
+
+            contents = [n for n in dst_dir.iterdir()]
+            if len(contents) == 0:
+                file_utils.clean_up(dst_dir)
+
+
+
+    def _initialize(
+            self,
+            dst_dir,
+            tmp_dir,
+            db_path,
+            data_file_spec,
+            clobber,
+            force_download):
+
         self.download_mgr = download_manager.DownloadManager(
             dst_dir=dst_dir
         )
@@ -58,22 +93,10 @@ class MMCGeneMapper(object):
 
         if not self.db_path.is_file():
 
-            tmp_dir = tempfile.mkdtemp(
-                dir=dst_dir,
-                prefix='scratch_'
+            mapper_utils.create_mapper_database(
+                db_path=self.db_path,
+                download_manager=self.download_mgr,
+                data_file_spec=data_file_spec,
+                tmp_dir=tmp_dir,
+                force_download=force_download
             )
-
-            try:
-                mapper_utils.create_mapper_database(
-                    db_path=self.db_path,
-                    download_manager=self.download_mgr,
-                    data_file_spec=data_file_spec,
-                    tmp_dir=tmp_dir,
-                    force_download=force_download
-                )
-            finally:
-                file_utils.clean_up(tmp_dir)
-
-        contents = [n for n in dst_dir.iterdir()]
-        if len(contents) == 0:
-            file_utils.clean_up(dst_dir)
