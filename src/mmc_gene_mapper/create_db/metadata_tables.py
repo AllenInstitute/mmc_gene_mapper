@@ -33,10 +33,23 @@ def create_metadata_tables(conn):
     )
 
 
-def get_citation(conn, name):
+def get_citation(
+        conn,
+        name,
+        strict=False):
 
     cursor = conn.cursor()
+    return _get_citation(
+        cursor=cursor,
+        name=name,
+        strict=strict
+    )
 
+
+def _get_citation(
+        cursor,
+        name,
+        strict=False):
     results = cursor.execute(
         """
         SELECT name, id, metadata
@@ -52,6 +65,10 @@ def get_citation(conn, name):
         )
 
     if len(results) == 0:
+        if strict:
+            raise ValueError(
+                f"No citation corresponding to name {name}"
+            )
         return None
 
     return {
@@ -130,7 +147,7 @@ def insert_unique_citation(
     if pre_existing_citation is not None:
         if not clobber:
             raise RuntimeError(
-                f"citation {citation_name} already exists; "
+                f"citation {name} already exists; "
                 "run with clobber=True to overwrite"
             )
         else:
@@ -147,9 +164,22 @@ def insert_unique_citation(
     return citation_idx
 
 
-def get_authority(conn, name):
+def get_authority(
+        conn,
+        name,
+        strict=False):
 
     cursor = conn.cursor()
+    return _get_authority(
+        cursor=cursor,
+        name=name,
+        strict=strict)
+
+
+def _get_authority(
+        cursor,
+        name,
+        strict=False):
 
     results = cursor.execute(
         """
@@ -166,6 +196,10 @@ def get_authority(conn, name):
         )
 
     if len(results) == 0:
+        if strict:
+            raise ValueError(
+                f"No authority corresponding to name {name}"
+            )
         return None
 
     return {

@@ -12,7 +12,7 @@ import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
 
-def insert_orthologs(
+def ingest_orthologs(
         conn,
         gene0_list,
         species0_list,

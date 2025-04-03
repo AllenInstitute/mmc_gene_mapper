@@ -13,93 +13,70 @@ import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.query_db.query as db_query
-import mmc_gene_mapper.download.ftp_utils as ftp_utils
-
-
-def update_ncbi_data(
-        db_path,
-        data_dir,
-        do_download=True):
-
-    t0 = time.time()
-    data_dir = pathlib.Path(data_dir)
-    if data_dir.exists():
-        if not data_dir.is_dir():
-            raise RuntimeError(
-                f"{data_dir} is not a dir"
-            )
-    else:
-        data_dir.mkdir(parents=True)
-
-
-    if do_download:
-        host = 'ftp.ncbi.nlm.nih.gov'
-        mapping = {
-            'gene/DATA/gene_info.gz': data_dir/'gene_info.gz',
-            'gene/DATA/gene2ensembl.gz': data_dir/'gene2ensembl.gz',
-            'gene/DATA/gene_orthologs.gz': data_dir/'gene_orthologs.gz'
-        }
-        metadata_dst = data_dir/'metadata.json'
-
-        ftp_utils.download_files_from_ftp(
-            ftp_host=host,
-            file_dst_mapping=mapping,
-            metadata_dst=metadata_dst
-        )
-
-    ingest_ncbi_data(
-        db_path=db_path,
-        data_dir=data_dir,
-        clobber=True
-    )
-    dur = (time.time()-t0)/60.0
-    print(f'SUCCESS; WHOLE PROCESS TOOK {dur:.2e} minutes')
+import mmc_gene_mapper.download.download_utils as download_utils
 
 
 def ingest_ncbi_data(
         db_path,
-        data_dir,
-        clobber=False):
+        download_manager,
+        clobber=True,
+        force_download=False):
 
-    data_dir = pathlib.Path(data_dir)
-    assert data_dir.is_dir()
+    t0 = time.time()
 
-    gene_info_path = data_dir / 'gene_info.gz'
-    ortholog_path = data_dir / 'gene_orthologs.gz'
-    ensembl_path = data_dir / 'gene2ensembl.gz'
-    metadata_path = data_dir / 'metadata.json'
+    metadata_dict = dict()
+    host = 'ftp.ncbi.nlm.nih.gov'
+    file_list = [
+        'gene/DATA/gene_info.gz',
+        'gene/DATA/gene2ensembl.gz',
+        'gene/DATA/gene_orthologs.gz'
+    ]
+
+    for src_path in file_list:
+        record = download_manager.get_file(
+            host=host,
+            src_path=src_path,
+            force_download=force_download
+        )
+        fname = pathlib.Path(src_path).name
+        metadata_dict[fname] = record
+
+
+    ensembl_path = metadata_dict['gene2ensembl.gz'].pop('local_path')
+    ortholog_path = metadata_dict['gene_orthologs.gz'].pop('local_path')
+    gene_info_path = metadata_dict['gene_info.gz'].pop('local_path')
 
     _ingest_ncbi_data(
         db_path=db_path,
         gene_info_path=gene_info_path,
         ensembl_path=ensembl_path,
         ortholog_path=ortholog_path,
-        metadata_path=metadata_path,
+        metadata_dict=metadata_dict,
         clobber=clobber,
         citation_name='NCBI'
     )
+
+    dur = (time.time()-t0)/60.0
+    print(f'SUCCESS; WHOLE PROCESS TOOK {dur:.2e} minutes')
+
 
 def _ingest_ncbi_data(
         db_path,
         gene_info_path,
         ortholog_path,
         ensembl_path,
-        metadata_path,
+        metadata_dict,
         clobber=False,
         citation_name='NCBI'):
 
     file_utils.assert_is_file(ensembl_path)
     file_utils.assert_is_file(ortholog_path)
     file_utils.assert_is_file(gene_info_path)
-    file_utils.assert_is_file(metadata_path)
 
     db_exists = False
     db_path = pathlib.Path(db_path)
     if db_utils.check_existence(db_path):
         db_exists = True
-
-    with open(metadata_path, 'rb') as src:
-        metadata_dict = json.load(src)
 
     with sqlite3.connect(db_path) as conn:
         if not db_exists:

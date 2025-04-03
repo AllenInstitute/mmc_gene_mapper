@@ -8,49 +8,62 @@ import tarfile
 import tempfile
 
 import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.download.ftp_utils as ftp_utils
+import mmc_gene_mapper.download.download_utils as download_utils
 
 
-def download_and_ingest_species_data(
+def ingest_species_data(
         db_path,
-        tmp_dir):
+        download_manager,
+        force_download=False,
+        tmp_dir=None):
 
-    tmp_dir = tempfile.mkdtemp(dir=tmp_dir)
+    tmp_dir = pathlib.Path(
+        tempfile.mkdtemp(dir=tmp_dir)
+    )
+
+    if not tmp_dir.is_dir():
+        raise RuntimeError(
+            f"{tmp_dir} is not a dir"
+        )
+
     try:
-        _download_and_ingest_species_data(
+        _ingest_species_data(
             db_path=db_path,
+            download_manager=download_manager,
+            force_download=force_download,
             tmp_dir=tmp_dir
         )
     finally:
-        file_utils.clean_up(tmp_dir)
+       file_utils.clean_up(tmp_dir)
 
-def _download_and_ingest_species_data(
+
+def _ingest_species_data(
         db_path,
+        download_manager,
+        force_download,
         tmp_dir):
 
     db_path = pathlib.Path(db_path)
     if db_path.exists():
         file_utils.assert_is_file(db_path)
 
-    tmp_dir = pathlib.Path(tmp_dir)
-    metadata_dst = tmp_dir / 'metadata.json'
-
-    md5_path = tmp_dir / 'new_taxdump.tar.gz.md5'
-    tar_path = tmp_dir / 'new_taxdump.tar.gz'
-
     host = 'ftp.ncbi.nih.gov'
-    mapping = {
-        'pub/taxonomy/new_taxdump/new_taxdump.tar.gz': tar_path,
-        'pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5': md5_path
-    }
+    tar_record = download_manager.get_file(
+        host=host,
+        src_path='pub/taxonomy/new_taxdump/new_taxdump.tar.gz',
+        force_download=force_download
+    )
 
-    ftp_utils.download_files_from_ftp(
-        ftp_host=host,
-        file_dst_mapping=mapping,
-        metadata_dst=metadata_dst
+    md5_record = download_manager.get_file(
+        host=host,
+        src_path='pub/taxonomy/new_taxdump/new_taxdump.tar.gz.md5',
+        force_download=force_download
     )
 
     md5 = hashlib.md5()
+
+    tar_path = tar_record['local_path']
+    md5_path = md5_record['local_path']
 
     with open(tar_path, 'rb') as src:
         while True:

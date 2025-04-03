@@ -2,6 +2,7 @@
 Utilities to help with managing temporary files
 """
 
+import hashlib
 import os
 import pathlib
 import tempfile
@@ -80,3 +81,23 @@ def mkstemp_clean(
     if delete:
         os.unlink(file_path)
     return file_path
+
+
+def hash_from_path(file_path, chunk_bytes=100000000):
+    """
+    Return md5 hash for file at file_path
+    (raises an error if file_path does not point to a file)
+    """
+    file_path = pathlib.Path(file_path)
+    if not file_path.is_file():
+        raise RuntimeError(
+            f"{file_path} is not a file"
+        )
+    hasher = hashlib.md5()
+    with open(file_path, 'rb') as src:
+        while True:
+            chunk = src.read(chunk_bytes)
+            if len(chunk) == 0:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
