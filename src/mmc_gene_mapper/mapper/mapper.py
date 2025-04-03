@@ -1,7 +1,9 @@
 """
 Define the class to actually do gene mapping
 """
+import json
 import pathlib
+import sqlite3
 import tempfile
 
 import mmc_gene_mapper.utils.timestamp as timestamp
@@ -67,6 +69,54 @@ class MMCGeneMapper(object):
             if len(contents) == 0:
                 file_utils.clean_up(dst_dir)
 
+    def get_all_citations(self):
+        """
+        Return a list of dicts representing all of the citations
+        recorded in this database.
+
+        Dicts will be of the form
+            {"name": "NameOfCitation",
+             "metadata": {dict representing metadata describing citation}
+            }
+        """
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            raw = cursor.execute(
+                """
+                SELECT
+                    name,
+                    metadata
+                FROM
+                    citation
+                """
+            ).fetchall()
+
+        return [
+            {"name": row[0],
+             "metadata": json.loads(row[1])}
+            for row in raw
+        ]
+
+    def get_all_authorities(self):
+        """
+        Return a list of strings representing the names of all
+        the authorities in this database
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            raw = cursor.execute(
+                """
+                SELECT
+                    name
+                FROM
+                    authority
+                """
+            ).fetchall()
+
+        return [
+            row[0] for row in raw
+        ]
 
 
     def _initialize(
