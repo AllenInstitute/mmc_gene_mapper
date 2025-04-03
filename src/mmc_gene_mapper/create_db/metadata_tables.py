@@ -319,10 +319,10 @@ def _delete_metadata(conn, table_name, name):
 
     #print("    DELETED INDEXES")
 
-    for table_name in db_utils.data_table_list:
+    for data_table_name in db_utils.data_table_list:
         cursor.execute(
             f"""
-            DELETE FROM {table_name}
+            DELETE FROM {data_table_name}
             WHERE citation=?
             """,
             (target_idx,)

@@ -60,11 +60,10 @@ def _ingest_species_data(
         force_download=force_download
     )
 
-    md5 = hashlib.md5()
-
     tar_path = tar_record['local_path']
     md5_path = md5_record['local_path']
 
+    md5 = hashlib.md5()
     with open(tar_path, 'rb') as src:
         while True:
             chunk = src.read(100000000)

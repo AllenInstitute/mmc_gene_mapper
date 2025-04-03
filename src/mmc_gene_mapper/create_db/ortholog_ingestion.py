@@ -4,12 +4,56 @@ Define function to just ingest orthologs
 
 import json
 import numpy as np
+import pandas as pd
+import pathlib
 import sqlite3
 import time
 
+import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.query_db.query as query_utils
+
+
+def ingest_hmba_orthologs(
+        conn,
+        hmba_file_path,
+        citation_name,
+        baseline_species='human',
+        clobber=False):
+
+    hmba_file_path = pathlib.Path(
+        hmba_file_path
+    )
+    if not hmba_file_path.is_file():
+        raise RuntimeError(
+            f"{hmba_file_path} is not a file"
+        )
+
+    metadata = {
+        "file": str(hmba_file_path),
+        "hash": file_utils.hash_from_path(hmba_file_path)
+    }
+
+    df = pd.read_csv(hmba_file_path)
+    gene0_list = df.ncbi_id.values
+    species0_list=[
+        s.replace('_', ' ')
+        for s in df.species.values
+    ]
+
+    gene1_list = df.ortholog_id.values
+    species1_list=[baseline_species]*len(gene1_list)
+    ingest_orthologs(
+        conn=conn,
+        gene0_list=gene0_list,
+        species0_list=species0_list,
+        gene1_list=gene1_list,
+        species1_list=species1_list,
+        citation_name=citation_name,
+        citation_metadata_dict=metadata,
+        clobber=clobber
+    )
 
 
 def ingest_orthologs(
