@@ -34,10 +34,12 @@ class MMCGeneMapper(object):
                 'path': path to file}
         """
 
-        dst_dir = tempfile.mkdtemp(
-            dir=local_dir,
-            prefix=(
-                f'mmc_gene_mapper_downloads_{timestamp.get_timestamp()}_'
+        dst_dir = pathlib.Path(
+            tempfile.mkdtemp(
+                dir=local_dir,
+                prefix=(
+                    f'mmc_gene_mapper_downloads_{timestamp.get_timestamp()}_'
+                )
             )
         )
 
@@ -71,3 +73,7 @@ class MMCGeneMapper(object):
                 )
             finally:
                 file_utils.clean_up(tmp_dir)
+
+        contents = [n for n in dst_dir.iterdir()]
+        if len(contents) == 0:
+            file_utils.clean_up(dst_dir)
