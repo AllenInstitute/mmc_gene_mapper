@@ -16,11 +16,17 @@ import mmc_gene_mapper.query_db.query as query_utils
 
 
 def ingest_hmba_orthologs(
-        conn,
+        db_path,
         hmba_file_path,
         citation_name,
         baseline_species='human',
         clobber=False):
+
+    db_path = pathlib.Path(db_path)
+    if not db_path.is_file():
+        raise RuntimeError(
+            f"db_path {db_path} is not a file"
+        )
 
     hmba_file_path = pathlib.Path(
         hmba_file_path
@@ -44,16 +50,17 @@ def ingest_hmba_orthologs(
 
     gene1_list = df.ortholog_id.values
     species1_list=[baseline_species]*len(gene1_list)
-    ingest_orthologs(
-        conn=conn,
-        gene0_list=gene0_list,
-        species0_list=species0_list,
-        gene1_list=gene1_list,
-        species1_list=species1_list,
-        citation_name=citation_name,
-        citation_metadata_dict=metadata,
-        clobber=clobber
-    )
+    with sqlite3.connect(db_path) as conn:
+        ingest_orthologs(
+            conn=conn,
+            gene0_list=gene0_list,
+            species0_list=species0_list,
+            gene1_list=gene1_list,
+            species1_list=species1_list,
+            citation_name=citation_name,
+            citation_metadata_dict=metadata,
+            clobber=clobber
+        )
 
 
 def ingest_orthologs(
@@ -117,13 +124,6 @@ def ingest_orthologs(
 
     print("    GOT SPECIES MAP")
 
-    # insert data into ortholog table
-    cursor.execute(
-        """
-        DROP INDEX IF EXISTS gene_ortholog_idx
-        """
-    )
-
     for ii in range(2):
         if ii == 0:
             i0 = 0
@@ -156,6 +156,5 @@ def ingest_orthologs(
             values
         )
 
-    data_utils.create_data_indexes(conn)
     dur = (time.time()-t0)/60.0
     print(f"=======ORTHOLOG INGESTION TOOK {dur:.2e} minutes=======")

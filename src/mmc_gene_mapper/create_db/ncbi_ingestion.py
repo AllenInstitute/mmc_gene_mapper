@@ -117,8 +117,6 @@ def _ingest_ncbi_data(
             citation_idx=citation_idx
         )
 
-        data_utils.create_data_indexes(conn)
-            
 
 def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     print('=======INGESTING GENE INFO=======')

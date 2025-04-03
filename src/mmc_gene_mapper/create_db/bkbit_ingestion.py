@@ -32,7 +32,6 @@ def ingest_bkbit_genes(
             f"{db_path} does not exist"
         )
 
-
     metadata_dict, values = _read_bkbit_data(
         bkbit_path=bkbit_path,
         db_path=db_path

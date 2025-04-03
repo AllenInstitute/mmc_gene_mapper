@@ -68,6 +68,12 @@ def create_gene_index(cursor):
         )
     )
 
+def delete_gene_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_idx"
+    )
+
 
 def create_gene_equivalence_index(cursor):
     db_utils.create_index(
@@ -84,6 +90,13 @@ def create_gene_equivalence_index(cursor):
     )
 
 
+def delete_gene_equivalence_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_equivalence_idx"
+    )
+
+
 def create_gene_ortholog_index(cursor):
     db_utils.create_index(
         cursor=cursor,
@@ -96,4 +109,10 @@ def create_gene_ortholog_index(cursor):
             "species1",
             "gene0"
         )
+    )
+
+def delete_gene_ortholog_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_ortholog_idx"
     )
