@@ -156,16 +156,22 @@ def get_authority_and_citation(
     }
 
 
-def symbols_to_gene_identifiers(
+def translate_to_gene_identifiers(
         db_path,
-        symbol_list,
+        value_column,
+        value_list,
         authority_name,
         species_taxon,
         chunk_size=100):
 
+    if value_column not in ('symbol', 'id'):
+        raise RuntimeError(
+            f"{value_column} not a valid column for gene table"
+        )
+
     results = {
-        symbol: []
-        for symbol in symbol_list
+        val: []
+        for val in value_list
     }
 
     with sqlite3.connect(db_path) as conn:
@@ -183,14 +189,14 @@ def symbols_to_gene_identifiers(
         citation_idx = full_citation["idx"]
 
         cursor = conn.cursor()
-        n_symbols = len(symbol_list)
-        for i0 in range(0, n_symbols, chunk_size):
-            values = symbol_list[i0:i0+chunk_size]
+        n_vals = len(value_list)
+        for i0 in range(0, n_vals, chunk_size):
+            values = value_list[i0:i0+chunk_size]
             n_values = len(values)
 
-            query = """
+            query = f"""
                 SELECT
-                    symbol,
+                    {value_column},
                     identifier
                 FROM gene
                 WHERE
@@ -200,7 +206,7 @@ def symbols_to_gene_identifiers(
                 AND
                     species_taxon=?
                 AND
-                    symbol IN (
+                    {value_column} IN (
                 """
             query += ",".join(['?']*n_values)
             query += ")"
@@ -210,11 +216,11 @@ def symbols_to_gene_identifiers(
                  authority_idx,
                  species_taxon,
                  *values)
-            )
+            ).fetchall()
             for row in raw:
-                symbol = row[0]
+                val = row[0]
                 identifier = row[1]
-                results[symbol].append(identifier)
+                results[val].append(identifier)
         return {
             'metadata': {
                 'authority': full_authority,
