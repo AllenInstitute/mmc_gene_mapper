@@ -108,13 +108,42 @@ def get_authority_and_citation(
         conn,
         species_taxon,
         authority_name):
+    """
+    Return the full dicts characterizing authority
+    and citaiton for a given (authority, species)
+    combination
+
+    Parameters
+    ----------
+    conn:
+        sqlite3 connection
+    species_taxon:
+        an int identifying the species
+    authority_name:
+        a str; the name of the authority entry
+
+    Returns
+    -------
+    A dict
+        {'authority': full_authority,
+         'citaiton': full_citation}
+
+    Each value is a dict characterizing all the data
+    carried around for that entity.
+
+    Notes
+    -----
+    This function assumes there is one and only one
+    valid citation for each (species_taxon, authority)
+    combination. If more than one valid citation are found,
+    an error will be thrown.
+    """
 
     full_authority = metadata_utils.get_authority(
         conn=conn,
         name=authority_name
     )
 
-    # get citation idx
     full_citation = get_citation_from_bibliography(
         cursor=conn.cursor(),
         authority_idx=full_authority['idx'],
