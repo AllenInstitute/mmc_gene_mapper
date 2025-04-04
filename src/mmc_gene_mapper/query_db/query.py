@@ -397,20 +397,6 @@ def get_orthologs(
     }
 
 
-def species_to_taxon(db_path, species):
-    if isinstance(species, int):
-        return species
-
-    try:
-        result = int(species)
-    except ValueError:
-        result = get_species_taxon(
-            db_path=db_path,
-            species_name=species
-        )
-    return result
-
-
 def does_path_exist(db_path):
     db_path = pathlib.Path(db_path)
     if not db_path.is_file():
