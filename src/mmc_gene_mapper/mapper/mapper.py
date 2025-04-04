@@ -120,6 +120,58 @@ class MMCGeneMapper(object):
             row[0] for row in raw
         ]
 
+    def identifiers_from_symbols(
+            self,
+            gene_symbol_list,
+            species_name,
+            authority_name):
+        """
+        Find the mapping that converts gene symbols into
+        gene identifiers
+
+        Parameters
+        ----------
+        gene_symbol_list:
+            list of gene symbols
+        species_name:
+            name of the species we are working with
+        authority_name:
+            name of the authority in whose identifiers
+            we want the genes listed
+
+        Returns
+        -------
+        A dict
+            {
+              "metadata": {
+                  a dict describing the citation according
+                  to which these symbols map to these
+                  identifiers
+              },
+              "mapping": {
+                  a dict keyed on input symbols. Each symbol
+                  maps to the list of all gene identifiers
+                  that are associated with that symbol according
+                  to the source described in "metadata"
+              }
+            }
+        """
+        species_taxon = query_utils.get_species_taxon(
+            db_path=self.db_path,
+            species_name=species_name,
+            strict=True)
+
+        result = query_utils.translate_to_gene_identifiers(
+            db_path=self.db_path,
+            value_column="symbol",
+            value_list=gene_symbol_list,
+            authority_name=authority_name,
+            species_taxon=species_taxon,
+            chunk_size=500
+        )
+        return result
+
+
     def _initialize(
             self,
             dst_dir,
