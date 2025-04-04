@@ -156,22 +156,28 @@ def get_authority_and_citation(
     }
 
 
-def translate_to_gene_identifiers(
+def translate_gene_identifiers(
         db_path,
-        value_column,
-        value_list,
+        src_column,
+        dst_column,
+        src_list,
         authority_name,
         species_taxon,
         chunk_size=100):
 
-    if value_column not in ('symbol', 'id'):
+    if src_column not in ('symbol', 'id'):
         raise RuntimeError(
-            f"{value_column} not a valid column for gene table"
+            f"{src_column} not a valid src column for gene table"
+        )
+
+    if dst_column not in ('identifier', 'id'):
+        raise RuntimeError(
+            f"{dst_column} not a valid dst column for gene table"
         )
 
     results = {
         val: []
-        for val in value_list
+        for val in src_list
     }
 
     with sqlite3.connect(db_path) as conn:
@@ -189,15 +195,15 @@ def translate_to_gene_identifiers(
         citation_idx = full_citation["idx"]
 
         cursor = conn.cursor()
-        n_vals = len(value_list)
+        n_vals = len(src_list)
         for i0 in range(0, n_vals, chunk_size):
-            values = value_list[i0:i0+chunk_size]
+            values = src_list[i0:i0+chunk_size]
             n_values = len(values)
 
             query = f"""
                 SELECT
-                    {value_column},
-                    identifier
+                    {src_column},
+                    {dst_column}
                 FROM gene
                 WHERE
                     citation=?
@@ -206,7 +212,7 @@ def translate_to_gene_identifiers(
                 AND
                     species_taxon=?
                 AND
-                    {value_column} IN (
+                    {src_column} IN (
                 """
             query += ",".join(['?']*n_values)
             query += ")"

@@ -161,16 +161,16 @@ class MMCGeneMapper(object):
             species_name=species_name,
             strict=True)
 
-        result = query_utils.translate_to_gene_identifiers(
+        result = query_utils.translate_gene_identifiers(
             db_path=self.db_path,
-            value_column="symbol",
-            value_list=gene_symbol_list,
+            src_column="symbol",
+            dst_column="identifier",
+            src_list=gene_symbol_list,
             authority_name=authority_name,
             species_taxon=species_taxon,
             chunk_size=500
         )
         return result
-
 
     def _initialize(
             self,
