@@ -1,0 +1,6 @@
+*.csv
+*.txt
+*.db
+*.gz
+*.json
+*.jsonld
