@@ -74,7 +74,7 @@ def _get_citation(
     return {
         "name": results[0][0],
         "idx": results[0][1],
-        "metadata": results[0][2]
+        "metadata": json.loads(results[0][2])
     }
 
 

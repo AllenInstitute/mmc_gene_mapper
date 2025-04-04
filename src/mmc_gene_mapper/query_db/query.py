@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import pathlib
 import sqlite3
 
@@ -165,12 +166,12 @@ def translate_gene_identifiers(
         species_taxon,
         chunk_size=100):
 
-    if src_column not in ('symbol', 'id'):
+    if src_column not in ('symbol', 'id', 'identifier'):
         raise RuntimeError(
             f"{src_column} not a valid src column for gene table"
         )
 
-    if dst_column not in ('identifier', 'id'):
+    if dst_column not in ('symbol', 'id', 'identifier'):
         raise RuntimeError(
             f"{dst_column} not a valid dst column for gene table"
         )
@@ -236,7 +237,68 @@ def translate_gene_identifiers(
         }
 
 
-def get_equivalent_genes(
+def get_equivalent_genes_from_identifiers(
+        db_path,
+        input_authority_name,
+        output_authority_name,
+        input_gene_list,
+        species_name,
+        citation_name,
+        chunk_size=100):
+
+    species_taxon = get_species_taxon(
+        db_path=db_path,
+        species_name=species_name,
+        strict=True
+    )
+
+    id_translation = translate_gene_identifiers(
+        db_path=db_path,
+        src_column='identifier',
+        dst_column='id',
+        src_list=input_gene_list,
+        authority_name=input_authority_name,
+        species_taxon=species_taxon,
+        chunk_size=chunk_size
+    )
+
+    id_values = set()
+    for key in id_translation['mapping']:
+        id_values = id_values.union(set(id_translation['mapping'][key]))
+
+    equivalence = _get_equivalent_genes(
+        db_path=db_path,
+        input_id_list=sorted(id_values),
+        input_authority_name=input_authority_name,
+        output_authority_name=output_authority_name,
+        species_taxon=species_taxon,
+        citation_name=citation_name,
+        chunk_size=chunk_size
+    )
+    
+    mapping_dict = mapping_dict_to_identifiers(
+        db_path=db_path,
+        mapping_dict=equivalence['mapping'],
+        key_authority_name=input_authority_name,
+        key_species_taxon=species_taxon,
+        value_authority_name=output_authority_name,
+        value_species_taxon=species_taxon
+    )
+
+    equivalence['metadata']['key_authority'] = input_authority_name
+    equivalence['metadata']['value_authority'] = output_authority_name
+
+    unmapped_genes = set(input_gene_list)-set(mapping_dict.keys())
+    for gene in unmapped_genes:
+        mapping_dict[gene] = []
+
+    return {
+        'metadata': equivalence['metadata'],
+        'mapping': mapping_dict
+    }
+
+
+def _get_equivalent_genes(
         db_path,
         input_id_list,
         input_authority_name,
@@ -244,6 +306,9 @@ def get_equivalent_genes(
         species_taxon,
         chunk_size=100,
         citation_name="NCBI"):
+    """
+    This takes as input ids (the integer IDs used in the database)
+    """
 
     input_id_list = [int(ii) for ii in input_id_list]
 
@@ -438,7 +503,7 @@ def mapping_dict_to_identifiers(
     """
 
     error_msg = ""
-    key_mapping, key_error = _strict_mapping(
+    key_mapping, key_error = _strict_mapping_from_id(
         db_path=db_path,
         value_list=list(mapping_dict.keys()),
         authority_name=key_authority_name,
@@ -451,7 +516,7 @@ def mapping_dict_to_identifiers(
         value_list = value_list.union(set(mapping_dict[key]))
     value_list = sorted(value_list)
 
-    value_mapping, value_error = _strict_mapping(
+    value_mapping, value_error = _strict_mapping_from_id(
         db_path=db_path,
         value_list=list(value_list),
         authority_name=value_authority_name,
@@ -473,28 +538,55 @@ def mapping_dict_to_identifiers(
     return new_dict
 
 
-def _strict_mapping(
+def _strict_mapping_from_id(
         db_path,
         value_list,
         authority_name,
         species_taxon):
 
-    mapping = translate_to_gene_identifiers(
+    return _strict_mapping(
         db_path=db_path,
-        value_column='id',
-        value_list=value_list,
+        src_column='id',
+        dst_column='identifier',
+        src_list=value_list,
+        authority_name=authority_name,
+        species_taxon=species_taxon,
+        allow_none=False
+    )
+
+
+def _strict_mapping(
+        db_path,
+        src_column,
+        dst_column,
+        src_list,
+        authority_name,
+        species_taxon,
+        allow_none=True):
+    """
+    demand 1:1 mapping
+    """
+
+    mapping = translate_gene_identifiers(
+        db_path=db_path,
+        src_column='id',
+        dst_column='identifier',
+        src_list=src_list,
         authority_name=authority_name,
         species_taxon=species_taxon
     )['mapping']
 
     error_msg = ""
-    for val in value_list:
+    for val in src_list:
         if len(mapping[val]) != 1:
-            error_msg += (
-                f"id: {val} authority: {authority_name} "
-                f"species: {species_taxon} "
-                f"n: {len(mapping[val])}\n"
-            )
+            if len(mapping[val]) == 0 and allow_none:
+                pass
+            else:
+                error_msg += (
+                   f"id: {val} authority: {authority_name} "
+                    f"species: {species_taxon} "
+                    f"n: {len(mapping[val])}\n"
+                )
     return mapping, error_msg
 
 
