@@ -212,7 +212,7 @@ class MMCGeneMapper(object):
                   a dict keyed on input genes. Each gene
                   maps to the list of all genes
                   that are considered equivalent to that
-                  symbol according to the source described
+                  gene according to the source described
                   in "metadata"
               }
             }
@@ -227,6 +227,59 @@ class MMCGeneMapper(object):
             chunk_size=500
         )
 
+    def ortholog_genes(
+            self,
+            authority,
+            src_species_name,
+            dst_species_name,
+            gene_list,
+            citation_name):
+        """
+        Return a mapping between gene identifiers from
+        different species
+
+        Parameters
+        ----------
+        authority:
+            a str; the name of the authority (ENSEMBL, NCBI etc.)
+            we are working in
+        src_species_name:
+            a str; the name of the species we are starting from
+        dst_species_name:
+            as str; the name of the species we are mapping to
+        gene_list:
+            list of gene identifiers (in src_species) to be
+            mapped
+        citation_name:
+            name of citation to use to assess gene eqivalence
+
+        Returns
+        -------
+        A dict
+            {
+              "metadata": {
+                  a dict describing the citation according
+                  to which these symbols map to these
+                  identifiers
+              },
+              "mapping": {
+                  a dict keyed on input genes. Each gene
+                  maps to the list of all genes
+                  that are considered orthologs to that
+                  gene according to the source described
+                  in "metadata"
+              }
+            }
+        """
+        return query_utils.get_ortholog_genes_from_identifiers(
+            db_path=self.db_path,
+            authority_name=authority,
+            src_species_name=src_species_name,
+            dst_species_name=dst_species_name,
+            src_gene_list=gene_list,
+            citation_name=citation_name,
+            chunk_size=500
+        )
 
     def _initialize(
             self,

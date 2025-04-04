@@ -275,7 +275,7 @@ def get_equivalent_genes_from_identifiers(
         citation_name=citation_name,
         chunk_size=chunk_size
     )
-    
+
     mapping_dict = mapping_dict_to_identifiers(
         db_path=db_path,
         mapping_dict=equivalence['mapping'],
@@ -378,13 +378,78 @@ def _get_equivalent_genes(
     }
 
 
-def get_orthologs(
+def get_ortholog_genes_from_identifiers(
+        db_path,
+        authority_name,
+        src_species_name,
+        dst_species_name,
+        src_gene_list,
+        citation_name,
+        chunk_size=100):
+
+    src_species_taxon = get_species_taxon(
+        db_path=db_path,
+        species_name=src_species_name,
+        strict=True
+    )
+
+    dst_species_taxon = get_species_taxon(
+        db_path=db_path,
+        species_name=dst_species_name,
+        strict=True
+    )
+
+    id_translation = translate_gene_identifiers(
+        db_path=db_path,
+        src_column='identifier',
+        dst_column='id',
+        src_list=src_gene_list,
+        authority_name=authority_name,
+        species_taxon=src_species_taxon,
+        chunk_size=chunk_size
+    )
+
+    id_values = set()
+    for key in id_translation['mapping']:
+        id_values = id_values.union(set(id_translation['mapping'][key]))
+
+    orthologs = _get_ortholog_genes(
+        db_path=db_path,
+        authority_name=authority_name,
+        src_species_taxon=src_species_taxon,
+        src_genes=sorted(id_values),
+        dst_species_taxon=dst_species_taxon,
+        citation_name=citation_name,
+        chunk_size=chunk_size
+    )
+
+    mapping_dict = mapping_dict_to_identifiers(
+        db_path=db_path,
+        mapping_dict=orthologs['mapping'],
+        key_authority_name=authority_name,
+        key_species_taxon=src_species_taxon,
+        value_authority_name=authority_name,
+        value_species_taxon=dst_species_taxon
+    )
+
+    unmapped_genes = set(src_gene_list)-set(mapping_dict.keys())
+    for gene in unmapped_genes:
+        mapping_dict[gene] = []
+
+    return {
+        'metadata': orthologs['metadata'],
+        'mapping': mapping_dict
+    }
+
+
+def _get_ortholog_genes(
         db_path,
         authority_name,
         src_species_taxon,
         src_genes,
         dst_species_taxon,
-        citation_name):
+        citation_name,
+        chunk_size=50):
     """
     Parameters
     ----------
@@ -396,20 +461,21 @@ def get_orthologs(
     src_species_taxon:
         int indicating the species of the
         specified genes
-    dst_genes:
+    src_genes:
         list of ints indicating the NCBI IDs of the
-        sepcified genes
+        specified genes
     dst_species_taxon:
         int indicating the species in which you
         want to find ortholog genes
     citation_name:
         string indicating the source of the ortholog
         assignments you want to use
+    chunk_size:
+        how many values to process at once
     """
     does_path_exist(db_path)
 
     results = dict()
-    chunk_size = 500
 
     with sqlite3.connect(db_path) as conn:
         citation = metadata_utils.get_citation(
@@ -460,7 +526,8 @@ def get_orthologs(
 
     return {
         'metadata': {
-            'citation': json.loads(citation['metadata']),
+            'authority': authority_name,
+            'citation': citation['metadata'],
             'src_species_taxon': src_species_taxon,
             'dst_species_taxon': dst_species_taxon
         },
