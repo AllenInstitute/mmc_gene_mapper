@@ -104,10 +104,33 @@ def get_citation_from_bibliography(
     }
 
 
+def get_authority_and_citation(
+        conn,
+        species_taxon,
+        authority_name):
+
+    full_authority = metadata_utils.get_authority(
+        conn=conn,
+        name=authority_name
+    )
+
+    # get citation idx
+    full_citation = get_citation_from_bibliography(
+        cursor=conn.cursor(),
+        authority_idx=full_authority['idx'],
+        species_taxon=species_taxon
+    )
+
+    return {
+        'authority': full_authority,
+        'citation': full_citation
+    }
+
+
 def symbols_to_gene_identifiers(
         db_path,
         symbol_list,
-        authority,
+        authority_name,
         species_taxon,
         chunk_size=100):
 
@@ -118,23 +141,19 @@ def symbols_to_gene_identifiers(
 
     with sqlite3.connect(db_path) as conn:
 
-        full_authority = metadata_utils.get_authority(
+        meta_source = get_authority_and_citation(
             conn=conn,
-            name=authority
-        )
-        authority_idx = full_authority["idx"]
-
-        cursor = conn.cursor()
-
-        # get citation idx
-        full_citation = get_citation_from_bibliography(
-            cursor=cursor,
-            authority_idx=authority_idx,
+            authority_name=authority_name,
             species_taxon=species_taxon
         )
 
+        full_authority = meta_source['authority']
+        full_citation = meta_source['citation']
+
+        authority_idx = full_authority["idx"]
         citation_idx = full_citation["idx"]
 
+        cursor = conn.cursor()
         n_symbols = len(symbol_list)
         for i0 in range(0, n_symbols, chunk_size):
             values = symbol_list[i0:i0+chunk_size]
