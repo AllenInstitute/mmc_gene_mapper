@@ -22,8 +22,6 @@ def ingest_ncbi_data(
         clobber=True,
         force_download=False):
 
-    t0 = time.time()
-
     metadata_dict = dict()
     host = 'ftp.ncbi.nlm.nih.gov'
     file_list = [
@@ -55,9 +53,6 @@ def ingest_ncbi_data(
         clobber=clobber,
         citation_name='NCBI'
     )
-
-    dur = (time.time()-t0)/60.0
-    print(f'SUCCESS; WHOLE PROCESS TOOK {dur:.2e} minutes')
 
 
 def _ingest_ncbi_data(

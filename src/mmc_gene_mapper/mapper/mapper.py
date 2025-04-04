@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import sqlite3
 import tempfile
+import time
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -305,7 +306,8 @@ class MMCGeneMapper(object):
 
         if not self.db_path.is_file():
 
-
+            t0 = time.time()
+            print('=======CREATING DB FILE=======')
             tmp_db_path = file_utils.mkstemp_clean(
                 dir=tmp_dir,
                 suffix='.db',
@@ -329,3 +331,5 @@ class MMCGeneMapper(object):
                 src=tmp_db_path,
                 dst=self.db_path
             )
+            dur = (time.time()-t0)/60.0
+            print(f'=======DB CREATION TOOK {dur:.2e} MINUTES=======')
