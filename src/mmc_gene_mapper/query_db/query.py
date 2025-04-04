@@ -233,37 +233,43 @@ def translate_to_gene_identifiers(
 def get_equivalent_genes(
         db_path,
         input_id_list,
-        input_authority,
-        output_authority,
+        input_authority_name,
+        output_authority_name,
         species_taxon,
         chunk_size=100,
-        citation="NCBI"):
+        citation_name="NCBI"):
+
+    input_id_list = [int(ii) for ii in input_id_list]
 
     does_path_exist(db_path)
-    results = dict()
+    results = {
+        ii: []
+        for ii in input_id_list
+    }
     with sqlite3.connect(db_path) as conn:
 
-        citation = metadata_utils.get_citation(
+        full_citation = metadata_utils.get_citation(
             conn=conn,
-            name=citation
+            name=citation_name
         )
 
         input_auth = metadata_utils.get_authority(
             conn=conn,
-            name=input_authority
+            name=input_authority_name
         )["idx"]
 
         output_auth = metadata_utils.get_authority(
             conn=conn,
-            name=output_authority
+            name=output_authority_name
         )["idx"]
 
         cursor = conn.cursor()
         for i0 in range(0, len(input_id_list), chunk_size):
             values = [
-                int(ii) for ii in input_id_list[i0:i0+chunk_size]
+                ii for ii in input_id_list[i0:i0+chunk_size]
             ]
-            query=f"""
+            n_values = len(values)
+            query="""
             SELECT
                 gene0,
                 gene1
@@ -277,58 +283,59 @@ def get_equivalent_genes(
             AND
                 species_taxon=?
             AND
-                gene0 IN {tuple(values)}
+                gene0 IN (
             """
+            query += ",".join(['?']*n_values)
+            query += ")"
             chunk = cursor.execute(
                 query,
-                (citation['idx'],
+                (full_citation['idx'],
                  input_auth,
                  output_auth,
-                 species_taxon)).fetchall()
+                 species_taxon,
+                 *values)).fetchall()
             for row in chunk:
-                if row[0] not in results:
-                    results[row[0]] = []
                 results[row[0]].append(row[1])
-    return results
+
+    return {
+        'metadata': {
+            'key_authority': input_auth,
+            'value_authority': output_auth,
+            'citation': full_citation
+        },
+        'mapping': results
+    }
 
 
 def get_orthologs(
         db_path,
-        authority,
-        src_species,
+        authority_name,
+        src_species_taxon,
         src_genes,
-        dst_species,
-        citation):
+        dst_species_taxon,
+        citation_name):
     """
     Parameters
     ----------
     db_path:
         path to the database file
-    authority:
+    authority_name:
         string indicating according to what authority
         (NCBI or ENSEMBL) we want orthologs
-    src_species:
-        string or int indicating the species of the
+    src_species_taxon:
+        int indicating the species of the
         specified genes
     dst_genes:
         list of ints indicating the NCBI IDs of the
         sepcified genes
-    dst_species:
-        string or int indicating the species in which you
+    dst_species_taxon:
+        int indicating the species in which you
         want to find ortholog genes
-    citation:
+    citation_name:
         string indicating the source of the ortholog
         assignments you want to use
     """
     does_path_exist(db_path)
-
-    src_taxon = species_to_taxon(
-        db_path=db_path,
-        species=src_species)
-
-    dst_taxon = species_to_taxon(
-        db_path=db_path,
-        species=dst_species)
 
     results = dict()
     chunk_size = 500
@@ -336,20 +343,19 @@ def get_orthologs(
     with sqlite3.connect(db_path) as conn:
         citation = metadata_utils.get_citation(
             conn=conn,
-            name=citation
+            name=citation_name
         )
 
         authority_idx = metadata_utils.get_authority(
             conn=conn,
-            name=authority
+            name=authority_name
         )["idx"]
 
         cursor = conn.cursor()
 
         for i0 in range(0, len(src_genes), chunk_size):
             values = tuple(src_genes[i0:i0+chunk_size])
-            raw = cursor.execute(
-                f"""
+            query = """
                 SELECT
                     gene0,
                     gene1
@@ -364,12 +370,17 @@ def get_orthologs(
                 AND
                     species1=?
                 AND
-                    gene0 IN {values}
-                """,
+                    gene0 IN (
+                """
+            query += ",".join(['?']*len(values))
+            query += ")"
+            raw = cursor.execute(
+                query,
                 (authority_idx,
                  citation['idx'],
-                 src_taxon,
-                 dst_taxon)
+                 src_species_taxon,
+                 dst_species_taxon,
+                 *values)
             )
             for row in raw:
                 if row[0] not in results:
@@ -378,9 +389,9 @@ def get_orthologs(
 
     return {
         'metadata': {
-            'provenance': json.loads(citation['metadata']),
-            'src_species_taxon': src_taxon,
-            'dst_species_taxon': dst_taxon
+            'citation': json.loads(citation['metadata']),
+            'src_species_taxon': src_species_taxon,
+            'dst_species_taxon': dst_species_taxon
         },
         'mapping': results
     }
