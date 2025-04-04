@@ -397,9 +397,108 @@ def get_orthologs(
     }
 
 
+def mapping_dict_to_identifiers(
+        db_path,
+        mapping_dict,
+        key_authority_name,
+        key_species_taxon,
+        value_authority_name,
+        value_species_taxon):
+    """
+    Take a dict mapping gene ids (ints) to other
+    gene ids. Convert it to a dict mapping
+    gene identifiers (strings) to other gene identifiers.
+
+    Parameters
+    ----------
+    db_path:
+        path to the database
+    mapping_dict:
+        keys should be ints; values should be lists of ints
+    key_authority_name:
+        name of the authority defining the keys
+    key_species_taxon:
+        int defining the species associated with the keys
+    value_authority_name:
+        name of the authority defining the values
+    value_species_taxon:
+        int defining the species associated with the values
+
+    Returns
+    -------
+    A dict
+       equivalent to mapping dict, but id integers
+       have been converted to identifier strings
+    """
+
+    error_msg = ""
+    key_mapping, key_error = _strict_mapping(
+        db_path=db_path,
+        value_list=list(mapping_dict.keys()),
+        authority_name=key_authority_name,
+        species_taxon=key_species_taxon
+    )
+    error_msg += key_error
+
+    value_list = set()
+    for key in mapping_dict:
+        value_list = value_list.union(set(mapping_dict[key]))
+    value_list = sorted(value_list)
+
+    value_mapping, value_error = _strict_mapping(
+        db_path=db_path,
+        value_list=list(value_list),
+        authority_name=value_authority_name,
+        species_taxon=value_species_taxon
+    )
+    error_msg += value_error
+    if len(error_msg) > 0:
+        raise MappingError(error_msg)
+
+    new_dict = dict()
+    for key in mapping_dict:
+        new_key = key_mapping[key][0]
+        new_dict[new_key] = []
+        for val in mapping_dict[key]:
+            new_dict[new_key].append(
+                value_mapping[val][0]
+            )
+
+    return new_dict
+
+
+def _strict_mapping(
+        db_path,
+        value_list,
+        authority_name,
+        species_taxon):
+
+    mapping = translate_to_gene_identifiers(
+        db_path=db_path,
+        value_column='id',
+        value_list=value_list,
+        authority_name=authority_name,
+        species_taxon=species_taxon
+    )['mapping']
+
+    error_msg = ""
+    for val in value_list:
+        if len(mapping[val]) != 1:
+            error_msg += (
+                f"id: {val} authority: {authority_name} "
+                f"species: {species_taxon} "
+                f"n: {len(mapping[val])}\n"
+            )
+    return mapping, error_msg
+
+
 def does_path_exist(db_path):
     db_path = pathlib.Path(db_path)
     if not db_path.is_file():
         raise RuntimeError(
             f"{db_path} is not a file"
         )
+
+
+class MappingError(Exception):
+    pass
