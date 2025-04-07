@@ -14,8 +14,7 @@ import mmc_gene_mapper.query_db.query as query_utils
 
 def ingest_bkbit_genes(
         db_path,
-        bkbit_path,
-        citation_name):
+        bkbit_path):
 
     print(
         f"=======INGESTING {bkbit_path}======="
@@ -32,7 +31,7 @@ def ingest_bkbit_genes(
             f"{db_path} does not exist"
         )
 
-    metadata_dict, values = _read_bkbit_data(
+    metadata_dict, values, citation_name = _read_bkbit_data(
         bkbit_path=bkbit_path,
         db_path=db_path
     )
@@ -74,6 +73,7 @@ def _read_bkbit_data(bkbit_path, db_path):
     authority_idx = None
     species_lookup = dict()
     raw_gene_annotation_values = []
+    citation_name = None
 
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -124,6 +124,20 @@ def _read_bkbit_data(bkbit_path, db_path):
                         f"{json.dumps(record, indent=2)}"
                     )
                 category = category[0]
+                if category == 'bican:GenomeAnnotation':
+                    candidate_name = record['id'].split(':')[-1]
+                    candidate_name = candidate_name.replace(
+                        'annotation-', ''
+                    )
+                    if citation_name is None:
+                        citation_name = candidate_name
+                    else:
+                        if citation_name != candidate_name:
+                            raise RuntimeError(
+                                "More than one GenomeAnnotation in "
+                                f"{bkbit_pat}: ({citation_name} and "
+                                f"{candidate_name}). Unsure how to proceed."
+                            )
                 if category in metadata_dict:
                     raise RuntimeError(
                         f"multiple entries for category {category}"
@@ -145,5 +159,6 @@ def _read_bkbit_data(bkbit_path, db_path):
 
     return (
         metadata_dict,
-        raw_gene_annotation_values
+        raw_gene_annotation_values,
+        citation_name
     )

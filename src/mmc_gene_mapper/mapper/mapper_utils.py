@@ -45,8 +45,7 @@ def create_mapper_database(
             if file_spec['type'] == 'bkbit':
                 bkbit_ingestion.ingest_bkbit_genes(
                     db_path=db_path,
-                    bkbit_path=file_spec['path'],
-                    citation_name=file_spec['name']
+                    bkbit_path=file_spec['path']
                 )
             elif file_spec['type'] == 'hmba_orthologs':
                 ortholog_ingestion.ingest_hmba_orthologs(
