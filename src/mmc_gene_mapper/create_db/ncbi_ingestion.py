@@ -22,8 +22,6 @@ def ingest_ncbi_data(
         clobber=True,
         force_download=False):
 
-    t0 = time.time()
-
     metadata_dict = dict()
     host = 'ftp.ncbi.nlm.nih.gov'
     file_list = [
@@ -55,9 +53,6 @@ def ingest_ncbi_data(
         clobber=clobber,
         citation_name='NCBI'
     )
-
-    dur = (time.time()-t0)/60.0
-    print(f'SUCCESS; WHOLE PROCESS TOOK {dur:.2e} minutes')
 
 
 def _ingest_ncbi_data(
@@ -117,10 +112,9 @@ def _ingest_ncbi_data(
             citation_idx=citation_idx
         )
 
-        data_utils.create_data_indexes(conn)
-            
 
 def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
+    t0 = time.time()
     print('=======INGESTING GENE INFO=======')
     data_path = pathlib.Path(data_path)
     cursor = conn.cursor()
@@ -136,35 +130,24 @@ def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     ) VALUES (?, ?, ?, ?, ?, ?)
     """
     i0 = 0
-    if data_path.suffix == '.gz':
-        open_fn = gzip.open
-        mode = 'rb'
-    else:
-        open_fn = open
-        mode = 'r'
 
-    with open_fn(data_path, mode=mode) as src:
-        header = src.readline()
-        while True:
-            chunk = [
-                src.readline().strip().split()[:3]
-                for ii in range(chunk_size)
-            ]
-            if mode == 'rb':
-                chunk = [
-                    [el.decode('utf-8') for el in row]
-                    for row in chunk
-                ]
-
+    #with open_fn(data_path, mode=mode) as src:
+    with pd.read_csv(data_path,
+                     delimiter='\t',
+                     chunksize=chunk_size,
+                     usecols=['#tax_id', 'GeneID', 'Symbol']) as src:
+        for chunk in src:
             values = [
                 (authority_idx,
-                 int(row[0]),
-                 int(row[1]),
-                 row[2],
-                 f'NCBIGene:{row[1]}',
+                 int(tax_id),
+                 int(gene_id),
+                 gene_symbol,
+                 f'NCBIGene:{gene_id}',
                  citation_idx)
-                for row in chunk
-                if len(row) > 0
+                for tax_id, gene_id, gene_symbol in zip(
+                        chunk['#tax_id'].values,
+                        chunk['GeneID'].values,
+                        chunk['Symbol'].values)
             ]
 
             if len(values) == 0:
@@ -175,9 +158,12 @@ def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
             i0 += len(chunk)
             cursor.executemany(query, values)
             conn.commit()
+    dur = (time.time()-t0)/60.0
+    print(f'=======INGESTING gene_info TOOK {dur:.2e} minutes=======')
 
 
 def ingest_gene_to_ensembl(conn, data_path, citation_idx):
+    t0 = time.time()
     print('=======INGESTING GENE TO ENSEMBL=======')
 
     ncbi_idx = metadata_utils.get_authority(
@@ -193,7 +179,7 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
     cursor = conn.cursor()
     data = pd.read_csv(data_path, delimiter='\t')
     n_rows = len(data)
-    chunk_size = 50000
+    chunk_size = 100000
 
     query = """
     INSERT INTO gene_equivalence (
@@ -207,51 +193,65 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
     VALUES (?, ?, ?, ?, ?, ?)
     """
     uploaded_pairs = set()
-    for i0 in range(0, n_rows, chunk_size):
-        chunk = data.iloc[i0:i0+chunk_size].to_dict(orient='records')
-        values = []
-        for row in chunk:
-            try:
-                ensembl_gene_id = str_utils.int_from_identifier(
-                    row['Ensembl_gene_identifier']
+    with pd.read_csv(
+            data_path,
+            delimiter='\t',
+            chunksize=chunk_size,
+            usecols=['#tax_id', 'GeneID', 'Ensembl_gene_identifier'],
+            dtype={'#tax_id': int,
+                   'GeneID': int,
+                   'Ensembl_gene_identifier': str}) as src:
+
+        for chunk in src:
+            values = []
+            for taxon_id, ncbi_gene_id, raw_ens_id in zip(
+                    chunk['#tax_id'].values,
+                    chunk['GeneID'].values,
+                    chunk['Ensembl_gene_identifier'].values):
+
+                ncbi_gene_id = int(ncbi_gene_id)
+                taxon_id = int(taxon_id)
+
+                try:
+                    ensembl_gene_id = str_utils.int_from_identifier(
+                        raw_ens_id
+                    )
+                except ValueError:
+                    continue
+
+                pair = (ncbi_gene_id, ensembl_gene_id)
+                if pair in uploaded_pairs:
+                    continue
+                uploaded_pairs.add(pair)
+
+                values.append(
+                    (taxon_id,
+                     ncbi_idx,
+                     ncbi_gene_id,
+                     ensembl_idx,
+                     ensembl_gene_id,
+                     citation_idx)
                 )
-            except ValueError:
-                continue
+                values.append(
+                    (taxon_id,
+                     ensembl_idx,
+                     ensembl_gene_id,
+                     ncbi_idx,
+                     ncbi_gene_id,
+                     citation_idx)
+                )
 
-            ncbi_gene_id = int(row['GeneID'])
-
-            pair = (ncbi_gene_id, ensembl_gene_id)
-            if pair in uploaded_pairs:
-                continue
-            uploaded_pairs.add(pair)
-
-            taxon_id = int(row['#tax_id'])
-
-            values.append(
-                (taxon_id,
-                 ncbi_idx,
-                 ncbi_gene_id,
-                 ensembl_idx,
-                 ensembl_gene_id,
-                 citation_idx)
-            )
-            values.append(
-                (taxon_id,
-                 ensembl_idx,
-                 ensembl_gene_id,
-                 ncbi_idx,
-                 ncbi_gene_id,
-                 citation_idx)
-            )
-
-        cursor.executemany(query, values)
-        conn.commit()
+            cursor.executemany(query, values)
+            conn.commit()
+    dur = (time.time()-t0)/60.0
+    print(f'=======INGESTING gene2ensembl TOOK {dur:.2e} minutes=======')
 
 
 def ingest_orthologs(
         conn,
         data_path,
         citation_idx):
+    t0 = time.time()
     print('=======INGESTING ORTHOLOGS=======')
 
     ncbi_idx = metadata_utils.get_authority(
@@ -299,3 +299,6 @@ def ingest_orthologs(
         ]
         cursor.executemany(query, values)
         conn.commit()
+
+    dur = (time.time()-t0)/60.0
+    print(f'=======INGESTING gene_orthologs TOOK {dur:.2e} minutes=======')

@@ -49,8 +49,8 @@ def check_existence(db_path):
 
 data_table_list = (
     "gene",
-    "ortholog",
-    "equivalence",
+    "gene_ortholog",
+    "gene_equivalence",
 )
 
 

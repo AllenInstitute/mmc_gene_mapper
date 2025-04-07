@@ -58,7 +58,7 @@ def create_data_indexes(conn):
 def create_gene_index(cursor):
     db_utils.create_index(
         cursor=cursor,
-        idx_name="gene_idx",
+        idx_name="gene_symbol_idx",
         table_name="gene",
         column_tuple=(
             "citation",
@@ -66,6 +66,29 @@ def create_gene_index(cursor):
             "species_taxon",
             "symbol"
         )
+    )
+
+    db_utils.create_index(
+        cursor=cursor,
+        idx_name="gene_id_idx",
+        table_name="gene",
+        column_tuple=(
+            "citation",
+            "authority",
+            "species_taxon",
+            "id"
+        )
+    )
+
+
+def delete_gene_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_symbol_idx"
+    )
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_id_idx"
     )
 
 
@@ -84,6 +107,13 @@ def create_gene_equivalence_index(cursor):
     )
 
 
+def delete_gene_equivalence_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_equivalence_idx"
+    )
+
+
 def create_gene_ortholog_index(cursor):
     db_utils.create_index(
         cursor=cursor,
@@ -96,4 +126,10 @@ def create_gene_ortholog_index(cursor):
             "species1",
             "gene0"
         )
+    )
+
+def delete_gene_ortholog_index(cursor):
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_ortholog_idx"
     )

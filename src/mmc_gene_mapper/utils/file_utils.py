@@ -100,4 +100,4 @@ def hash_from_path(file_path, chunk_bytes=100000000):
             if len(chunk) == 0:
                 break
             hasher.update(chunk)
-    return hasher.hexdigest()
+    return f"md5:{hasher.hexdigest()}"

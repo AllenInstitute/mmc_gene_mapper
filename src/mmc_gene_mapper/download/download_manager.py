@@ -18,7 +18,10 @@ class DownloadManager(object):
 
     def __init__(
             self,
-            dst_dir):
+            dst_dir,
+            suppress_stdout=False):
+
+        self.suppress_stdout = suppress_stdout
 
         dst_dir = pathlib.Path(dst_dir)
         if not dst_dir.is_dir():
@@ -113,7 +116,8 @@ class DownloadManager(object):
                 host=host,
                 src_path=src_path,
                 dst_path=dst_path,
-                clobber=False
+                clobber=False,
+                suppress_stdout=self.suppress_stdout
             )
             mgr_utils.insert_record(
                 db_path=self.db_path,
