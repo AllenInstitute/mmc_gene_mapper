@@ -37,7 +37,7 @@ def _get_species_taxon(
 
     if len(results) > 1:
         raise RuntimeError(
-            f"{len(results)} species match name {name}\n"
+            f"{len(results)} species match name {species_name}\n"
             f"{results}"
         )
     elif len(results) == 0:
