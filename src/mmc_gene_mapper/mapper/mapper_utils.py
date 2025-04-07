@@ -48,11 +48,6 @@ def create_mapper_database(
                     bkbit_path=file_spec['path']
                 )
 
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        data_utils.create_gene_index(cursor)
-        data_utils.create_gene_equivalene_index(cursor)
-
     if data_file_spec is not None:
         for file_spec in data_file_spec:
             if file_spec['type'] == 'bkbit':
@@ -71,8 +66,7 @@ def create_mapper_database(
 
     # only after all data has been ingested
     with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        data_utils.create_gene_ortholog_index(cursor)
+        data_utils.create_data_indexes(conn)
 
 
 def create_bibliography_table(
