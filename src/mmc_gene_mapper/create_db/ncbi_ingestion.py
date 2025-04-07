@@ -129,35 +129,24 @@ def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     ) VALUES (?, ?, ?, ?, ?, ?)
     """
     i0 = 0
-    if data_path.suffix == '.gz':
-        open_fn = gzip.open
-        mode = 'rb'
-    else:
-        open_fn = open
-        mode = 'r'
 
-    with open_fn(data_path, mode=mode) as src:
-        header = src.readline()
-        while True:
-            chunk = [
-                src.readline().strip().split()[:3]
-                for ii in range(chunk_size)
-            ]
-            if mode == 'rb':
-                chunk = [
-                    [el.decode('utf-8') for el in row]
-                    for row in chunk
-                ]
-
+    #with open_fn(data_path, mode=mode) as src:
+    with pd.read_csv(data_path,
+                     delimiter='\t',
+                     chunksize=chunk_size,
+                     usecols=['#tax_id', 'GeneID', 'Symbol']) as src:
+        for chunk in src:
             values = [
                 (authority_idx,
-                 int(row[0]),
-                 int(row[1]),
-                 row[2],
-                 f'NCBIGene:{row[1]}',
+                 int(tax_id),
+                 int(gene_id),
+                 gene_symbol,
+                 f'NCBIGene:{tax_id}',
                  citation_idx)
-                for row in chunk
-                if len(row) > 0
+                for tax_id, gene_id, gene_symbol in zip(
+                        chunk['#tax_id'].values,
+                        chunk['GeneID'].values,
+                        chunk['Symbol'].values)
             ]
 
             if len(values) == 0:
