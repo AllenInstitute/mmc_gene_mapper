@@ -23,7 +23,8 @@ class MMCGeneMapper(object):
            local_dir,
            data_file_spec=None,
            clobber=False,
-           force_download=False):
+           force_download=False,
+           suppress_download_stdout=False):
         """
         Parameters
         ----------
@@ -37,6 +38,14 @@ class MMCGeneMapper(object):
                 {'type': ('bkbit', or 'hmba_ortholog')
                  'name': name_by_which_to_refer_to_citation,
                 'path': path to file}
+        clobber:
+            if True, overwrite existing database
+        force_download:
+            if True, re-download data
+        suppress_download_stdout:
+            if True, suppress the stdout produced by calling
+            wget with subprocess while downloading data
+            (this is necessary when running in a notebook)
         """
 
         dst_dir = pathlib.Path(
@@ -62,7 +71,8 @@ class MMCGeneMapper(object):
                 db_path=db_path,
                 data_file_spec=data_file_spec,
                 clobber=clobber,
-                force_download=force_download
+                force_download=force_download,
+                suppress_download_stdout=suppress_download_stdout
             )
         finally:
 
@@ -289,10 +299,12 @@ class MMCGeneMapper(object):
             db_path,
             data_file_spec,
             clobber,
-            force_download):
+            force_download,
+            suppress_download_stdout):
 
         self.download_mgr = download_manager.DownloadManager(
-            dst_dir=dst_dir
+            dst_dir=dst_dir,
+            suppress_stdout=suppress_download_stdout
         )
 
         self.db_path = pathlib.Path(db_path)

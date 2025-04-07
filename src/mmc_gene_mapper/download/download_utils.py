@@ -4,6 +4,7 @@ Define generic FTP download utils
 import json
 import pathlib
 import subprocess
+import time
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -13,7 +14,8 @@ def download_file(
         host,
         src_path,
         dst_path,
-        clobber=False):
+        clobber=False,
+        suppress_stdout=False):
     """
     Parameters
     ----------
@@ -26,11 +28,14 @@ def download_file(
         path on local machine where we will be saving the file
     clobber:
         whether or not to overwrite existing file
+    suppress_stdout:
+        if True, pipe stdout and stderr to /dev/NULL
 
     Returns
     -------
     metadata describing downloaded file
     """
+
     dst_path = pathlib.Path(dst_path)
     if dst_path.exists():
         if clobber:
@@ -61,10 +66,18 @@ def download_file(
         "-O",
         dst_url
     ]
-    process = subprocess.Popen(args=process_args)
+
+    if suppress_stdout:
+        process_args.append("-q")
+
+    t0 = time.time()
+    process = subprocess.Popen(
+        args=process_args)
     return_code = process.wait()
     if return_code != 0:
         raise RuntimeError(
-            f"subprocess {args} returned code {return_code}"
+            f"subprocess {process_args} returned code {return_code}"
         )
+    dur = time.time()-t0
+    print(f'=======DOWNLOADED {src_path} in {dur:.2e} seconds=======')
     return metadata

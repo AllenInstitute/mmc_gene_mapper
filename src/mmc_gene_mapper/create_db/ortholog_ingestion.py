@@ -146,10 +146,10 @@ def ingest_orthologs(
             """
             INSERT INTO gene_ortholog (
                 authority,
-                species0,
                 gene0,
-                species1,
+                species0,
                 gene1,
+                species1,
                 citation
             ) VALUES (?, ?, ?, ?, ?, ?)
             """,
