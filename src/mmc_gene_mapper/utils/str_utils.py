@@ -2,7 +2,11 @@ import re
 
 
 def int_from_identifier(identifier):
-    pattern = re.compile('[0-9]+')
+    """
+    Take a gene identifier (a string) and return
+    the integer part from the end as an integer
+    """
+    pattern = re.compile('[0-9]+$')
     result = pattern.findall(identifier)
     if len(result) != 1:
         raise ValueError(

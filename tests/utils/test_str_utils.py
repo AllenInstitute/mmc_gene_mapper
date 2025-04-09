@@ -1,6 +1,20 @@
+import pytest
+
 import numpy as np
 
 import mmc_gene_mapper.utils.str_utils as str_utils
+
+
+def test_int_from_identifier():
+    assert str_utils.int_from_identifier('ENS009991') == 9991
+    assert str_utils.int_from_identifier('ABC89910') == 89910
+    assert str_utils.int_from_identifier('AB123DEF8910') == 8910
+
+    with pytest.raises(ValueError, match='could not get one integer'):
+        str_utils.int_from_identifier('abcabc')
+
+    with pytest.raises(ValueError, match='could not get one integer'):
+        str_utils.int_from_identifier('abc123def')
 
 
 def test_characterize_gene_identifiers():
