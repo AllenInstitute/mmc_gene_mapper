@@ -37,7 +37,28 @@ def get_citation(
         conn,
         name,
         strict=False):
+    """
+    Query the database at conn for a specific citation.
 
+    Parameters
+    ----------
+    conn:
+        the sqlite3 connection to the database
+    name:
+        a str; the name of the citation being requested
+    strict:
+        if True and there is no match, raise a ValueError.
+        if False and there is no match, return None
+
+    Returns
+    -------
+    A dict
+        {
+            "name": the name of the citation,
+            "metadata": the metadata associated with the citation
+            "idx": the integer index of the citation in the database
+        }
+    """
     cursor = conn.cursor()
     return _get_citation(
         cursor=cursor,
