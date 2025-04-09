@@ -1,11 +1,9 @@
 """
 Utilities for creating the gene mapper database
 """
-
-import json
 import pathlib
-import sqlite3
-import time
+
+import mmc_gene_mapper.utils.file_utils as file_utils
 
 
 def delete_index(cursor, idx_name):
@@ -39,9 +37,18 @@ def create_index(
 
 
 def check_existence(db_path):
+    """
+    Check that the file at db_path exists.
+    If it exists but is not a file, raise a
+    NotAFileError
+
+    (this function exists to prevent us from
+    creating a sqlite3 connection to a new file when
+    we do not intend to)
+    """
     db_path = pathlib.Path(db_path)
     if db_path.exists() and not db_path.is_file():
-        raise RuntimeError(
+        raise file_utils.NotAFileError(
             f"{db_path} exists but is not a file"
         )
     return db_path.exists()
