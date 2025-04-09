@@ -8,7 +8,6 @@ import tarfile
 import tempfile
 
 import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.download.download_utils as download_utils
 
 
 def ingest_species_data(
@@ -34,7 +33,7 @@ def ingest_species_data(
             tmp_dir=tmp_dir
         )
     finally:
-       file_utils.clean_up(tmp_dir)
+        file_utils.clean_up(tmp_dir)
 
 
 def _ingest_species_data(
