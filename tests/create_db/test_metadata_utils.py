@@ -8,8 +8,56 @@ import shutil
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
+
+
+def create_data_tables(conn):
+    """
+    This is an older version of data_utils.create_data_tables.
+    The fact that the schema of gene_ortholog has changed does
+    not matter for this unit test
+    """
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE gene (
+            authority INTEGER,
+            id INTEGER,
+            species_taxon INTEGER,
+            symbol STRING,
+            identifier STRING,
+            citation INTEGER
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE gene_equivalence (
+            species_taxon INTEGER,
+            authority0 INTEGER,
+            gene0 INTEGER,
+            authority1 INTEGER,
+            gene1 INTEGER,
+            citation INTEGER
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE gene_ortholog(
+            authority INTEGER,
+            species0 INTEGER,
+            gene0 INTEGER,
+            species1 INTEGER,
+            gene1 INTEGER,
+            citation INTEGER
+        )
+        """
+    )
+
 
 
 @pytest.fixture(scope='module')
@@ -168,7 +216,7 @@ def citation_table_with_data_fixture(
     )
 
     with sqlite3.connect(db_path) as conn:
-        data_utils.create_data_tables(conn)
+        create_data_tables(conn)
         cursor = conn.cursor()
         cursor.executemany(
             """
