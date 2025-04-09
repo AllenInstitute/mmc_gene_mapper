@@ -167,7 +167,7 @@ def insert_unique_citation(
 
     if pre_existing_citation is not None:
         if not clobber:
-            raise RuntimeError(
+            raise ValueError(
                 f"citation {name} already exists; "
                 "run with clobber=True to overwrite"
             )

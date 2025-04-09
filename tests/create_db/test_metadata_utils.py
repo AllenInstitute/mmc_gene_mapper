@@ -368,3 +368,104 @@ def test_insert_citation(
         assert len(expected) == len(actual)
         for ex in expected:
             assert ex in actual
+
+
+@pytest.mark.parametrize("clobber", [True, False])
+def test_insert_unique_citation(
+        citation_table_with_data_fixture,
+        citation_dataset_fixture,
+        gene_data_fixture,
+        gene_equivalence_data_fixture,
+        gene_ortholog_data_fixture,
+        clobber):
+    """
+    Test that if we insert a unique citation with name='A'
+    and clobber=True, all of the relevant data gets deleted
+    and the new 'A' citation exists
+    """
+    with sqlite3.connect(citation_table_with_data_fixture) as conn:
+        if not clobber:
+            msg = "already exists; run with clobber"
+            with pytest.raises(ValueError, match=msg):
+                metadata_utils.insert_unique_citation(
+                    conn=conn,
+                    name="A",
+                    metadata_dict={"alt": "A"},
+                    clobber=clobber
+                )
+        else:
+            metadata_utils.insert_unique_citation(
+                conn=conn,
+                name="A",
+                metadata_dict={"alt": "A"},
+                clobber=clobber
+            )
+
+    if not clobber:
+        return
+
+    with sqlite3.connect(citation_table_with_data_fixture) as conn:
+        cursor = conn.cursor()
+        citations = cursor.execute(
+            "SELECT name, metadata, id FROM citation"
+        ).fetchall()
+        assert len(citations) == 4
+        expected = set([
+            (row['name'],
+             json.dumps(row['metadata']),
+             row['idx'])
+            for row in citation_dataset_fixture[1:]
+        ])
+        expected.add(
+            ("A",
+             json.dumps({"alt": "A"}),
+             4)
+        )
+        assert set(citations) == expected
+
+        genes = cursor.execute(
+            """
+            SELECT
+                authority,
+                id,
+                species_taxon,
+                symbol,
+                identifier,
+                citation
+            FROM
+                gene
+            """
+        ).fetchall()
+        assert set(genes) == set(gene_data_fixture[2:])
+
+        equiv = cursor.execute(
+            """
+            SELECT
+                species_taxon,
+                authority0,
+                gene0,
+                authority1,
+                gene1,
+                citation
+            FROM
+                gene_equivalence
+            """
+        ).fetchall()
+        assert set(equiv) == set(gene_equivalence_data_fixture[2:])
+
+        orthologs = cursor.execute(
+            """
+            SELECT
+                authority,
+                species0,
+                gene0,
+                species1,
+                gene1,
+                citation
+            FROM
+                gene_ortholog
+            """
+        ).fetchall()
+        assert set(orthologs) == set([
+            gene_ortholog_data_fixture[1],
+            gene_ortholog_data_fixture[3]])
