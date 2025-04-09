@@ -330,16 +330,6 @@ def _delete_metadata(conn, table_name, name):
 
     target_idx = pre_existing[0][0]
 
-    #for idx_name in ("symbol_idx",
-    #                 "ncbi_idx",
-    #                 "ncbi_ensembl_idx",
-    #                 "ncbi_ortholog_idx"):
-    #    cursor.execute(
-    #        f"DROP INDEX IF EXISTS {idx_name}"
-    #    )
-
-    #print("    DELETED INDEXES")
-
     for data_table_name in db_utils.data_table_list:
         cursor.execute(
             f"""

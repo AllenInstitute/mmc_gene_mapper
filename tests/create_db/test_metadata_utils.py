@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
@@ -29,6 +30,74 @@ def citation_dataset_fixture():
         {"name": "C",
          "metadata": {"uh": "oh"},
          "idx": 3}
+    ]
+
+
+@pytest.fixture(scope='module')
+def gene_data_fixture():
+    """
+    List of records for gene table that reference
+    simulated citations
+
+    column order = (
+        authority
+        id
+        species_taxon
+        symbol
+        identifier
+        citation
+    )
+    """
+    return [
+        (0, 1, 11, 'ENS111', 111, 0),
+        (0, 2, 22, 'ENS222', 222, 0),
+        (1, 3, 33, 'ENS333', 333, 1)
+    ]
+
+
+@pytest.fixture(scope='module')
+def gene_equivalence_data_fixture():
+    """
+    List of records for gene_equivalence table
+    that reference simulated citations
+
+    column order = (
+        species_taxon
+        authority0
+        gene0
+        authority1
+        gene1
+        citation
+    )
+    """
+    return [
+        (11, 0, 1, 22, 2, 0),
+        (11, 1, 2, 33, 3, 0),
+        (22, 3, 4, 55, 5, 1),
+        (33, 5, 6, 77, 7, 2)
+    ]
+
+
+@pytest.fixture(scope='module')
+def gene_ortholog_data_fixture():
+    """
+    List of records for gene_ortholog table
+    that reference simulated citations
+
+    column_order= (
+        authority
+        species0
+        gene0
+        species1
+        gene1
+        citation
+    )
+    """
+    return [
+        (0, 1, 1, 2, 2, 0),
+        (0, 3, 3, 4, 4, 1),
+        (0, 5, 5, 6, 6, 0),
+        (0, 7, 7, 8, 8, 2)
     ]
 
 
@@ -74,6 +143,78 @@ def citation_table_fixture(
     return db_path
 
 
+@pytest.fixture(scope='function')
+def citation_table_with_data_fixture(
+        citation_table_fixture,
+        gene_data_fixture,
+        gene_equivalence_data_fixture,
+        gene_ortholog_data_fixture,
+        tmp_dir_fixture):
+    """
+    Return path to a database that has a citation
+    table and data tables.
+
+    scope is 'function' because we are expected to change it
+    in tests
+    """
+    db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='citation_with_data_',
+        suffix='.db'
+    )
+    shutil.copy(
+        src=citation_table_fixture,
+        dst=db_path
+    )
+
+    with sqlite3.connect(db_path) as conn:
+        data_utils.create_data_tables(conn)
+        cursor = conn.cursor()
+        cursor.executemany(
+            """
+            INSERT INTO gene (
+               authority,
+               id,
+               species_taxon,
+               symbol,
+               identifier,
+               citation
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            gene_data_fixture
+        )
+
+        cursor.executemany(
+            """
+            INSERT INTO gene_equivalence (
+                species_taxon,
+                authority0,
+                gene0,
+                authority1,
+                gene1,
+                citation
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            gene_equivalence_data_fixture
+        )
+
+        cursor.executemany(
+            """
+            INSERT INTO gene_ortholog (
+                authority,
+                species0,
+                gene0,
+                species1,
+                gene1,
+                citation
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            gene_ortholog_data_fixture
+        )
+
+    return db_path
+
+
 def test_get_citation(
         citation_dataset_fixture,
         citation_table_fixture):
@@ -108,3 +249,122 @@ def test_get_citation(
                 name="D",
                 strict=True
             )
+
+
+def test_delete_citation(
+        citation_table_with_data_fixture,
+        citation_dataset_fixture,
+        gene_data_fixture,
+        gene_equivalence_data_fixture,
+        gene_ortholog_data_fixture):
+    with sqlite3.connect(citation_table_with_data_fixture) as conn:
+        metadata_utils.delete_citation(
+            conn=conn,
+            name="A"
+        )
+
+    with sqlite3.connect(citation_table_with_data_fixture) as conn:
+        cursor = conn.cursor()
+        citations = cursor.execute(
+            "SELECT name, metadata, id FROM citation"
+        ).fetchall()
+        assert len(citations) == 3
+        expected = set([
+            (row['name'],
+             json.dumps(row['metadata']),
+             row['idx'])
+            for row in citation_dataset_fixture[1:]
+        ])
+        assert set(citations) == expected
+
+        genes = cursor.execute(
+            """
+            SELECT
+                authority,
+                id,
+                species_taxon,
+                symbol,
+                identifier,
+                citation
+            FROM
+                gene
+            """
+        ).fetchall()
+        assert set(genes) == set(gene_data_fixture[2:])
+
+        equiv = cursor.execute(
+            """
+            SELECT
+                species_taxon,
+                authority0,
+                gene0,
+                authority1,
+                gene1,
+                citation
+            FROM
+                gene_equivalence
+            """
+        ).fetchall()
+        assert set(equiv) == set(gene_equivalence_data_fixture[2:])
+
+        orthologs = cursor.execute(
+            """
+            SELECT
+                authority,
+                species0,
+                gene0,
+                species1,
+                gene1,
+                citation
+            FROM
+                gene_ortholog
+            """
+        ).fetchall()
+        assert set(orthologs) == set([
+            gene_ortholog_data_fixture[1],
+            gene_ortholog_data_fixture[3]])
+
+
+def test_insert_citation(
+        citation_table_with_data_fixture,
+        citation_dataset_fixture):
+    with sqlite3.connect(citation_table_with_data_fixture) as conn:
+        with pytest.raises(ValueError, match="already exists"):
+            metadata_utils.insert_citation(
+                conn=conn,
+                name="A",
+                metadata_dict={"will not": "work"}
+            )
+
+        metadata_utils.insert_citation(
+            conn=conn,
+            name="E",
+            metadata_dict={"okay": "fine"}
+        )
+
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                name,
+                metadata,
+                id
+            FROM
+                citation
+            """
+        ).fetchall()
+
+        expected = [
+            (row['name'],
+             json.dumps(row['metadata']),
+             row['idx'])
+            for row in citation_dataset_fixture
+        ]
+        expected.append(
+            ("E",
+             json.dumps({"okay": "fine"}),
+             4)
+        )
+        assert len(expected) == len(actual)
+        for ex in expected:
+            assert ex in actual
