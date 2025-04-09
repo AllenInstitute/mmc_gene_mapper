@@ -9,11 +9,16 @@ import tempfile
 
 
 def assert_is_file(file_path):
+    """
+    Asserrt that file_path points to a file.
+    Raise a NotAFileError if not.
+    """
     file_path = pathlib.Path(file_path)
     if not file_path.is_file():
-        raise RuntimeError(
+        raise NotAFileError(
             f"{file_path} is not a file"
         )
+
 
 def clean_up(target_path):
     """
@@ -101,3 +106,7 @@ def hash_from_path(file_path, chunk_bytes=100000000):
                 break
             hasher.update(chunk)
     return f"md5:{hasher.hexdigest()}"
+
+
+class NotAFileError(Exception):
+    pass

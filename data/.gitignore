@@ -1,4 +1,7 @@
+*.h5
 *.csv
 *.tsv
 gene*
 *.json
+abc_cache/*
+mmc_gene_mapper*
