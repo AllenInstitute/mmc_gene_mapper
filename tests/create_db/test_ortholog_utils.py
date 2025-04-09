@@ -1,5 +1,6 @@
 import pytest
 
+import copy
 import mmc_gene_mapper.create_db.ortholog_utils as ortholog_utils
 
 
@@ -33,3 +34,36 @@ def test_create_ortholog_graph():
             gene0_list=[1, 2, 3],
             gene1_list=[4, 5]
         )
+
+
+@pytest.mark.parametrize("use_guess", [True, False])
+def test_assign_ortholog_group(use_guess):
+
+    graph = dict()
+    graph[1] = set([2, 3, 5])
+    graph[2] = set([1, 4, 6])
+    graph[3] = set([1, 7, 8])
+    graph[4] = set([2, 5])
+    graph[5] = set([1, 4])
+    graph[6] = set([2])
+    graph[7] = set([3])
+    graph[8] = set([3])
+    graph[9] = set([10])
+    graph[10] = set([9])
+
+    if use_guess:
+        root_gene_list = [1, 2, 5]
+    else:
+        root_gene_list = None
+
+    group_lookup = ortholog_utils.assign_ortholog_group(
+        graph=copy.deepcopy(graph),
+        root_gene_list=root_gene_list)
+
+    for k in graph:
+        assert k in group_lookup
+
+    for k in [1, 2, 3, 4, 5, 6, 7, 8]:
+        assert group_lookup[k] == group_lookup[1]
+    assert group_lookup[9] == group_lookup[10]
+    assert group_lookup[9] != group_lookup[1]
