@@ -83,7 +83,7 @@ def test_assign_ortholog_group():
         gene0_list=gene0_list,
         gene1_list=gene1_list)
 
-    for k in range(1, 11,1):
+    for k in range(1, 11, 1):
         assert k in group_lookup
 
     for k in [1, 2, 3, 4, 5, 6, 7, 8]:

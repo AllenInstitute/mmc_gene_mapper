@@ -10,6 +10,24 @@ def get_species_taxon(
         db_path,
         species_name,
         strict=False):
+    """
+    Return the integer identifier for a species
+
+    Parameters
+    ----------
+    db_path:
+        path to the database
+    species_name:
+        human-readable name of the species
+    strict:
+        if True and no such species exists, raise
+        an exception; if False and no such species
+        exists, return None
+
+    Returns
+    -------
+    an integer; the taxon ID of the species
+    """
     does_path_exist(db_path)
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -23,6 +41,25 @@ def _get_species_taxon(
         cursor,
         species_name,
         strict=False):
+
+    """
+    Return the integer identifier for a species
+
+    Parameters
+    ----------
+    cursor:
+        a sqlite3.cursor
+    species_name:
+        human-readable name of the species
+    strict:
+        if True and no such species exists, raise
+        an exception; if False and no such species
+        exists, return None
+
+    Returns
+    -------
+    an integer; the taxon ID of the species
+    """
     results = cursor.execute(
        """
        SELECT
@@ -36,13 +73,13 @@ def _get_species_taxon(
    ).fetchall()
 
     if len(results) > 1:
-        raise RuntimeError(
+        raise ValueError(
             f"{len(results)} species match name {species_name}\n"
             f"{results}"
         )
     elif len(results) == 0:
         if strict:
-            raise RuntimeError(
+            raise ValueError(
                 f"no species match for {species_name}"
             )
         return None
