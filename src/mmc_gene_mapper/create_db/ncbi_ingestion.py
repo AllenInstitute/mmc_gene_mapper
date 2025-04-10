@@ -278,7 +278,6 @@ def ingest_ncbi_orthologs(
         int(ii) for ii in data['Other_tax_id'].values
     ]
 
-
     ortholog_utils.ingest_ortholog(
         conn=conn,
         gene0_list=gene0_list,

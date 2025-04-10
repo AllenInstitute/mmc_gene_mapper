@@ -491,11 +491,11 @@ def _get_ortholog_genes(
         cursor = conn.cursor()
 
         for i0 in range(0, len(src_genes), chunk_size):
-            values = tuple(src_genes[i0:i0+chunk_size])
+            gene_chunk = tuple(src_genes[i0:i0+chunk_size])
             query = """
                 SELECT
-                    gene0,
-                    gene1
+                    gene,
+                    ortholog_group
                 FROM
                     gene_ortholog
                 WHERE
@@ -503,26 +503,76 @@ def _get_ortholog_genes(
                 AND
                     citation=?
                 AND
-                    species0=?
+                    species=?
                 AND
-                    species1=?
-                AND
-                    gene0 IN (
-                """
-            query += ",".join(['?']*len(values))
+                    gene IN (
+            """
+            query += ",".join(['?']*len(gene_chunk))
             query += ")"
-            raw = cursor.execute(
+            gene_to_ortholog = cursor.execute(
                 query,
                 (authority_idx,
                  citation['idx'],
                  src_species_taxon,
-                 dst_species_taxon,
-                 *values)
+                 *gene_chunk)
+            ).fetchall()
+            n_raw = len(gene_to_ortholog)
+
+            gene_to_ortholog = {
+                row[0]: row[1]
+                for row in gene_to_ortholog
+            }
+            if len(gene_to_ortholog) != n_raw:
+                raise ValueError(
+                    "gene_to_ortholog was not unique"
+                )
+
+            ortholog_chunk = tuple(
+                set(gene_to_ortholog.values())
             )
-            for row in raw:
-                if row[0] not in results:
-                    results[row[0]] = []
-                results[row[0]].append(row[1])
+
+            query = """
+                SELECT
+                    ortholog_group,
+                    gene
+                FROM
+                    gene_ortholog
+                WHERE
+                    authority=?
+                AND
+                    citation=?
+                AND
+                    species=?
+                AND
+                    ortholog_group IN (
+            """
+            query += ",".join(['?']*len(ortholog_chunk))
+            query += ")"
+            ortholog_to_other_gene = cursor.execute(
+                query,
+                (authority_idx,
+                 citation['idx'],
+                 dst_species_taxon,
+                 *ortholog_chunk)
+            ).fetchall()
+            n_raw = len(ortholog_to_other_gene)
+
+            ortholog_to_other_gene = {
+                row[0]: row[1]
+                for row in ortholog_to_other_gene
+            }
+            if len(ortholog_to_other_gene) != n_raw:
+                raise ValueError(
+                    "ortholog_to_other_gene was not unique"
+                )
+
+            for gene in gene_to_ortholog:
+                orth = gene_to_ortholog[gene]
+                if orth not in ortholog_to_other_gene:
+                    continue
+                if gene not in results:
+                    results[gene] = []
+                results[gene].append(ortholog_to_other_gene[orth])
 
     return {
         'metadata': {

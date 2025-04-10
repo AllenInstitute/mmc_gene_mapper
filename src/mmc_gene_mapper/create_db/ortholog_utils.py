@@ -1,10 +1,20 @@
+import numpy as np
+
 def assign_ortholog_group(gene0_list, gene1_list):
+    filtered0 = []
+    filtered1 = []
+    for g0, g1 in zip(gene0_list, gene1_list):
+        if g0 != g1:
+            filtered0.append(g0)
+            filtered1.append(g1)
+
     graph = create_ortholog_graph(
-        gene0_list=gene0_list,
-        gene1_list=gene1_list)
+        gene0_list=filtered0,
+        gene1_list=filtered1)
+    print("    GOT GRAPH")
     return assign_ortholog_group_from_graph(
         graph=graph,
-        root_gene_list=gene0_list)
+        root_gene_list=sorted(set(filtered0)))
 
 
 def create_ortholog_graph(gene0_list, gene1_list):
@@ -66,8 +76,16 @@ def assign_ortholog_group_from_graph(
     """
     if root_gene_list is None:
         root_gene_list = []
+    else:
+        root_gene_list = np.array(root_gene_list)
+        n_neigh = np.array([len(graph[g]) for g in root_gene_list])
+        sorted_dex = np.argsort(n_neigh)[-1::-1]
+        root_gene_list = list(root_gene_list[sorted_dex])
+
     group_idx = 0
     gene_to_group = dict()
+    n0 = len(graph)
+    last_decrement = 0
     while True:
         start_node = None
         for ii, node in enumerate(root_gene_list):
@@ -91,6 +109,11 @@ def assign_ortholog_group_from_graph(
             gene_to_group[node] = group_idx
 
         group_idx += 1
+        n1 = len(graph)
+        decrement = n0-n1
+        if group_idx == 1 or decrement > last_decrement*10:
+            print(f"    group {group_idx} decrement {decrement:.3e} of {n0:.3e}")
+            last_decrement = decrement
 
     return gene_to_group
 

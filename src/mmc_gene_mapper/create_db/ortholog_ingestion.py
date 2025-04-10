@@ -24,6 +24,9 @@ def ingest_hmba_orthologs(
         clobber=False,
         chunk_size=1000):
 
+    hmba_file_path = pathlib.Path(hmba_file_path)
+    print(f'=======INGESTING ORTHOLOGS FROM {hmba_file_path.name}=======')
+
     t0 = time.time()
     db_path = pathlib.Path(db_path)
     if not db_path.is_file():
@@ -45,8 +48,9 @@ def ingest_hmba_orthologs(
     }
 
     df = pd.read_csv(hmba_file_path)
-    gene0_list = df.ncbi_id.values
-    gene1_list = df.ortholog_id.values
+    df = df[df['ncbi_id'] != df['ortholog_id']]
+    gene0_list = [int(ii) for ii in df.ncbi_id.values]
+    gene1_list = [int(ii) for ii in df.ortholog_id.values]
     with sqlite3.connect(db_path) as conn:
 
         ingest_orthologs_and_citation(
@@ -84,7 +88,6 @@ def ingest_orthologs_and_citation(
         clobber=clobber
     )
 
-    print(f'=======INGESTING {len(pair_list)} ORTHOLOG PAIRS=======')
     src_citation = metadata_utils.get_citation(
         conn=conn,
         name='NCBI'
@@ -107,15 +110,9 @@ def ingest_orthologs_and_citation(
     gene_to_species_taxon = dict()
     t0 = time.time()
     gene_set = sorted(set(gene0_list).union(set(gene1_list)))
-
+    print(f'len gene set {len(gene_set)}')
+    print(gene_set[:10])
     for i0 in range(0, len(gene_set), chunk_size):
-        dur = (time.time()-t0)/60.0
-        if i0 > 0:
-            per = dur/i0
-            pred = per*n_pairs
-        else:
-            per = 0
-            pred = 0
         gene_subset = gene_set[i0:i0+chunk_size]
         query = """
             SELECT
@@ -150,6 +147,8 @@ def ingest_orthologs_and_citation(
         idx_name=tmp_idx_name
     )
 
+    print(f"ingesting with out_citation {out_citation}")
+    print(f'gene_to_species {len(gene_to_species_taxon)}')
     _ingest_ortholog_from_species_lookup(
         conn=conn,
         gene0_list=gene0_list,
@@ -174,9 +173,9 @@ def ingest_ortholog(
 
     if len(gene0_list) != len(species0_list):
         raise ValueError(
-            "length mismatch between gene0_list and species0_list
+            "length mismatch between gene0_list and species0_list"
         )
-    if len(gene1_list) != len(speces1_list):
+    if len(gene1_list) != len(species1_list):
         raise ValueError(
             "length mismatch between gene1_list and species1_list"
         )
@@ -184,7 +183,7 @@ def ingest_ortholog(
     error_msg = ""
     gene_to_species = dict()
     for gene_list, species_list in [(gene0_list, species0_list),
-                                    (gene1_list, species1_list)]"
+                                    (gene1_list, species1_list)]:
         for g0, s0 in zip(gene_list, species_list):
             if g0 in gene_to_species:
                 if gene_to_species[g0] != s0:
@@ -193,6 +192,8 @@ def ingest_ortholog(
                         f"{gene_to_species[g0]}")
             else:
                 gene_to_species[g0] = s0
+
+    print("    GOT gene_to_species")
 
     if len(error_msg) > 0:
         raise ValueError(error_msg)
@@ -214,10 +215,16 @@ def _ingest_ortholog_from_species_lookup(
         citation_idx,
         authority_idx):
 
-    gene_to_ortholog = ortholog_utils.assig_ortholog_group(
+    print(f'gene0 {len(gene0_list)}')
+    print(f'gene1 {len(gene1_list)}')
+
+    gene_to_ortholog = ortholog_utils.assign_ortholog_group(
         gene0_list=gene0_list,
         gene1_list=gene1_list
     )
+
+    print(f'gene_to_ortholog {len(gene_to_ortholog)}')
+    print(f'gene_to_species {len(gene_to_species)}')
 
     values = [
         (authority_idx,
@@ -228,6 +235,7 @@ def _ingest_ortholog_from_species_lookup(
         for g0 in gene_to_species
     ]
 
+    print(f"inserting {len(values)} values with citation {citation_idx}")
     cursor = conn.cursor()
     cursor.executemany(
         """
