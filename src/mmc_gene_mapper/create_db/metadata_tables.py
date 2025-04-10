@@ -189,6 +189,27 @@ def get_authority(
         conn,
         name,
         strict=False):
+    """
+    Get metadata describing an authority entry in the database
+
+    Parameters
+    ----------
+    conn:
+        a sqlite3 database connection
+    name:
+        a str. The name of the authority being asked for
+    strict:
+        if True and no such authority exists, raise exception;
+        if False and no such authority exists, return None
+
+    Returns
+    -------
+    A dict
+        {
+            "name": the name of the authority
+            "idx": its numerical index in the database
+        }
+    """
 
     cursor = conn.cursor()
     return _get_authority(
@@ -307,6 +328,11 @@ def insert_unique_authority(
 
 
 def _delete_metadata(conn, table_name, name):
+
+    if table_name not in ('citation', 'authority'):
+        raise ValueError(
+            f"{table_name} not a metadata table we can delete from."
+        )
     t0 = time.time()
     print(f'=======DELETING {table_name} {name}=======')
     cursor = conn.cursor()
@@ -331,14 +357,26 @@ def _delete_metadata(conn, table_name, name):
     target_idx = pre_existing[0][0]
 
     for data_table_name in db_utils.data_table_list:
-        cursor.execute(
-            f"""
-            DELETE FROM {data_table_name}
-            WHERE citation=?
-            """,
-            (target_idx,)
-        )
-        print(f"    DELETED FROM {table_name}")
+        if data_table_name != "gene_equivalence" or table_name == "citation":
+            cursor.execute(
+                f"""
+                DELETE FROM {data_table_name}
+                WHERE {table_name}=?
+                """,
+                (target_idx,)
+            )
+        else:
+            cursor.execute(
+                """
+                DELETE FROM gene_equivalence
+                WHERE
+                    authority0=?
+                OR
+                    authority1=?
+                """,
+                (target_idx, target_idx)
+            )
+        print(f"    DELETED FROM {data_table_name}")
 
     cursor.execute(
         f"""
