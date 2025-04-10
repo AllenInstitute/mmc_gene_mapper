@@ -7,7 +7,12 @@ import mmc_gene_mapper.create_db.utils as db_utils
 def create_data_tables(conn):
     print('=======CREATING TABLES=======')
     cursor = conn.cursor()
+    create_gene_table(cursor)
+    create_gene_equivalence_table(cursor)
+    create_gene_ortholog_table(cursor)
 
+
+def create_gene_table(cursor):
     cursor.execute(
         """
         CREATE TABLE gene (
@@ -21,6 +26,8 @@ def create_data_tables(conn):
         """
     )
 
+
+def create_gene_equivalence_table(cursor):
     cursor.execute(
         """
         CREATE TABLE gene_equivalence (
@@ -34,6 +41,8 @@ def create_data_tables(conn):
         """
     )
 
+
+def create_gene_ortholog_table(cursor):
     cursor.execute(
         """
         CREATE TABLE gene_ortholog(

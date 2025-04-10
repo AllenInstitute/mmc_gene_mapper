@@ -90,6 +90,30 @@ def get_citation_from_bibliography(
         cursor,
         authority_idx,
         species_taxon):
+    """
+    Return the full entry for a citation based on
+    authority and species (assumes there is only one
+    valid citation).
+
+    Parameters
+    ----------
+    cursor:
+        sqlite3 cursor object
+    authority_idx:
+        the integer index of the relevant authority
+    species_taxon:
+        the integer index of the species
+
+    Returns
+    -------
+    A dict representing the citation that associates
+    that species with that authority (via the gene table)
+        {
+            "name": name of the citation,
+            "idx": numerical index of the citation,
+            "metadata": dict containing citation's metadata
+        }
+    """
     raw = cursor.execute(
         """
         SELECT
@@ -114,10 +138,14 @@ def get_citation_from_bibliography(
             FROM authority
             WHERE id=?
             """,
-            (authority,)
-        )
-        raise RuntimeError(
-            f"There are {results} citations associated "
+            (authority_idx,)
+        ).fetchall()
+
+        if len(full_authority) == 0:
+            full_authority = authority_idx
+
+        raise ValueError(
+            f"There are {len(results)} citations associated "
             f"with authority={full_authority}, "
             f"species_taxon={species_taxon}; "
             "unclear how to proceed"
