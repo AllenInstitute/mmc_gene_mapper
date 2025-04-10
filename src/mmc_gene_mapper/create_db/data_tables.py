@@ -38,11 +38,10 @@ def create_data_tables(conn):
         """
         CREATE TABLE gene_ortholog(
             authority INTEGER,
-            species0 INTEGER,
-            gene0 INTEGER,
-            species1 INTEGER,
-            gene1 INTEGER,
-            citation INTEGER
+            citation INTEGER,
+            species INTEGER,
+            gene INTEGER,
+            ortholog_group INTEGER
         )
         """
     )
@@ -117,19 +116,35 @@ def delete_gene_equivalence_index(cursor):
 def create_gene_ortholog_index(cursor):
     db_utils.create_index(
         cursor=cursor,
-        idx_name="gene_ortholog_idx",
+        idx_name="gene_ortholog_gene_idx",
         table_name="gene_ortholog",
         column_tuple=(
             "authority",
             "citation",
-            "species0",
-            "species1",
-            "gene0"
+            "species",
+            "gene"
         )
     )
+    db_utils.create_index(
+        cursor=cursor,
+        idx_name="gene_ortholog_ortholog_idx",
+        table_name="gene_ortholog",
+        column_tuple=(
+            "authority",
+            "citation",
+            "species",
+            "ortholog_group"
+        )
+    )
+
+
 
 def delete_gene_ortholog_index(cursor):
     db_utils.delete_index(
         cursor=cursor,
-        idx_name="gene_ortholog_idx"
+        idx_name="gene_ortholog_gene_idx"
+    )
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_ortholog_ortholog_idx"
     )
