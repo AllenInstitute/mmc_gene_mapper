@@ -112,6 +112,27 @@ def insert_citation(
         conn,
         name,
         metadata_dict):
+    """
+    Insert a new citation into the database
+
+    Parameters
+    ----------
+    conn:
+        a sqlite3 connection to the database
+    name:
+        a str; the name of the new citation
+    metadata_dict:
+        a dict; the metadata to be associated with the
+        citation
+
+    Returns
+    -------
+    the numerical index of the newly created citation
+
+    Notes
+    -----
+    If a citation already exists for name, raise an exception
+    """
 
     pre_existing = get_citation(
         conn=conn,
@@ -261,14 +282,40 @@ def delete_authority(conn, name):
 
 def insert_authority(
         conn,
-        name):
+        name,
+        strict=False):
+    """
+    Insert a new authority into the database.
+
+    Parameters
+    ----------
+    conn:
+        a sqlite3 connection to the database
+    name:
+        the name of the authority being inserted
+    strict:
+        if True and name already exists, raise an exception;
+        if False and name already exists, return the numerical
+        index of the pre-existing authority
+
+    Returns
+    -------
+    An int
+        the numerical index for the newly created authority
+    """
 
     pre_existing = get_authority(
         conn=conn,
-        name=name)
+        name=name,
+        strict=False)
 
     if pre_existing is not None:
-        return pre_existing
+        if strict:
+            raise ValueError(
+                f"authority {name} already exists"
+            )
+        else:
+            return pre_existing['idx']
 
     cursor = conn.cursor()
 

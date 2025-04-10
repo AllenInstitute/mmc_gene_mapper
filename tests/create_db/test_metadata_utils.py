@@ -422,11 +422,11 @@ def test_insert_citation(
                 metadata_dict={"will not": "work"}
             )
 
-        metadata_utils.insert_citation(
+        assert metadata_utils.insert_citation(
             conn=conn,
             name="E",
             metadata_dict={"okay": "fine"}
-        )
+        ) == 4
 
         cursor = conn.cursor()
         actual = cursor.execute(
@@ -667,3 +667,53 @@ def test_delete_authority(
         assert set(orthologs) == set([
             gene_ortholog_data_fixture[1],
             gene_ortholog_data_fixture[2]])
+
+
+@pytest.mark.parametrize("strict", [True, False])
+def test_insert_authority(
+        metadata_table_with_data_fixture,
+        authority_dataset_fixture,
+        strict):
+    with sqlite3.connect(metadata_table_with_data_fixture) as conn:
+        if strict:
+            with pytest.raises(ValueError, match="already exists"):
+                metadata_utils.insert_authority(
+                    conn=conn,
+                    name="a1",
+                    strict=strict
+                )
+        else:
+            assert metadata_utils.insert_authority(
+                conn=conn,
+                name="a1",
+                strict=strict) == 1
+
+        assert metadata_utils.insert_authority(
+            conn=conn,
+            name="c0",
+            strict=strict
+        ) == 4
+
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                name,
+                id
+            FROM
+                authority
+            """
+        ).fetchall()
+
+        expected = [
+            (row['name'],
+             row['idx'])
+            for row in authority_dataset_fixture
+        ]
+        expected.append(
+            ("c0",
+             4)
+        )
+        assert len(expected) == len(actual)
+        for ex in expected:
+            assert ex in actual
