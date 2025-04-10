@@ -59,7 +59,6 @@ def create_data_tables(conn):
     )
 
 
-
 @pytest.fixture(scope='module')
 def citation_dataset_fixture():
     """
@@ -79,6 +78,7 @@ def citation_dataset_fixture():
          "metadata": {"uh": "oh"},
          "idx": 3}
     ]
+
 
 @pytest.fixture(scope='module')
 def authority_dataset_fixture():
@@ -334,7 +334,6 @@ def test_get_citation(
                 conn=conn,
                 name="D",
                 strict=strict) is None
-
 
 
 def test_delete_citation(
@@ -717,3 +716,103 @@ def test_insert_authority(
         assert len(expected) == len(actual)
         for ex in expected:
             assert ex in actual
+
+
+@pytest.mark.parametrize("clobber", [True, False])
+def test_insert_unique_authority(
+        metadata_table_with_data_fixture,
+        authority_dataset_fixture,
+        gene_data_fixture,
+        gene_equivalence_data_fixture,
+        gene_ortholog_data_fixture,
+        clobber):
+    """
+    Test that if we insert a unique authority with name='a0'
+    and clobber=True, all of the relevant data gets deleted
+    and the new 'a0' authority exists
+    """
+    with sqlite3.connect(metadata_table_with_data_fixture) as conn:
+        if not clobber:
+            msg = "already exists; run with clobber"
+            with pytest.raises(ValueError, match=msg):
+                metadata_utils.insert_unique_authority(
+                    conn=conn,
+                    name="a0",
+                    clobber=clobber
+                )
+        else:
+            metadata_utils.insert_unique_authority(
+                conn=conn,
+                name="a0",
+                clobber=clobber
+            )
+
+    if not clobber:
+        return
+
+    with sqlite3.connect(metadata_table_with_data_fixture) as conn:
+        cursor = conn.cursor()
+        citations = cursor.execute(
+            "SELECT name, id FROM authority"
+        ).fetchall()
+        assert len(citations) == 4
+        expected = set([
+            (row['name'],
+             row['idx'])
+            for row in authority_dataset_fixture[1:]
+        ])
+        expected.add(
+            ("a0",
+             4)
+        )
+        assert set(citations) == expected
+
+        genes = cursor.execute(
+            """
+            SELECT
+                authority,
+                id,
+                species_taxon,
+                symbol,
+                identifier,
+                citation
+            FROM
+                gene
+            """
+        ).fetchall()
+        assert set(genes) == set(gene_data_fixture[2:])
+
+        equiv = cursor.execute(
+            """
+            SELECT
+                species_taxon,
+                authority0,
+                gene0,
+                authority1,
+                gene1,
+                citation
+            FROM
+                gene_equivalence
+            """
+        ).fetchall()
+        assert set(equiv) == set([
+            gene_equivalence_data_fixture[1],
+            gene_equivalence_data_fixture[3]
+        ])
+
+        orthologs = cursor.execute(
+            """
+            SELECT
+                authority,
+                species0,
+                gene0,
+                species1,
+                gene1,
+                citation
+            FROM
+                gene_ortholog
+            """
+        ).fetchall()
+        assert set(orthologs) == set([
+            gene_ortholog_data_fixture[1],
+            gene_ortholog_data_fixture[2]])

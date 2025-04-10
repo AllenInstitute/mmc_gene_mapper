@@ -3,8 +3,6 @@ Define utilities around metadata tables
 (authority and citation)
 """
 import json
-import pathlib
-import sqlite3
 import time
 
 import mmc_gene_mapper.create_db.utils as db_utils
@@ -97,7 +95,6 @@ def _get_citation(
         "idx": results[0][1],
         "metadata": json.loads(results[0][2])
     }
-
 
 
 def delete_citation(conn, name):
@@ -271,7 +268,6 @@ def _get_authority(
     }
 
 
-
 def delete_authority(conn, name):
     _delete_metadata(
         conn=conn,
@@ -350,15 +346,15 @@ def insert_unique_authority(
     """
     If citation already exists, delete it.
     """
-    pre_existing_citation = get_authority(
+    pre_existing_authority = get_authority(
        conn=conn,
        name=name
     )
 
-    if pre_existing_citation is not None:
+    if pre_existing_authority is not None:
         if not clobber:
-            raise RuntimeError(
-                f"citation {citation_name} already exists; "
+            raise ValueError(
+                f"authority {name} already exists; "
                 "run with clobber=True to overwrite"
             )
         else:
@@ -436,4 +432,3 @@ def _delete_metadata(conn, table_name, name):
     conn.commit()
     dur = time.time() - t0
     print(f"    DELETING TOOK {dur:.2e} seconds")
-
