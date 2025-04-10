@@ -1,3 +1,10 @@
+def assign_ortholog_group(gene0_list, gene1_list):
+    graph = create_ortholog_graph(
+        gene0_list=gene0_list,
+        gene1_list=gene1_list)
+    return assign_ortholog_group_from_graph(
+        graph=graph,
+        root_gene_list=gene0_list)
 
 
 def create_ortholog_graph(gene0_list, gene1_list):
@@ -31,7 +38,7 @@ def create_ortholog_graph(gene0_list, gene1_list):
     return graph
 
 
-def assign_ortholog_group(
+def assign_ortholog_group_from_graph(
         graph,
         root_gene_list=None):
     """
