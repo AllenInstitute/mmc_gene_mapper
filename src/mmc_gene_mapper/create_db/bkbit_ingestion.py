@@ -15,6 +15,21 @@ import mmc_gene_mapper.query_db.query as query_utils
 def ingest_bkbit_genes(
         db_path,
         bkbit_path):
+    """
+    Ingest gene info from a bkbit jsonld file into the gene
+    table of the database
+
+    Parameters
+    ----------
+    db_path:
+        path to the database into which we are ingesting
+    bkbit_path:
+        path to the jsonld file with the data being ingested
+
+    Returns
+    -------
+    None
+    """
 
     print(
         f"=======INGESTING {bkbit_path}======="

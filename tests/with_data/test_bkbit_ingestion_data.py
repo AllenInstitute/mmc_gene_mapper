@@ -5,6 +5,7 @@ import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
+import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.bkbit_ingestion as bkbit_ingestion
 import mmc_gene_mapper.create_db.species_ingestion as species_ingestion
 
@@ -88,3 +89,65 @@ def test_read_bkbit_data(
             expected_tuples.append(this)
 
     assert expected_tuples == bkbit_data[1]
+
+
+def test_ingest_bkbit_data(
+        pre_bkbit_database_fixture,
+        bkbit_data_fixture0):
+    """
+    Test function to ingest bkbit data into gene table
+    """
+    with sqlite3.connect(pre_bkbit_database_fixture) as conn:
+        cursor = conn.cursor()
+        metadata_utils.create_citation_table(cursor)
+        data_utils.create_gene_table(cursor)
+
+    bkbit_ingestion.ingest_bkbit_genes(
+        db_path=pre_bkbit_database_fixture,
+        bkbit_path=bkbit_data_fixture0
+    )
+
+    with open(bkbit_data_fixture0, 'rb') as src:
+        raw_data = json.load(src)
+
+    expected_tuples = []
+    for ii, el in enumerate(raw_data['@graph'][3:]):
+        this = (
+            0,
+            ii,
+            999,
+            el['symbol'],
+            el['source_id'],
+            0
+        )
+        expected_tuples.append(this)
+        if el['symbol'] != el['name']:
+            this = (
+                0,
+                ii,
+                999,
+                el['name'],
+                el['source_id'],
+                0
+            )
+            expected_tuples.append(this)
+
+    with sqlite3.connect(pre_bkbit_database_fixture) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                authority,
+                id,
+                species_taxon,
+                symbol,
+                identifier,
+                citation
+            FROM
+                gene
+            """
+        ).fetchall()
+
+    assert len(expected_tuples) == len(actual)
+    assert len(set(actual)) == len(actual)
+    assert set(actual) == set(expected_tuples)
