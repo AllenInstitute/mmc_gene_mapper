@@ -210,6 +210,12 @@ def get_authority_and_citation(
         name=authority_name
     )
 
+    if full_authority is None:
+        raise ValueError(
+            f"authority {authority_name} does not exist "
+            "in this database"
+        )
+
     full_citation = get_citation_from_bibliography(
         cursor=conn.cursor(),
         authority_idx=full_authority['idx'],

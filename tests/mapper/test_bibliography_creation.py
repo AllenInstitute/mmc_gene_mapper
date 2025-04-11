@@ -9,7 +9,6 @@ import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
 
-
 @pytest.fixture(scope='session')
 def gene_table_data_fixture():
     """
@@ -18,7 +17,7 @@ def gene_table_data_fixture():
     """
     return [
         {'authority': 0, 'citation': 1, 'species_taxon': 88,
-         'id': 0, 'identifier': 'a', 'symbol':'b'},
+         'id': 0, 'identifier': 'a', 'symbol': 'b'},
         {'authority': 0, 'citation': 1, 'species_taxon': 88,
          'id': 1, 'identifier': 'c', 'symbol': 'd'},
         {'authority': 1, 'citation': 2, 'species_taxon': 88,
@@ -154,7 +153,6 @@ def gene_table_fixture(
     return db_path
 
 
-
 def test_create_bibliography(gene_table_fixture):
 
     # make sure test database starts out with the bogus
@@ -195,7 +193,7 @@ def test_create_bibliography(gene_table_fixture):
         assert set(actual) == set(expected)
 
 
-def test_get_authority_and_citation(gene_table_fixture):
+def test_get_citation_from_bibliography(gene_table_fixture):
     mapper_utils.create_bibliography_table(
         db_path=gene_table_fixture
     )
@@ -253,5 +251,85 @@ def test_get_authority_and_citation(gene_table_fixture):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=15,
+                species_taxon=99
+            )
+
+
+def test_get_authority_and_citation(gene_table_fixture):
+    mapper_utils.create_bibliography_table(
+        db_path=gene_table_fixture
+    )
+
+    with sqlite3.connect(gene_table_fixture) as conn:
+        actual = query_utils.get_authority_and_citation(
+            conn=conn,
+            authority_name="A0",
+            species_taxon=88
+        )
+        assert actual == {
+            "authority": {
+                "name": "A0",
+                "idx": 0
+            },
+            "citation": {
+                "name": "C1",
+                "idx": 1,
+                "metadata": {"meta": "M1"}
+            }
+        }
+
+        actual = query_utils.get_authority_and_citation(
+            conn=conn,
+            authority_name="A1",
+            species_taxon=77
+        )
+        assert actual == {
+            "authority": {
+                "name": "A1",
+                "idx": 1
+            },
+            "citation": {
+                "name": "C1",
+                "idx": 1,
+                "metadata": {"meta": "M1"}
+            }
+        }
+
+        actual = query_utils.get_authority_and_citation(
+            conn=conn,
+            authority_name="A1",
+            species_taxon=88
+        )
+        assert actual == {
+            "authority": {
+                "name": "A1",
+                "idx": 1
+            },
+            "citation": {
+                "name": "C2",
+                "idx": 2,
+                "metadata": {"meta": "M2"}
+            }
+        }
+
+        with pytest.raises(ValueError, match="2 citations associated with"):
+            query_utils.get_authority_and_citation(
+                conn=conn,
+                authority_name="A0",
+                species_taxon=99
+            )
+
+        with pytest.raises(ValueError, match="0 citations associated with"):
+            query_utils.get_authority_and_citation(
+                conn=conn,
+                authority_name="A1",
+                species_taxon=99
+            )
+
+        msg = "does not exist in this database"
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_authority_and_citation(
+                conn=conn,
+                authority_name="A15",
                 species_taxon=99
             )
