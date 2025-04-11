@@ -10,7 +10,11 @@ import mmc_gene_mapper.create_db.utils as db_utils
 
 def create_metadata_tables(conn):
     cursor = conn.cursor()
+    create_citation_table(cursor)
+    create_authority_table(cursor)
 
+
+def create_citation_table(cursor):
     cursor.execute(
         """
         CREATE TABLE citation(
@@ -21,6 +25,8 @@ def create_metadata_tables(conn):
         """
     )
 
+
+def create_authority_table(cursor):
     cursor.execute(
         """
         CREATE TABLE authority(

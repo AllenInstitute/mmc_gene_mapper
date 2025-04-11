@@ -31,7 +31,7 @@ def ingest_bkbit_genes(
             f"{db_path} does not exist"
         )
 
-    metadata_dict, values, citation_name = _read_bkbit_data(
+    metadata_dict, values, citation_name = read_bkbit_data(
         bkbit_path=bkbit_path,
         db_path=db_path
     )
@@ -65,7 +65,32 @@ def ingest_bkbit_genes(
         )
 
 
-def _read_bkbit_data(bkbit_path, db_path):
+def read_bkbit_data(bkbit_path, db_path):
+    """
+    Read data from a bkbit file and format for ingestion into
+    the database.
+
+    Parameters
+    ----------
+    bkbit_path:
+        path to the bkbit jsonld file
+    db_path:
+        path to the database into which we are ingesting data
+        (for looking up the mapping from species name to
+        species_taxon)
+
+    Returns
+    -------
+    A tuple
+        (
+            metadata -- dict of metadata for the citation
+                corresponding to this file
+            raw_gene_annotation_values -- list of tuples; the
+                values to be ingested into the gene table
+            citation_name -- the human readable name of the
+                citation corresponding to this file
+        )
+    """
     with open(bkbit_path, "rb") as src:
         bkbit_data = json.load(src)
 
