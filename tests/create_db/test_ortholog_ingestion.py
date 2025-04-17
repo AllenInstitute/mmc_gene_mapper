@@ -1,6 +1,8 @@
 """
 test ortholog ingestion functions
 """
+import pytest
+
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -62,4 +64,97 @@ def test_ingest_ortholog_from_species_lookup(
         (999, 99, 11, 7, 1),
         (999, 99, 12, 8, 0)
     ]
+    assert actual == expected
+
+
+@pytest.fixture
+def gene_to_species_fixture():
+    """
+    Return a dict mapping gene idx to species idx
+    (for testing purposes)
+    """
+    result = {
+        ii: ii//3
+        for ii in range(12)
+    }
+    return result
+
+
+@pytest.fixture
+def ortholog_groups_fixture():
+    """
+    Return lists, each of which is a
+    group of orthologs
+    """
+    return [
+        [0, 4, 11],
+        [1, 5, 7, 10],
+        [2, 9],
+        [3, 6]
+    ]
+
+
+def test_ingest_ortholog_from_lists(
+        ortholog_groups_fixture,
+        gene_to_species_fixture,
+        tmp_dir_fixture):
+    """
+    Test function to ingest orthologs as lists
+    of genes and species
+    """
+    db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix="ortholog_table_test_",
+        suffix=".db"
+    )
+    gene0_list = [4, 4, 5, 5, 7, 3]
+    gene1_list = [0, 11, 1, 7, 10, 6]
+    species0_list = [
+        gene_to_species_fixture[gene]
+        for gene in gene0_list
+    ]
+    species1_list = [
+        gene_to_species_fixture[gene]
+        for gene in gene1_list
+    ]
+
+    with sqlite3.connect(db_path) as conn:
+        data_utils.create_gene_ortholog_table(conn.cursor())
+        ortholog_ingestion.ingest_ortholog(
+            conn=conn,
+            gene0_list=gene0_list,
+            gene1_list=gene1_list,
+            species0_list=species0_list,
+            species1_list=species1_list,
+            citation_idx=99,
+            authority_idx=999
+        )
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species,
+                gene,
+                ortholog_group
+            FROM gene_ortholog
+            ORDER BY gene
+            """
+        ).fetchall()
+
+    expected = [
+        (999, 99, 0, 0, 1),
+        (999, 99, 0, 1, 0),
+        (999, 99, 1, 3, 2),
+        (999, 99, 1, 4, 1),
+        (999, 99, 1, 5, 0),
+        (999, 99, 2, 6, 2),
+        (999, 99, 2, 7, 0),
+        (999, 99, 3, 10, 0),
+        (999, 99, 3, 11, 1)
+    ]
+
     assert actual == expected

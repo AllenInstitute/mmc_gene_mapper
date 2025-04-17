@@ -168,7 +168,34 @@ def ingest_ortholog(
         citation_idx,
         authority_idx):
     """
-    All lists are numerical indexes
+    Ingest ortholog data into database
+
+    Prameters
+    ---------
+    conn:
+        the sqlite3 connection to the database
+    gene0_list:
+        list of integers; the first set of genes
+    gene1_list:
+        list of integers; genes that are orthologs to the
+        corresponding genes in gene0_list
+    species0_list:
+        list of integers indicating the species that the
+        genes in gene0_list belong to
+    species1_list:
+        list of integers indicating the specie that the
+        genes in gene1_list belong to
+    citation_idx:
+        the integer corresponding to the citation justifying
+        these ortholog assignments
+    authority_idx:
+        the integer corresponding to the authority in which
+        these orthologs are identified (ENSEMBL or NCBI)
+
+    Returns
+    -------
+    None
+        data is ingested into the gene_ortholog database
     """
 
     if len(gene0_list) != len(species0_list):
