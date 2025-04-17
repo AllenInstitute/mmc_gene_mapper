@@ -8,6 +8,7 @@ import pandas as pd
 import pathlib
 import sqlite3
 import time
+import warnings
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.utils as db_utils
@@ -74,7 +75,8 @@ def ingest_orthologs_and_citation(
         citation_name,
         citation_metadata_dict,
         clobber=False,
-        chunk_size=1000):
+        chunk_size=1000,
+        gene_authority='NCBI'):
 
     if len(gene0_list) != len(gene1_list):
         raise ValueError(
@@ -88,14 +90,9 @@ def ingest_orthologs_and_citation(
         clobber=clobber
     )
 
-    src_citation = metadata_utils.get_citation(
-        conn=conn,
-        name='NCBI'
-    )
-
     src_authority = metadata_utils.get_authority(
         conn=conn,
-        name='NCBI'
+        name=gene_authority
     )
 
     tmp_idx_name = "tmp_gene_to_species_idx"
@@ -271,6 +268,10 @@ def _ingest_ortholog_from_species_lookup(
     -------
     None
         data is ingested into the gene_ortholog database
+
+    Notes
+    -----
+    genes that do not occur in gene_to_species will not be ingested
     """
 
     print(f'gene0 {len(gene0_list)}')
@@ -283,6 +284,18 @@ def _ingest_ortholog_from_species_lookup(
 
     print(f'gene_to_ortholog {len(gene_to_ortholog)}')
     print(f'gene_to_species {len(gene_to_species)}')
+
+    warning_msg = ""
+    for gene in gene_to_ortholog:
+        if gene not in gene_to_species:
+            warning_msg += f"{gene}\n"
+    if len(warning_msg) > 0:
+        warning_msg = (
+            "The following genes had no species assigned to "
+            "them and were not ingested\n"
+            f"{warning_msg}"
+        )
+        warnings.warn(warning_msg, category=InvalidOrthologGeneWarning)
 
     values = [
         (authority_idx,
@@ -310,3 +323,7 @@ def _ingest_ortholog_from_species_lookup(
         """,
         values
     )
+
+
+class InvalidOrthologGeneWarning(UserWarning):
+    pass

@@ -10,8 +10,10 @@ import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_ingestion
 
 
+@pytest.mark.parametrize("emit_warning", [True, False])
 def test_ingest_ortholog_from_species_lookup(
-        tmp_dir_fixture):
+        tmp_dir_fixture,
+        emit_warning):
 
     # even genes are all connect; odd genes are all connected
     gene0_list = [0, 0, 0, 1, 2, 2, 3, 3]
@@ -21,6 +23,10 @@ def test_ingest_ortholog_from_species_lookup(
         ii: ii+4 for ii in range(9)
     }
 
+    if emit_warning:
+        gene0_list.append(24)
+        gene1_list.append(27)
+
     db_path = file_utils.mkstemp_clean(
         dir=tmp_dir_fixture,
         prefix='ortholog_test_db_',
@@ -29,14 +35,28 @@ def test_ingest_ortholog_from_species_lookup(
 
     with sqlite3.connect(db_path) as conn:
         data_utils.create_gene_ortholog_table(conn.cursor())
-        ortholog_ingestion._ingest_ortholog_from_species_lookup(
-            conn=conn,
-            gene0_list=gene0_list,
-            gene1_list=gene1_list,
-            gene_to_species=gene_to_species,
-            citation_idx=99,
-            authority_idx=999
-        )
+        if emit_warning:
+            msg = "The following genes had no species"
+            with pytest.warns(
+                    ortholog_ingestion.InvalidOrthologGeneWarning,
+                    match=msg):
+                ortholog_ingestion._ingest_ortholog_from_species_lookup(
+                    conn=conn,
+                    gene0_list=gene0_list,
+                    gene1_list=gene1_list,
+                    gene_to_species=gene_to_species,
+                    citation_idx=99,
+                    authority_idx=999
+                )
+        else:
+            ortholog_ingestion._ingest_ortholog_from_species_lookup(
+                conn=conn,
+                gene0_list=gene0_list,
+                gene1_list=gene1_list,
+                gene_to_species=gene_to_species,
+                citation_idx=99,
+                authority_idx=999
+            )
 
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
