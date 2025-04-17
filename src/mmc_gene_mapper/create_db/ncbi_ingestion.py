@@ -107,7 +107,7 @@ def _ingest_ncbi_data(
             data_path=ensembl_path,
             citation_idx=citation_idx
         )
-        ortholog_ingestion.ingest_ncbi_orthologs(
+        ingest_ncbi_orthologs(
             conn=conn,
             data_path=ortholog_path,
             citation_idx=citation_idx,

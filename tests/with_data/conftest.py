@@ -4,7 +4,9 @@ tests/with_data contains tests that run off of a cartoon data model
 import pytest
 
 import hashlib
+import itertools
 import json
+import pandas as pd
 import pathlib
 import tarfile
 import tempfile
@@ -27,6 +29,155 @@ def species_id_fixture():
         'fey': 998,
         'goblin': 997,
         'orc': 997
+    }
+
+
+@pytest.fixture(scope='session')
+def ncbi_ortholog_group_fixture():
+    """
+    List of lists of ints.
+    Each list is a group of orthologous genes
+    """
+    return [
+        [0, 14, 21],
+        [1, 13, 27],
+        [4, 12, 23],
+        [7, 15],
+        [6, 24]
+    ]
+
+
+@pytest.fixture(scope='session')
+def ncbi_data_package_fixture(
+        species_id_fixture,
+        ncbi_ortholog_group_fixture):
+    """
+    Simulate data from which to generate a simulated NCBI-like test data
+    package. Return a list of gene dicts each like
+    {
+     'species': int,
+     'gene_id': int,
+     'symbol': str,
+     'ensembl_identifier': str
+     'orthologs': list_of_ints
+    }
+    """
+    species_list = [
+        species_id_fixture['human'],
+        species_id_fixture['jabberwock'],
+        species_id_fixture['mouse']
+    ]
+
+    ortholog_lookup = dict()
+    for row in ncbi_ortholog_group_fixture:
+        for pair in itertools.combinations(row, 2):
+            p0 = pair[0]
+            p1 = pair[1]
+            if p0 not in ortholog_lookup:
+                ortholog_lookup[p0] = []
+            ortholog_lookup[p0].append(p1)
+            if p1 not in ortholog_lookup:
+                ortholog_lookup[p1] = []
+            ortholog_lookup[p1].append(p0)
+
+    result = []
+    for gene_id in range(30):
+        species_id = species_list[gene_id//10]
+        symbol = f'symbol:{gene_id}'
+
+        if gene_id % 2 == 1:
+            ensembl = f'ENS{2*gene_id}'
+        else:
+            ensembl = None
+
+        if gene_id in ortholog_lookup:
+            orthologs = ortholog_lookup[gene_id]
+        else:
+            orthologs = []
+        result.append(
+            {'species': species_id,
+             'gene_id': gene_id,
+             'symbol': symbol,
+             'ensembl_identifier': ensembl,
+             'orthologs': orthologs}
+        )
+    return result
+
+
+@pytest.fixture(scope='session')
+def ncbi_file_package_fixture(
+        ncbi_data_package_fixture,
+        ncbi_ortholog_group_fixture,
+        species_id_fixture,
+        tmp_dir_fixture):
+    """
+    Return paths to files meant to look like an NCBI file package
+    """
+    tmp_dir = pathlib.Path(
+        tempfile.mkdtemp(
+            dir=tmp_dir_fixture,
+            prefix='ncbi_package_'
+        )
+    )
+    gene_info_path = tmp_dir / 'gene_info.gz'
+    gene_2_ensembl_path = tmp_dir / 'gene2ensembl.gz'
+    gene_ortholog_path = tmp_dir / 'gene_orthologs.gz'
+
+    gene_info_data = [
+        {'#tax_id': g['species'],
+         'GeneID': g['gene_id'],
+         'Symbol': g['symbol']}
+        for g in ncbi_data_package_fixture
+    ]
+    pd.DataFrame(gene_info_data).to_csv(
+        gene_info_path,
+        sep='\t',
+        compression='gzip',
+        index=False
+    )
+
+    gene_2_ensembl_data = [
+        {'#tax_id': g['species'],
+         'GeneID': g['gene_id'],
+         'Ensembl_gene_identifier': g['ensembl_identifier']}
+        for g in ncbi_data_package_fixture
+        if g['ensembl_identifier'] is not None
+    ]
+
+    # simulate more than one ENSEMBL gene being equivalent
+    # to an NCBI gene
+    gene_2_ensembl_data.append(
+        {'#tax_id': species_id_fixture['human'],
+         'GeneID': 5,
+         'Ensembl_gene_identifier': 'ENS999'}
+    )
+
+    pd.DataFrame(gene_2_ensembl_data).to_csv(
+        gene_2_ensembl_path,
+        sep='\t',
+        compression='gzip',
+        index=False
+    )
+
+    ortholog_data = []
+    for row in ncbi_ortholog_group_fixture:
+        for ii in range(1, len(row), 1):
+            ortholog_data.append(
+                {'GeneID': row[ii],
+                 'Other_GeneID': row[ii-1],
+                 'relationship': 'Ortholog'}
+            )
+    pd.DataFrame(ortholog_data).to_csv(
+        gene_ortholog_path,
+        sep='\t',
+        compression='gzip',
+        index=False
+    )
+
+    return {
+        'gene_info': str(gene_info_path),
+        'gene_2_ensembl': str(gene_2_ensembl_path),
+        'gene_orthologs': str(gene_ortholog_path)
     }
 
 
@@ -74,11 +225,15 @@ def species_file_fixture(
 
 
 @pytest.fixture(scope='session')
-def dummy_download_mgr_fixture(species_file_fixture):
+def dummy_download_mgr_fixture(
+        species_file_fixture,
+        ncbi_file_package_fixture):
     """
     define dummy downloan manager class
     """
     class DummyDownloadManager(object):
+        def __init__(self, *args, **kwargs):
+            pass
 
         def get_file(
                 self,
@@ -92,6 +247,18 @@ def dummy_download_mgr_fixture(species_file_fixture):
             elif src_path.endswith('new_taxdump.tar.gz.md5'):
                 return {
                     'local_path': species_file_fixture['hash']
+                }
+            elif src_path.endswith('gene_info.gz'):
+                return {
+                    'local_path': ncbi_file_package_fixture['gene_info']
+                }
+            elif src_path.endswith('gene2ensembl.gz'):
+                return {
+                    'local_path': ncbi_file_package_fixture['gene_2_ensembl']
+                }
+            elif src_path.endswith('gene_orthologs.gz'):
+                return {
+                    'local_path': ncbi_file_package_fixture['gene_orthologs']
                 }
             else:
                 raise RuntimeError(
