@@ -2,8 +2,6 @@
 Define function to just ingest orthologs
 """
 
-import json
-import numpy as np
 import pandas as pd
 import pathlib
 import sqlite3
@@ -13,9 +11,7 @@ import warnings
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
-import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.ortholog_utils as ortholog_utils
-import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.create_db.species_utils as species_utils
 
 
@@ -152,7 +148,7 @@ def ingest_orthologs_and_citation(
 
     if len(gene0_list) != len(gene1_list):
         raise ValueError(
-            f"length of gene lists does not match"
+            "length of gene lists does not match"
         )
 
     out_citation = metadata_utils.insert_unique_citation(
@@ -177,7 +173,6 @@ def ingest_orthologs_and_citation(
     )
 
     cursor = conn.cursor()
-    t0 = time.time()
     gene_set = sorted(set(gene0_list).union(set(gene1_list)))
     print(f'len gene set {len(gene_set)}')
     print(gene_set[:10])
