@@ -55,7 +55,7 @@ def get_gene_to_species_map(
                 if gene_to_species_taxon[row[0]] != row[1]:
                     raise ValueError(
                         "Conflicting species taxon for "
-                        f"gene_id {row[0]} authority {authority}; "
+                        f"gene_id {row[0]} authority_idx {authority_idx}; "
                         "unclear how to proceed."
                     )
             gene_to_species_taxon[row[0]] = row[1]
