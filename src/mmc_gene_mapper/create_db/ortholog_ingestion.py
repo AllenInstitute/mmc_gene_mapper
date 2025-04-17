@@ -214,6 +214,33 @@ def _ingest_ortholog_from_species_lookup(
         gene_to_species,
         citation_idx,
         authority_idx):
+    """
+    Ingest ortholog data into database
+
+    Prameters
+    ---------
+    conn:
+        the sqlite3 connection to the database
+    gene0_list:
+        list of integers; the first set of genes
+    gene1_list:
+        list of integers; genes that are orthologs to the
+        corresponding genes in gene0_list
+    gene_to_species:
+        a dict mapping the gene identifier ints in gene0_list
+        and gene1_list to species identifier ints
+    citation_idx:
+        the integer corresponding to the citation justifying
+        these ortholog assignments
+    authority_idx:
+        the integer corresponding to the authority in which
+        these orthologs are identified (ENSEMBL or NCBI)
+
+    Returns
+    -------
+    None
+        data is ingested into the gene_ortholog database
+    """
 
     print(f'gene0 {len(gene0_list)}')
     print(f'gene1 {len(gene1_list)}')
