@@ -421,15 +421,15 @@ def _ingest_orthologs_from_species_lookup(
     print(f'gene_to_ortholog {len(gene_to_ortholog)}')
     print(f'gene_to_species {len(gene_to_species)}')
 
-    warning_msg = ""
+    genes_without_species = []
     for gene in gene_to_ortholog:
         if gene not in gene_to_species:
-            warning_msg += f"{gene}\n"
-    if len(warning_msg) > 0:
+            genes_without_species.append(gene)
+    if len(genes_without_species) > 0:
         warning_msg = (
             "The following genes had no species assigned to "
             "them and were not ingested\n"
-            f"{warning_msg}"
+            f"{genes_without_species}"
         )
         warnings.warn(warning_msg, category=InvalidOrthologGeneWarning)
 
