@@ -141,7 +141,7 @@ def test_ingest_ortholog_from_lists(
 
     with sqlite3.connect(db_path) as conn:
         data_utils.create_gene_ortholog_table(conn.cursor())
-        ortholog_ingestion.ingest_ortholog(
+        ortholog_ingestion._ingest_ortholog_from_species_list(
             conn=conn,
             gene0_list=gene0_list,
             gene1_list=gene1_list,
@@ -216,7 +216,7 @@ def test_ingest_ortholog_from_lists_errors(
         data_utils.create_gene_ortholog_table(conn.cursor())
         msg = "length mismatch between gene0_list and species0_list"
         with pytest.raises(ValueError, match=msg):
-            ortholog_ingestion.ingest_ortholog(
+            ortholog_ingestion._ingest_ortholog_from_species_list(
                 conn=conn,
                 gene0_list=gene0_list_too_big,
                 gene1_list=gene1_list,
@@ -228,7 +228,7 @@ def test_ingest_ortholog_from_lists_errors(
 
         msg = "length mismatch between gene1_list and species1_list"
         with pytest.raises(ValueError, match=msg):
-            ortholog_ingestion.ingest_ortholog(
+            ortholog_ingestion._ingest_ortholog_from_species_list(
                 conn=conn,
                 gene0_list=gene0_list,
                 gene1_list=gene1_list_too_big,
@@ -240,7 +240,7 @@ def test_ingest_ortholog_from_lists_errors(
 
         msg = "length mismatch between gene0_list and gene1_list"
         with pytest.raises(ValueError, match=msg):
-            ortholog_ingestion.ingest_ortholog(
+            ortholog_ingestion._ingest_ortholog_from_species_list(
                 conn=conn,
                 gene0_list=gene0_list_too_big,
                 gene1_list=gene1_list,
@@ -252,7 +252,7 @@ def test_ingest_ortholog_from_lists_errors(
 
         msg = "gene 7 listed as species 2 and 0"
         with pytest.raises(ValueError, match=msg):
-            ortholog_ingestion.ingest_ortholog(
+            ortholog_ingestion._ingest_ortholog_from_species_list(
                 conn=conn,
                 gene0_list=gene0_list,
                 gene1_list=gene1_list,
@@ -335,7 +335,7 @@ def pre_populated_gene_table_fixture(
     return db_path
 
 
-def test_ingest_orthologs_and_citation(
+def test_ingest_ortholog_creating_citation(
         pre_populated_gene_table_fixture):
     """
     Test function that ingests orthologs, looking up their species
@@ -347,7 +347,7 @@ def test_ingest_orthologs_and_citation(
     gene1_list = [0, 11, 1, 7, 10, 6]
 
     with sqlite3.connect(db_path) as conn:
-        ortholog_ingestion.ingest_orthologs_and_citation(
+        ortholog_ingestion.ingest_ortholog_creating_citation(
             conn=conn,
             gene0_list=gene0_list,
             gene1_list=gene1_list,
@@ -387,11 +387,11 @@ def test_ingest_orthologs_and_citation(
     assert actual == expected
 
 
-def test_ingest_orthologs_and_citation_errors(
+def test_ingest_ortholog_creating_citation_errors(
         pre_populated_gene_table_fixture):
     """
     Test that expected errors are raised when input to
-    ingest_orthologs_and_citation is malformed
+    ingest_ortholog_creating_citation is malformed
     """
     db_path = pre_populated_gene_table_fixture
 
@@ -400,7 +400,7 @@ def test_ingest_orthologs_and_citation_errors(
 
     with sqlite3.connect(db_path) as conn:
         with pytest.raises(ValueError, match="No authority corresponding"):
-            ortholog_ingestion.ingest_orthologs_and_citation(
+            ortholog_ingestion.ingest_ortholog_creating_citation(
                 conn=conn,
                 gene0_list=gene0_list,
                 gene1_list=gene1_list,
@@ -414,7 +414,7 @@ def test_ingest_orthologs_and_citation_errors(
         with pytest.raises(ValueError,
                            match="length of gene lists does not match"):
 
-            ortholog_ingestion.ingest_orthologs_and_citation(
+            ortholog_ingestion.ingest_ortholog_creating_citation(
                 conn=conn,
                 gene0_list=[1, 2, 3],
                 gene1_list=gene1_list,

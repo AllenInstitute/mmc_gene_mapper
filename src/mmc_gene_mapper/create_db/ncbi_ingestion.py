@@ -268,22 +268,14 @@ def ingest_ncbi_orthologs(
     gene0_list = [
         int(ii) for ii in data['GeneID'].values
     ]
-    species0_list = [
-        int(ii) for ii in data['#tax_id'].values
-    ]
     gene1_list = [
         int(ii) for ii in data['Other_GeneID'].values
     ]
-    species1_list = [
-        int(ii) for ii in data['Other_tax_id'].values
-    ]
 
-    ortholog_utils.ingest_ortholog(
+    ortholog_utils.ingest_ortholog_specifying_citation(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
-        species0_list=species0_list,
-        species1_list=species1_list,
         citation_idx=citation_idx,
         authority_idx=ncbi_idx
     )

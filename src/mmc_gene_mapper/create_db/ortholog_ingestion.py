@@ -89,7 +89,7 @@ def ingest_hmba_orthologs(
     gene1_list = [int(ii) for ii in df[ortholog_id_column].values]
     with sqlite3.connect(db_path) as conn:
 
-        ingest_orthologs_and_citation(
+        ingest_ortholog_creating_citation(
             conn=conn,
             gene0_list=gene0_list,
             gene1_list=gene1_list,
@@ -104,7 +104,7 @@ def ingest_hmba_orthologs(
     print(f"=======ORTHOLOG INGESTION TOOK {dur:.2e} minutes=======")
 
 
-def ingest_orthologs_and_citation(
+def ingest_ortholog_creating_citation(
         conn,
         gene0_list,
         gene1_list,
@@ -164,6 +164,51 @@ def ingest_orthologs_and_citation(
         strict=True
     )
 
+    ingest_ortholog_specifying_citation(
+        conn=conn,
+        gene0_list=gene0_list,
+        gene1_list=gene1_list,
+        citation_idx=out_citation,
+        authority_idx=src_authority['idx'],
+        chunk_size=chunk_size
+    )
+
+
+
+def ingest_ortholog_specifying_citation(
+        conn,
+        gene0_list,
+        gene1_list,
+        citation_idx,
+        authority_idx,
+        chunk_size=10000):
+    """
+    Ingest ortholog data into database
+
+    Prameters
+    ---------
+    conn:
+        the sqlite3 connection to the database
+    gene0_list:
+        list of integers; the first set of genes
+    gene1_list:
+        list of integers; genes that are orthologs to the
+        corresponding genes in gene0_list
+    citation_idx:
+        the integer corresponding to the citation justifying
+        these ortholog assignments
+    authority_idx:
+        the integer corresponding to the authority in which
+        these orthologs are identified (ENSEMBL or NCBI)
+    chunk_size:
+        genes to process at once (to avoid overwhelming machine
+        memory)
+
+    Returns
+    -------
+    None
+        data is ingested into the gene_ortholog database
+    """
     tmp_idx_name = "tmp_gene_to_species_idx"
     db_utils.create_index(
         cursor=conn.cursor(),
@@ -174,12 +219,11 @@ def ingest_orthologs_and_citation(
 
     cursor = conn.cursor()
     gene_set = sorted(set(gene0_list).union(set(gene1_list)))
-    print(f'len gene set {len(gene_set)}')
-    print(gene_set[:10])
+
     gene_to_species_taxon = species_utils.get_gene_to_species_map(
         cursor=cursor,
         gene_list=gene_set,
-        authority_idx=src_authority["idx"],
+        authority_idx=authority_idx,
         chunk_size=chunk_size
     )
 
@@ -188,19 +232,18 @@ def ingest_orthologs_and_citation(
         idx_name=tmp_idx_name
     )
 
-    print(f"ingesting with out_citation {out_citation}")
-    print(f'gene_to_species {len(gene_to_species_taxon)}')
     _ingest_ortholog_from_species_lookup(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
         gene_to_species=gene_to_species_taxon,
-        citation_idx=out_citation,
-        authority_idx=src_authority['idx']
+        citation_idx=citation_idx,
+        authority_idx=authority_idx
     )
 
 
-def ingest_ortholog(
+
+def _ingest_ortholog_from_species_list(
         conn,
         gene0_list,
         gene1_list,
