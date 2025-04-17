@@ -77,6 +77,38 @@ def ingest_orthologs_and_citation(
         clobber=False,
         chunk_size=1000,
         gene_authority='NCBI'):
+    """
+    Ingest orthologs, creating a citation for this batch of
+    orthologs.
+
+    Parameters
+    ----------
+    conn:
+        sqlite3 connection object
+    gene0_list:
+        list of integers identifying genes
+    gene1_list:
+        list of integers identifying genes that are orthologs
+        of genes in gene0_list (gene1_list[ii] is ortholog of
+        gene0_list[ii])
+    citation_name:
+        name to be assigned to the citation created for these
+        orthologs
+    citation_metadata_dict:
+        dict defining the metadata to be associated with the
+        citation created for these orthologs
+    clobber:
+        if False and a citation with this name already exists,
+        fail. If not, overwrite the existing citation (deleting
+        all data connected with that citation)
+    chunk_size:
+        genes to process at once (to avoid overwhelming machine
+        memory)
+    gene_authority:
+        the human-readable name of the authority in which
+        these genes are defined.
+
+    """
 
     if len(gene0_list) != len(gene1_list):
         raise ValueError(
@@ -92,7 +124,8 @@ def ingest_orthologs_and_citation(
 
     src_authority = metadata_utils.get_authority(
         conn=conn,
-        name=gene_authority
+        name=gene_authority,
+        strict=True
     )
 
     tmp_idx_name = "tmp_gene_to_species_idx"

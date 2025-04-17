@@ -7,6 +7,7 @@ import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
+import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_ingestion
 
 
@@ -181,7 +182,6 @@ def test_ingest_ortholog_from_lists(
 
 
 def test_ingest_ortholog_from_lists_errors(
-        ortholog_groups_fixture,
         gene_to_species_fixture,
         tmp_dir_fixture):
     """
@@ -261,3 +261,115 @@ def test_ingest_ortholog_from_lists_errors(
                 citation_idx=99,
                 authority_idx=999
             )
+
+
+def test_ingest_orthologs_and_citation(
+        gene_to_species_fixture,
+        tmp_dir_fixture):
+    """
+    Test function that ingests orthologs, looking up their species
+    from the gene table
+    """
+    db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='ortholog_from_gene_test_',
+        suffix='.db'
+    )
+
+    authority_name='FIAT'
+
+    with sqlite3.connect(db_path) as conn:
+        data_utils.create_gene_table(conn.cursor())
+        data_utils.create_gene_ortholog_table(conn.cursor())
+        metadata_utils.create_metadata_tables(conn)
+
+        # add dummy citations and authorities so that
+        # the authority_idx and citation_idx of our test
+        # data are non-trivial
+        for ii in range(5):
+            metadata_utils.insert_authority(
+                conn=conn,
+                name=f'FAKE{ii}',
+                strict=True
+            )
+
+        for ii in range(2):
+            metadata_utils.insert_citation(
+                conn=conn,
+                name=f"FAKE_CITATION{ii}",
+                metadata_dict={"okay": "fine"}
+            )
+
+        authority_idx = metadata_utils.insert_authority(
+            conn=conn,
+            name=authority_name,
+            strict=True
+        )
+        assert authority_idx == 5
+
+        gene_values = [
+            (authority_idx,
+             gene_id,
+             gene_to_species_fixture[gene_id],
+             f'symbol{gene_id}',
+             f'identifier:{gene_id}',
+             0)
+            for gene_id in gene_to_species_fixture.keys()
+        ]
+        cursor = conn.cursor()
+        cursor.executemany(
+            """
+            INSERT INTO gene (
+                authority,
+                id,
+                species_taxon,
+                symbol,
+                identifier,
+                citation
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            gene_values
+        )
+
+    gene0_list = [4, 4, 5, 5, 7, 3]
+    gene1_list = [0, 11, 1, 7, 10, 6]
+
+    with sqlite3.connect(db_path) as conn:
+        ortholog_ingestion.ingest_orthologs_and_citation(
+            conn=conn,
+            gene0_list=gene0_list,
+            gene1_list=gene1_list,
+            citation_name='CITE',
+            citation_metadata_dict={'some': 'metdata'},
+            clobber=False,
+            chunk_size=3,
+            gene_authority=authority_name
+        )
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species,
+                gene,
+                ortholog_group
+            FROM gene_ortholog
+            ORDER BY gene
+            """
+        ).fetchall()
+
+    expected = [
+        (authority_idx, 2, 0, 0, 1),
+        (authority_idx, 2, 0, 1, 0),
+        (authority_idx, 2, 1, 3, 2),
+        (authority_idx, 2, 1, 4, 1),
+        (authority_idx, 2, 1, 5, 0),
+        (authority_idx, 2, 2, 6, 2),
+        (authority_idx, 2, 2, 7, 0),
+        (authority_idx, 2, 3, 10, 0),
+        (authority_idx, 2, 3, 11, 1)
+    ]
+    assert actual == expected
