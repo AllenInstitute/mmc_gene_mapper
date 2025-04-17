@@ -89,7 +89,7 @@ def ingest_hmba_orthologs(
     gene1_list = [int(ii) for ii in df[ortholog_id_column].values]
     with sqlite3.connect(db_path) as conn:
 
-        ingest_ortholog_creating_citation(
+        ingest_orthologs_creating_citation(
             conn=conn,
             gene0_list=gene0_list,
             gene1_list=gene1_list,
@@ -143,7 +143,7 @@ def ingest_ncbi_orthologs(
         int(ii) for ii in data['Other_GeneID'].values
     ]
 
-    ingest_ortholog_specifying_citation(
+    ingest_orthologs_specifying_citation(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
@@ -155,7 +155,7 @@ def ingest_ncbi_orthologs(
     print(f'=======INGESTING gene_orthologs TOOK {dur:.2e} minutes=======')
 
 
-def ingest_ortholog_creating_citation(
+def ingest_orthologs_creating_citation(
         conn,
         gene0_list,
         gene1_list,
@@ -215,7 +215,7 @@ def ingest_ortholog_creating_citation(
         strict=True
     )
 
-    ingest_ortholog_specifying_citation(
+    ingest_orthologs_specifying_citation(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
@@ -225,7 +225,7 @@ def ingest_ortholog_creating_citation(
     )
 
 
-def ingest_ortholog_specifying_citation(
+def ingest_orthologs_specifying_citation(
         conn,
         gene0_list,
         gene1_list,
@@ -282,7 +282,7 @@ def ingest_ortholog_specifying_citation(
         idx_name=tmp_idx_name
     )
 
-    _ingest_ortholog_from_species_lookup(
+    _ingest_orthologs_from_species_lookup(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
@@ -292,7 +292,7 @@ def ingest_ortholog_specifying_citation(
     )
 
 
-def _ingest_ortholog_from_species_list(
+def _ingest_orthologs_from_species_list(
         conn,
         gene0_list,
         gene1_list,
@@ -362,7 +362,7 @@ def _ingest_ortholog_from_species_list(
     if len(error_msg) > 0:
         raise ValueError(error_msg)
 
-    _ingest_ortholog_from_species_lookup(
+    _ingest_orthologs_from_species_lookup(
         conn=conn,
         gene0_list=gene0_list,
         gene1_list=gene1_list,
@@ -371,7 +371,7 @@ def _ingest_ortholog_from_species_list(
         authority_idx=authority_idx)
 
 
-def _ingest_ortholog_from_species_lookup(
+def _ingest_orthologs_from_species_lookup(
         conn,
         gene0_list,
         gene1_list,
