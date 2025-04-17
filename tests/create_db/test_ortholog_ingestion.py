@@ -158,3 +158,86 @@ def test_ingest_ortholog_from_lists(
     ]
 
     assert actual == expected
+
+
+def test_ingest_ortholog_from_lists_errors(
+        ortholog_groups_fixture,
+        gene_to_species_fixture,
+        tmp_dir_fixture):
+    """
+    Test that errors are raised if the inputs of ingest_ortholog
+    are poorly formed
+    """
+    db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix="ortholog_table_test_",
+        suffix=".db"
+    )
+    gene0_list = [4, 4, 5, 5, 7, 3]
+    gene0_list_too_big = list(range(8))
+    gene1_list = [0, 11, 1, 7, 10, 6]
+    gene1_list_too_big = list(range(8))
+    species0_list = [
+        gene_to_species_fixture[gene]
+        for gene in gene0_list
+    ]
+    species1_list = [
+        gene_to_species_fixture[gene]
+        for gene in gene1_list
+    ]
+    species0_list_too_big = [
+        gene_to_species_fixture[gene]
+        for gene in gene0_list_too_big
+    ]
+
+    species0_list_wrong = [0]*len(gene0_list)
+
+    with sqlite3.connect(db_path) as conn:
+        data_utils.create_gene_ortholog_table(conn.cursor())
+        msg = "length mismatch between gene0_list and species0_list"
+        with pytest.raises(ValueError, match=msg):
+            ortholog_ingestion.ingest_ortholog(
+                conn=conn,
+                gene0_list=gene0_list_too_big,
+                gene1_list=gene1_list,
+                species0_list=species0_list,
+                species1_list=species1_list,
+                citation_idx=99,
+                authority_idx=999
+            )
+
+        msg = "length mismatch between gene1_list and species1_list"
+        with pytest.raises(ValueError, match=msg):
+            ortholog_ingestion.ingest_ortholog(
+                conn=conn,
+                gene0_list=gene0_list,
+                gene1_list=gene1_list_too_big,
+                species0_list=species0_list,
+                species1_list=species1_list,
+                citation_idx=99,
+                authority_idx=999
+            )
+
+        msg = "length mismatch between gene0_list and gene1_list"
+        with pytest.raises(ValueError, match=msg):
+            ortholog_ingestion.ingest_ortholog(
+                conn=conn,
+                gene0_list=gene0_list_too_big,
+                gene1_list=gene1_list,
+                species0_list=species0_list_too_big,
+                species1_list=species1_list,
+                citation_idx=99,
+                authority_idx=999
+            )
+
+        msg = "gene 7 listed as species 2 and 0"
+        with pytest.raises(ValueError, match=msg):
+            ortholog_ingestion.ingest_ortholog(
+                conn=conn,
+                gene0_list=gene0_list,
+                gene1_list=gene1_list,
+                species0_list=species0_list_wrong,
+                species1_list=species1_list,
+                citation_idx=99,
+                authority_idx=999
+            )

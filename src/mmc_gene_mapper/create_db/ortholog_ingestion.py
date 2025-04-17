@@ -206,6 +206,10 @@ def ingest_ortholog(
         raise ValueError(
             "length mismatch between gene1_list and species1_list"
         )
+    if len(gene1_list) != len(gene0_list):
+        raise ValueError(
+            "length mismatch between gene0_list and gene1_list"
+        )
 
     error_msg = ""
     gene_to_species = dict()
