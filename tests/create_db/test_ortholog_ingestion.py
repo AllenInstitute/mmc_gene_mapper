@@ -10,6 +10,7 @@ import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_ingestion
+import mmc_gene_mapper.create_db.ncbi_ingestion as ncbi_ingestion
 
 
 @pytest.mark.parametrize("emit_warning", [True, False])
@@ -552,7 +553,7 @@ def test_ingest_ncbi_ortholog(
     db_path = pre_populated_gene_table_fixture
 
     with sqlite3.connect(db_path) as conn:
-        ortholog_ingestion.ingest_ncbi_orthologs(
+        ncbi_ingestion.ingest_ncbi_orthologs(
             conn=conn,
             data_path=ncbi_ortholog_fixture,
             citation_idx=2,

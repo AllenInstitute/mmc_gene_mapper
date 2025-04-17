@@ -104,57 +104,6 @@ def ingest_hmba_orthologs(
     print(f"=======ORTHOLOG INGESTION TOOK {dur:.2e} minutes=======")
 
 
-def ingest_ncbi_orthologs(
-        conn,
-        data_path,
-        citation_idx,
-        authority_idx):
-    """
-    Ingest a file that looks like NCBI's gene_orthologs file.
-
-    Parameters
-    ----------
-    conn:
-        sqlite3 connection to the database
-    data_path:
-        path to the gene_orthologs file being ingested
-    citation_idx:
-        the integer identifying the citation that is to be associated
-        with this set of orthologs
-    authority_idx:
-        the integer identifying the authority that is to be associated
-        with this set of orthologs
-
-    Returns
-    -------
-    None
-        orthologs are ingested into the gene_ortholog table of the database
-    """
-    t0 = time.time()
-    print('=======INGESTING ORTHOLOGS=======')
-
-    data = pd.read_csv(data_path, delimiter='\t')
-    data = data[data['relationship'] == 'Ortholog']
-
-    gene0_list = [
-        int(ii) for ii in data['GeneID'].values
-    ]
-    gene1_list = [
-        int(ii) for ii in data['Other_GeneID'].values
-    ]
-
-    ingest_orthologs_specifying_citation(
-        conn=conn,
-        gene0_list=gene0_list,
-        gene1_list=gene1_list,
-        citation_idx=citation_idx,
-        authority_idx=authority_idx
-    )
-
-    dur = (time.time()-t0)/60.0
-    print(f'=======INGESTING gene_orthologs TOOK {dur:.2e} minutes=======')
-
-
 def ingest_orthologs_creating_citation(
         conn,
         gene0_list,
