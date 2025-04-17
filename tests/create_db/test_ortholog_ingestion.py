@@ -263,12 +263,13 @@ def test_ingest_ortholog_from_lists_errors(
             )
 
 
-def test_ingest_orthologs_and_citation(
+@pytest.fixture
+def pre_populated_gene_table_fixture(
         gene_to_species_fixture,
         tmp_dir_fixture):
     """
-    Test function that ingests orthologs, looking up their species
-    from the gene table
+    Return the path to a database with genes from this test suite
+    already populated under authority_name 'FIAT'
     """
     db_path = file_utils.mkstemp_clean(
         dir=tmp_dir_fixture,
@@ -276,7 +277,7 @@ def test_ingest_orthologs_and_citation(
         suffix='.db'
     )
 
-    authority_name='FIAT'
+    authority_name = 'FIAT'
 
     with sqlite3.connect(db_path) as conn:
         data_utils.create_gene_table(conn.cursor())
@@ -331,6 +332,17 @@ def test_ingest_orthologs_and_citation(
             gene_values
         )
 
+    return db_path
+
+
+def test_ingest_orthologs_and_citation(
+        pre_populated_gene_table_fixture):
+    """
+    Test function that ingests orthologs, looking up their species
+    from the gene table
+    """
+    db_path = pre_populated_gene_table_fixture
+
     gene0_list = [4, 4, 5, 5, 7, 3]
     gene1_list = [0, 11, 1, 7, 10, 6]
 
@@ -343,7 +355,7 @@ def test_ingest_orthologs_and_citation(
             citation_metadata_dict={'some': 'metdata'},
             clobber=False,
             chunk_size=3,
-            gene_authority=authority_name
+            gene_authority='FIAT'
         )
 
     with sqlite3.connect(db_path) as conn:
@@ -362,14 +374,53 @@ def test_ingest_orthologs_and_citation(
         ).fetchall()
 
     expected = [
-        (authority_idx, 2, 0, 0, 1),
-        (authority_idx, 2, 0, 1, 0),
-        (authority_idx, 2, 1, 3, 2),
-        (authority_idx, 2, 1, 4, 1),
-        (authority_idx, 2, 1, 5, 0),
-        (authority_idx, 2, 2, 6, 2),
-        (authority_idx, 2, 2, 7, 0),
-        (authority_idx, 2, 3, 10, 0),
-        (authority_idx, 2, 3, 11, 1)
+        (5, 2, 0, 0, 1),
+        (5, 2, 0, 1, 0),
+        (5, 2, 1, 3, 2),
+        (5, 2, 1, 4, 1),
+        (5, 2, 1, 5, 0),
+        (5, 2, 2, 6, 2),
+        (5, 2, 2, 7, 0),
+        (5, 2, 3, 10, 0),
+        (5, 2, 3, 11, 1)
     ]
     assert actual == expected
+
+
+def test_ingest_orthologs_and_citation_errors(
+        pre_populated_gene_table_fixture):
+    """
+    Test that expected errors are raised when input to
+    ingest_orthologs_and_citation is malformed
+    """
+    db_path = pre_populated_gene_table_fixture
+
+    gene0_list = [4, 4, 5, 5, 7, 3]
+    gene1_list = [0, 11, 1, 7, 10, 6]
+
+    with sqlite3.connect(db_path) as conn:
+        with pytest.raises(ValueError, match="No authority corresponding"):
+            ortholog_ingestion.ingest_orthologs_and_citation(
+                conn=conn,
+                gene0_list=gene0_list,
+                gene1_list=gene1_list,
+                citation_name='CITE',
+                citation_metadata_dict={'some': 'metdata'},
+                clobber=False,
+                chunk_size=3,
+                gene_authority='GARBAGE'
+            )
+
+        with pytest.raises(ValueError,
+                           match="length of gene lists does not match"):
+
+            ortholog_ingestion.ingest_orthologs_and_citation(
+                conn=conn,
+                gene0_list=[1, 2, 3],
+                gene1_list=gene1_list,
+                citation_name='CITE',
+                citation_metadata_dict={'some': 'metdata'},
+                clobber=False,
+                chunk_size=3,
+                gene_authority='GARBAGE'
+            )
