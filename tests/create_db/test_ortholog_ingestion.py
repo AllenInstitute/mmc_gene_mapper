@@ -3,6 +3,7 @@ test ortholog ingestion functions
 """
 import pytest
 
+import pandas as pd
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -110,7 +111,6 @@ def ortholog_groups_fixture():
     return [
         [0, 4, 11],
         [1, 5, 7, 10],
-        [2, 9],
         [3, 6]
     ]
 
@@ -424,3 +424,81 @@ def test_ingest_orthologs_and_citation_errors(
                 chunk_size=3,
                 gene_authority='GARBAGE'
             )
+
+
+def test_ingest_hmba_orthologs(
+        ortholog_groups_fixture,
+        pre_populated_gene_table_fixture,
+        tmp_dir_fixture):
+    """
+    Test ingestion of orthologs from a CSV file structured
+    like the table produced for the HMBA Basal Ganglia taxonomy
+    work (really just care about the ncbi_id and ortholog_id columns)
+    """
+    db_path = pre_populated_gene_table_fixture
+    csv_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='hmba_orthologs_',
+        suffix='.csv'
+    )
+
+    data = []
+    for i_row, row in enumerate(ortholog_groups_fixture):
+        for ii in range(1, len(row), 1):
+            data.append(
+                {'foo': 'bar',
+                 'gene_id': row[ii-1],
+                 'ortholog_id': row[ii],
+                 'garbage': i_row,
+                 'silly': 'nope'}
+            )
+
+            # to make sure it can handle self -> self mappings
+            data.append(
+                {'foo': 'bar',
+                 'gene_id': row[ii],
+                 'ortholog_id': row[ii],
+                 'garbage': i_row,
+                 'silly': 'nope'}
+            )
+
+    pd.DataFrame(data).to_csv(csv_path, index=False)
+
+    ortholog_ingestion.ingest_hmba_orthologs(
+        db_path=db_path,
+        hmba_file_path=csv_path,
+        citation_name='CITE',
+        primary_id_column='gene_id',
+        ortholog_id_column='ortholog_id',
+        gene_authority='FIAT',
+        clobber=False,
+        chunk_size=2
+    )
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species,
+                gene,
+                ortholog_group
+            FROM gene_ortholog
+            ORDER BY gene
+            """
+        ).fetchall()
+
+    expected = [
+        (5, 2, 0, 0, 1),
+        (5, 2, 0, 1, 0),
+        (5, 2, 1, 3, 2),
+        (5, 2, 1, 4, 1),
+        (5, 2, 1, 5, 0),
+        (5, 2, 2, 6, 2),
+        (5, 2, 2, 7, 0),
+        (5, 2, 3, 10, 0),
+        (5, 2, 3, 11, 1)
+    ]
+    assert actual == expected

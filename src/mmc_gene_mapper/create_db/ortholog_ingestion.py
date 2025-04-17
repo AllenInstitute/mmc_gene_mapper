@@ -23,8 +23,46 @@ def ingest_hmba_orthologs(
         db_path,
         hmba_file_path,
         citation_name,
+        primary_id_column='ncbi_id',
+        ortholog_id_column='ortholog_id',
+        gene_authority='NCBI',
         clobber=False,
         chunk_size=1000):
+    """
+    Ingest orthologs from a CSV file containing a primary_id
+    column and a ortholog_id column
+
+    Parameters
+    ----------
+    db_path:
+        path to the database into which we are ingesting
+    hmba_file_path:
+        path to the CSV containing the ortholog information
+    citation_name:
+        the name that will be given to the citation associated
+        with this file
+    primary_id_column:
+        column in the CSV file giving the integer ID of the
+        "anchor" genes
+    ortholog_id_column:
+        column in the CSV file giving the integer ID of the
+        genes that are orthologs to the genes in primary_id_column
+    gene_authority:
+        the human-readable name of the authority in which these gene
+        IDs are defined
+    clobber:
+        if True and a citation with this citation_name already exists,
+        overwrite; raise an exception otherwise
+    chunk_size:
+        the number of genes to ingest at a time (to avoid overwhelming
+        machine memory in the case of large files)
+
+    Returns
+    -------
+    None
+        orthologs are populated in gene_ortholog table of the specified
+        database file
+    """
 
     hmba_file_path = pathlib.Path(hmba_file_path)
     print(f'=======INGESTING ORTHOLOGS FROM {hmba_file_path.name}=======')
@@ -50,9 +88,9 @@ def ingest_hmba_orthologs(
     }
 
     df = pd.read_csv(hmba_file_path)
-    df = df[df['ncbi_id'] != df['ortholog_id']]
-    gene0_list = [int(ii) for ii in df.ncbi_id.values]
-    gene1_list = [int(ii) for ii in df.ortholog_id.values]
+    df = df[df[primary_id_column] != df[ortholog_id_column]]
+    gene0_list = [int(ii) for ii in df[primary_id_column].values]
+    gene1_list = [int(ii) for ii in df[ortholog_id_column].values]
     with sqlite3.connect(db_path) as conn:
 
         ingest_orthologs_and_citation(
@@ -62,7 +100,8 @@ def ingest_hmba_orthologs(
             citation_name=citation_name,
             citation_metadata_dict=metadata,
             clobber=clobber,
-            chunk_size=chunk_size
+            chunk_size=chunk_size,
+            gene_authority=gene_authority
         )
 
     dur = (time.time()-t0)/60.0
