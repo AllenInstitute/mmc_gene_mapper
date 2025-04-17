@@ -502,3 +502,87 @@ def test_ingest_hmba_orthologs(
         (5, 2, 3, 11, 1)
     ]
     assert actual == expected
+
+
+@pytest.fixture
+def ncbi_ortholog_fixture(
+        ortholog_groups_fixture,
+        tmp_dir_fixture):
+    """
+    Create a TSV file that mimics the structure of
+    NCBI's gene_orthologs file
+    """
+    dst_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='gene_orthologs_',
+        suffix='.tsv'
+    )
+    data = []
+    for row in ortholog_groups_fixture:
+        for ii in range(1, len(row), 1):
+            data.append(
+                {"foo": "bar",
+                 "nonsense": ii,
+                 "GeneID": row[ii],
+                 "blah": 2*ii,
+                 "Other_GeneID": row[ii-1],
+                 "relationship": "Ortholog"
+                 }
+            )
+            data.append(
+                {"foo": "bar",
+                 "nonsense": 3*ii,
+                 "GeneID": row[ii],
+                 "relationship": "assertion",
+                 "blah": 5*ii,
+                 "Other_GeneID": row[ii]-1
+                 }
+            )
+    pd.DataFrame(data).to_csv(dst_path, sep='\t', index=False)
+    return dst_path
+
+
+def test_ingest_ncbi_ortholog(
+        pre_populated_gene_table_fixture,
+        ncbi_ortholog_fixture):
+    """
+    Test function that ingests orthologs, looking up their species
+    from the gene table
+    """
+    db_path = pre_populated_gene_table_fixture
+
+    with sqlite3.connect(db_path) as conn:
+        ortholog_ingestion.ingest_ncbi_orthologs(
+            conn=conn,
+            data_path=ncbi_ortholog_fixture,
+            citation_idx=2,
+            authority_idx=5
+        )
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species,
+                gene,
+                ortholog_group
+            FROM gene_ortholog
+            ORDER BY gene
+            """
+        ).fetchall()
+
+    expected = [
+        (5, 2, 0, 0, 1),
+        (5, 2, 0, 1, 0),
+        (5, 2, 1, 3, 2),
+        (5, 2, 1, 4, 1),
+        (5, 2, 1, 5, 0),
+        (5, 2, 2, 6, 2),
+        (5, 2, 2, 7, 0),
+        (5, 2, 3, 10, 0),
+        (5, 2, 3, 11, 1)
+    ]
+    assert actual == expected

@@ -14,7 +14,7 @@ import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.query_db.query as db_query
 import mmc_gene_mapper.download.download_utils as download_utils
-import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_utils
+import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_ingestion
 
 
 def ingest_ncbi_data(
@@ -107,10 +107,11 @@ def _ingest_ncbi_data(
             data_path=ensembl_path,
             citation_idx=citation_idx
         )
-        ingest_ncbi_orthologs(
+        ortholog_ingestion.ingest_ncbi_orthologs(
             conn=conn,
             data_path=ortholog_path,
-            citation_idx=citation_idx
+            citation_idx=citation_idx,
+            authority_idx=auth_idx
         )
 
 
@@ -246,39 +247,3 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
             conn.commit()
     dur = (time.time()-t0)/60.0
     print(f'=======INGESTING gene2ensembl TOOK {dur:.2e} minutes=======')
-
-
-def ingest_ncbi_orthologs(
-        conn,
-        data_path,
-        citation_idx):
-    t0 = time.time()
-    print('=======INGESTING ORTHOLOGS=======')
-
-    ncbi_idx = metadata_utils.get_authority(
-        conn=conn,
-        name='NCBI'
-    )["idx"]
-
-    cursor = conn.cursor()
-    data = pd.read_csv(data_path, delimiter='\t')
-    data = data[data['relationship'] == 'Ortholog']
-
-
-    gene0_list = [
-        int(ii) for ii in data['GeneID'].values
-    ]
-    gene1_list = [
-        int(ii) for ii in data['Other_GeneID'].values
-    ]
-
-    ortholog_utils.ingest_ortholog_specifying_citation(
-        conn=conn,
-        gene0_list=gene0_list,
-        gene1_list=gene1_list,
-        citation_idx=citation_idx,
-        authority_idx=ncbi_idx
-    )
-
-    dur = (time.time()-t0)/60.0
-    print(f'=======INGESTING gene_orthologs TOOK {dur:.2e} minutes=======')
