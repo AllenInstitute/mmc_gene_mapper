@@ -16,6 +16,7 @@ import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.ortholog_utils as ortholog_utils
 import mmc_gene_mapper.query_db.query as query_utils
+import mmc_gene_mapper.create_db.species_utils as species_utils
 
 
 def ingest_hmba_orthologs(
@@ -137,40 +138,16 @@ def ingest_orthologs_and_citation(
     )
 
     cursor = conn.cursor()
-    gene_to_species_taxon = dict()
     t0 = time.time()
     gene_set = sorted(set(gene0_list).union(set(gene1_list)))
     print(f'len gene set {len(gene_set)}')
     print(gene_set[:10])
-    for i0 in range(0, len(gene_set), chunk_size):
-        gene_subset = gene_set[i0:i0+chunk_size]
-        query = """
-            SELECT
-                id,
-                species_taxon
-            FROM gene
-            WHERE
-                authority=?
-            AND
-                id IN (
-        """
-        query += ",".join(["?"]*len(gene_subset))
-        query += ")"
-        raw = cursor.execute(
-            query,
-            (src_authority["idx"],
-             *gene_subset)
-        ).fetchall()
-        for row in raw:
-            if row[0] in gene_to_species_taxon:
-                if gene_to_species_taxon[row[0]] != row[1]:
-                    raise ValueError(
-                        "Conflicting species taxon for "
-                        f"gene_id {row[0]} authority {authority}; "
-                        "unclear how to proceed."
-                    )
-            gene_to_species_taxon[row[0]] = row[1]
-
+    gene_to_species_taxon = species_utils.get_gene_to_species_map(
+        cursor=cursor,
+        gene_list=gene_set,
+        authority_idx=src_authority["idx"],
+        chunk_size=chunk_size
+    )
 
     db_utils.delete_index(
         cursor=conn.cursor(),
