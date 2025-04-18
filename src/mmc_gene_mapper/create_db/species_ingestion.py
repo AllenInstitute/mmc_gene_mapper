@@ -108,7 +108,7 @@ def ingest_species_table(
             species.append((int(params[0]), params[1]))
 
     table_name = "NCBI_species"
-    index_name = "NSBI_species_idx"
+    index_name = "NCBI_species_idx"
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
