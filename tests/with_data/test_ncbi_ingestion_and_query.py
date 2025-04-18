@@ -85,6 +85,26 @@ def test_get_orthologs_from_ncbi(
     }
     assert actual['mapping'] == expected
 
+    gene_idx_list = [20, 21, 22, 23, 24, 27]
+    gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
+    actual = mapper_fixture.ortholog_genes(
+        authority='NCBI',
+        src_species_name='mouse',
+        dst_species_name='human',
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+
+    expected = {
+        'NCBIGene:20': [],
+        'NCBIGene:21': ['NCBIGene:0'],
+        'NCBIGene:22': [],
+        'NCBIGene:23': ['NCBIGene:4'],
+        'NCBIGene:24': ['NCBIGene:6'],
+        'NCBIGene:27': ['NCBIGene:1']
+    }
+    assert actual['mapping'] == expected
+
 
 @pytest.mark.skip('cannot get equivalent genes until we ingest ENSEMBL data')
 def test_get_equivalent_genes_from_ncbi(
