@@ -1,3 +1,7 @@
+"""
+These tests of the bibliography table were written before
+we added the has_symbols column to the table.
+"""
 import pytest
 
 import json
