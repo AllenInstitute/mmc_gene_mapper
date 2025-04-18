@@ -82,6 +82,28 @@ class MMCGeneMapper(object):
             if len(contents) == 0:
                 file_utils.clean_up(dst_dir)
 
+    def get_all_species(self):
+        """
+        Return a list of all species names in the database.
+
+        Note: these are not all the species for which there are
+        genes, orthologs, etc. These are simply all of the species
+        which the database can translate into a numerial value
+        for cross referencing against the gene tables.
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            gene_names = cursor.execute(
+                """
+                SELECT
+                    DISTINCT(name)
+                FROM
+                    NCBI_species
+                """
+            ).fetchall()
+        result = sorted([str(row[0]) for row in gene_names])
+        return result
+
     def get_all_citations(self):
         """
         Return a list of dicts representing all of the citations
