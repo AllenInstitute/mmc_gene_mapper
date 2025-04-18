@@ -373,7 +373,7 @@ def _ingest_orthologs_from_species_lookup(
     genes_without_species = []
     for gene in gene_to_ortholog:
         if gene not in gene_to_species:
-            genes_without_species.append(gene)
+            genes_without_species.append(int(gene))
     if len(genes_without_species) > 0:
         warning_msg = (
             "The following genes had no species assigned to "
