@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name="mmc_gene_mapper"
 version="0.0.1"
 dependencies = [
+    "abc_atlas_access @ git+https://github.com/AllenInstitute/abc_atlas_access",
     "h5py",
     "jupyter",
     "numpy",
