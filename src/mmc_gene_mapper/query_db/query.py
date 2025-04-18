@@ -89,7 +89,8 @@ def _get_species_taxon(
 def get_citation_from_bibliography(
         cursor,
         authority_idx,
-        species_taxon):
+        species_taxon,
+        require_symbols=False):
     """
     Return the full entry for a citation based on
     authority and species (assumes there is only one
@@ -103,6 +104,9 @@ def get_citation_from_bibliography(
         the integer index of the relevant authority
     species_taxon:
         the integer index of the species
+    require_symbols:
+        if True, only consider citation, authority pairs
+        with symbols associated with them
 
     Returns
     -------
@@ -113,9 +117,14 @@ def get_citation_from_bibliography(
             "idx": numerical index of the citation,
             "metadata": dict containing citation's metadata
         }
+
+    Notes
+    -----
+    If require_symbols is False and multiple citations are
+    returned, try running again with require_symbols=True
+    to see if you only get one citation back.
     """
-    raw = cursor.execute(
-        """
+    query = """
         SELECT
             citation
         FROM
@@ -124,32 +133,47 @@ def get_citation_from_bibliography(
             species_taxon=?
         AND
             authority=?
-        """,
+    """
+    if require_symbols:
+        query += """
+            AND
+               has_symbols=1
+            """
+
+    raw = cursor.execute(
+        query,
         (species_taxon, authority_idx)
     ).fetchall()
 
     results = set([r[0] for r in raw])
 
     if len(results) != 1:
-        full_authority = cursor.execute(
-            """
-            SELECT
-                name
-            FROM authority
-            WHERE id=?
-            """,
-            (authority_idx,)
-        ).fetchall()
+        if not require_symbols:
+            return get_citation_from_bibliography(
+                cursor=cursor,
+                authority_idx=authority_idx,
+                species_taxon=species_taxon,
+                require_symbols=True)
+        else:
+            full_authority = cursor.execute(
+                """
+                SELECT
+                    name
+                FROM authority
+                WHERE id=?
+                """,
+                (authority_idx,)
+            ).fetchall()
 
-        if len(full_authority) == 0:
-            full_authority = authority_idx
+            if len(full_authority) == 0:
+                full_authority = authority_idx
 
-        raise ValueError(
-            f"There are {len(results)} citations associated "
-            f"with authority={full_authority}, "
-            f"species_taxon={species_taxon}; "
-            "unclear how to proceed"
-        )
+            raise ValueError(
+                f"There are {len(results)} citations associated "
+                f"with authority={full_authority}, "
+                f"species_taxon={species_taxon}; "
+                "unclear how to proceed"
+            )
     citation_idx = results.pop()
     raw = cursor.execute(
         """
@@ -173,7 +197,8 @@ def get_citation_from_bibliography(
 def get_authority_and_citation(
         conn,
         species_taxon,
-        authority_name):
+        authority_name,
+        require_symbols=False):
     """
     Return the full dicts characterizing authority
     and citaiton for a given (authority, species)
@@ -187,6 +212,9 @@ def get_authority_and_citation(
         an int identifying the species
     authority_name:
         a str; the name of the authority entry
+    require_symbols:
+        if True, only consider (citation, authority) pairs
+        with associated gene symbols
 
     Returns
     -------
@@ -219,7 +247,8 @@ def get_authority_and_citation(
     full_citation = get_citation_from_bibliography(
         cursor=conn.cursor(),
         authority_idx=full_authority['idx'],
-        species_taxon=species_taxon
+        species_taxon=species_taxon,
+        require_symbols=require_symbols
     )
 
     return {
@@ -247,6 +276,11 @@ def translate_gene_identifiers(
             f"{dst_column} not a valid dst column for gene table"
         )
 
+    if src_column == 'symbol':
+        require_symbols = True
+    else:
+        require_symbols = False
+
     results = {
         val: set()
         for val in src_list
@@ -257,7 +291,8 @@ def translate_gene_identifiers(
         meta_source = get_authority_and_citation(
             conn=conn,
             authority_name=authority_name,
-            species_taxon=species_taxon
+            species_taxon=species_taxon,
+            require_symbols=require_symbols
         )
 
         full_authority = meta_source['authority']

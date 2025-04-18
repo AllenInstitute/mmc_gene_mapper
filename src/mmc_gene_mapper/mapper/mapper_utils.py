@@ -95,7 +95,8 @@ def create_bibliography_table(
             CREATE TABLE {table_name} (
                 authority INTEGER,
                 citation INTEGER,
-                species_taxon INTEGER
+                species_taxon INTEGER,
+                has_symbols INTEGER
             )
             """
         )
@@ -112,20 +113,51 @@ def create_bibliography_table(
                 species_taxon
             """
         ).fetchall()
+
+        has_symbols = cursor.execute(
+            """
+            SELECT
+                authority,
+                citation,
+                species_taxon,
+                COUNT(symbol)
+            FROM gene
+            WHERE
+                symbol IS NOT NULL
+            GROUP BY
+                authority,
+                citation,
+                species_taxon
+            """
+        ).fetchall()
+
+        has_symbols = {
+            row[:-1]: row[-1]
+            for row in has_symbols
+        }
+
+        values = [
+            (*row, 1)
+            if row in has_symbols and has_symbols[row] > 0
+            else (*row, 0)
+            for row in raw
+        ]
+
         cursor.executemany(
             f"""
             INSERT INTO {table_name} (
                 authority,
                 citation,
-                species_taxon
+                species_taxon,
+                has_symbols
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
             """,
-            raw
+            values
         )
         db_utils.create_index(
             cursor=cursor,
             idx_name=index_name,
             table_name=table_name,
-            column_tuple=("species_taxon", "authority")
+            column_tuple=("species_taxon", "authority", "has_symbols")
         )
