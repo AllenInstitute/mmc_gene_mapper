@@ -144,12 +144,12 @@ def ncbi_file_package_fixture(
         if g['ensembl_identifier'] is not None
     ]
 
-    # simulate more than one ENSEMBL gene being equivalent
-    # to an NCBI gene
+    # simulate one ENSEMBL gene being equivalent
+    # to more than one an NCBI gene
     gene_2_ensembl_data.append(
         {'#tax_id': species_id_fixture['human'],
          'GeneID': 5,
-         'Ensembl_gene_identifier': 'ENS999'}
+         'Ensembl_gene_identifier': 'ENS14'}
     )
 
     pd.DataFrame(gene_2_ensembl_data).to_csv(

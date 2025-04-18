@@ -248,7 +248,7 @@ def translate_gene_identifiers(
         )
 
     results = {
-        val: []
+        val: set()
         for val in src_list
     }
 
@@ -298,7 +298,11 @@ def translate_gene_identifiers(
             for row in raw:
                 val = row[0]
                 identifier = row[1]
-                results[val].append(identifier)
+                results[val].add(identifier)
+
+        for key in results:
+            results[key] = sorted(results[key])
+
         return {
             'metadata': {
                 'authority': full_authority,

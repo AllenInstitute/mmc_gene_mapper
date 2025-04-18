@@ -106,16 +106,28 @@ def test_get_orthologs_from_ncbi(
     assert actual['mapping'] == expected
 
 
-@pytest.mark.skip('cannot get equivalent genes until we ingest ENSEMBL data')
 def test_get_equivalent_genes_from_ncbi(
         mapper_fixture):
 
-    gene_idx_list = [1, 2, 3, 5, 6, 7, 8]
-    gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
+    gene_idx_list = [1, 2, 3, 6, 14, 10]
+    gene_list = [f'ENS{ii}' for ii in gene_idx_list]
     actual = mapper_fixture.equivalent_genes(
-        input_authority='NCBI',
-        output_authority='ENSEMBL',
+        input_authority='ENSEMBL',
+        output_authority='NCBI',
         gene_list=gene_list,
         species_name='human',
         citation_name='NCBI'
     )
+
+    expected = {
+        'ENS1': [],
+        'ENS2': ['NCBIGene:1'],
+        'ENS3': [],
+        'ENS6': ['NCBIGene:3'],
+        'ENS14': ['NCBIGene:5', 'NCBIGene:7'],
+        'ENS10': ['NCBIGene:5']
+    }
+
+    assert set(expected.keys()) == set(actual['mapping'].keys())
+    for k in expected:
+        assert set(expected[k]) == set(actual['mapping'][k])

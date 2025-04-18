@@ -194,6 +194,16 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
     )
     VALUES (?, ?, ?, ?, ?, ?)
     """
+    gene_query = """
+    INSERT INTO gene (
+        authority,
+        citation,
+        species_taxon,
+        id,
+        identifier
+    ) VALUES (?, ?, ?, ?, ?)
+    """
+
     uploaded_pairs = set()
     with pd.read_csv(
             data_path,
@@ -206,6 +216,7 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
 
         for chunk in src:
             values = []
+            gene_values = []
             for taxon_id, ncbi_gene_id, raw_ens_id in zip(
                     chunk['#tax_id'].values,
                     chunk['GeneID'].values,
@@ -242,8 +253,16 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
                      ncbi_gene_id,
                      citation_idx)
                 )
+                gene_values.append(
+                    (ensembl_idx,
+                     citation_idx,
+                     taxon_id,
+                     ensembl_gene_id,
+                     raw_ens_id)
+                )
 
             cursor.executemany(query, values)
+            cursor.executemany(gene_query, gene_values)
             conn.commit()
     dur = (time.time()-t0)/60.0
     print(f'=======INGESTING gene2ensembl TOOK {dur:.2e} minutes=======')
