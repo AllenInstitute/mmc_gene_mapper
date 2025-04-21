@@ -73,26 +73,26 @@ class DownloadManager(object):
             src_path=src_path
         )
         if len(pre_existing) == 0:
-            force_download = True
+            do_download = True
         elif len(pre_existing) == 1 and not force_download:
             record = pre_existing[0]
             local_path = pathlib.Path(
                 record['local_path']
             )
             if not local_path.is_file():
-                force_download = True
+                do_download = True
             else:
                 actual_hash = file_utils.hash_from_path(
                     local_path
                 )
                 if actual_hash != record['hash']:
-                    force_download = True
+                    do_download = True
                 else:
                     return record
         else:
-            force_download = True
+            do_download = True
         
-        if force_download:
+        if do_download:
             if len(pre_existing) > 0:
                 mgr_utils.remove_record(
                     db_path=self.db_path,
