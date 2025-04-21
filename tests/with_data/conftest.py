@@ -48,6 +48,51 @@ def ncbi_ortholog_group_fixture():
 
 
 @pytest.fixture(scope='session')
+def alt_ortholog_group_fixture():
+    """
+    Alternative grouping of orthologous genes
+    so that we can test querying orthologs from different
+    citations.
+    """
+    return [
+        [0, 11, 25],
+        [2, 26, 13],
+        [7, 12],
+    ]
+
+
+@pytest.fixture(scope='session')
+def alt_ortholog_file_fixture(
+        alt_ortholog_group_fixture,
+        tmp_dir_fixture):
+    """
+    Write alternative ortholog groupings to
+    a CSV file. Return the path to that file.
+    """
+
+    dst_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix="alternative_orthologs_",
+        suffix=".csv"
+    )
+
+    data = []
+    ct = 0
+    for row in alt_ortholog_group_fixture:
+        for g1 in row:
+            data.append(
+                {'ncbi_id': g1,
+                 'garbage': ct,
+                 'ortholog_id': row[-1],
+                 }
+            )
+            ct += 1
+
+    pd.DataFrame(data).to_csv(dst_path, index=False)
+    return dst_path
+
+
+@pytest.fixture(scope='session')
 def ncbi_data_package_fixture(
         species_id_fixture,
         ncbi_ortholog_group_fixture):

@@ -16,6 +16,7 @@ def mapper_fixture(
         ncbi_file_package_fixture,
         dummy_download_mgr_fixture,
         bkbit_data_fixture0,
+        alt_ortholog_file_fixture,
         tmp_dir_fixture):
     """
     Return an instantiation of the MMCGeneMapper class
@@ -31,7 +32,12 @@ def mapper_fixture(
 
     data_file_spec = [
         {"type": "bkbit",
-         "path": bkbit_data_fixture0}
+         "path": bkbit_data_fixture0
+         },
+        {"type": "hmba_orthologs",
+         "path": alt_ortholog_file_fixture,
+         "name": "alternative_orthologs"
+         }
     ]
 
     to_replace = "mmc_gene_mapper.download.download_manager.DownloadManager"
@@ -71,8 +77,8 @@ def test_get_all_species(mapper_fixture):
 
 def test_get_all_citations(mapper_fixture):
     actual = mapper_fixture.get_all_citations()
-    assert len(actual) == 2
-    expected_names = ["NCBI", "J001-2025"]
+    assert len(actual) == 3
+    expected_names = ["NCBI", "J001-2025", "alternative_orthologs"]
     actual_names = [citation["name"] for citation in actual]
     assert set(expected_names) == set(actual_names)
 
@@ -237,3 +243,81 @@ def test_get_equivalent_genes_from_ncbi(
     assert set(expected.keys()) == set(actual['mapping'].keys())
     for k in expected:
         assert set(expected[k]) == set(actual['mapping'][k])
+
+
+@pytest.mark.parametrize(
+    "src_species, dst_species, citation, gene_list, expected_mapping",
+    [("human",
+      "jabberwock",
+      "alternative_orthologs",
+      ["NCBIGene:0", "NCBIGene:2", "NCBIGene:7", "NCBIGene:4", "NCBIGene:6"],
+      {"NCBIGene:0": ["NCBIGene:11"],
+       "NCBIGene:2": ["NCBIGene:13"],
+       "NCBIGene:7": ["NCBIGene:12"],
+       "NCBIGene:4": [],
+       "NCBIGene:6": []
+       }
+      ),
+     ("mouse",
+      "human",
+      "alternative_orthologs",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      {"NCBIGene:21": [],
+       "NCBIGene:22": [],
+       "NCBIGene:23": [],
+       "NCBIGene:24": [],
+       "NCBIGene:25": ["NCBIGene:0"],
+       "NCBIGene:26": ["NCBIGene:2"],
+       "NCBIGene:27": []
+       }
+      ),
+     ("mouse",
+      "human",
+      "NCBI",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      {"NCBIGene:21": ["NCBIGene:0"],
+       "NCBIGene:22": [],
+       "NCBIGene:23": ["NCBIGene:4"],
+       "NCBIGene:24": ["NCBIGene:6"],
+       "NCBIGene:25": [],
+       "NCBIGene:26": [],
+       "NCBIGene:27": ["NCBIGene:1"]
+       }
+      ),
+     ("mouse",
+      "jabberwock",
+      "NCBI",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      {"NCBIGene:21": ["NCBIGene:14"],
+       "NCBIGene:22": [],
+       "NCBIGene:23": ["NCBIGene:12"],
+       "NCBIGene:24": [],
+       "NCBIGene:25": [],
+       "NCBIGene:26": [],
+       "NCBIGene:27": ["NCBIGene:13"]
+       }
+      ),
+     ]
+)
+def test_alternative_orthologs(
+        mapper_fixture,
+        src_species,
+        dst_species,
+        citation,
+        gene_list,
+        expected_mapping):
+
+    actual = mapper_fixture.ortholog_genes(
+        authority="NCBI",
+        src_species_name=src_species,
+        dst_species_name=dst_species,
+        citation_name=citation,
+        gene_list=gene_list
+    )
+    assert actual['mapping'] == expected_mapping
