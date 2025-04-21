@@ -3,6 +3,7 @@ import pytest
 import pathlib
 import sqlite3
 import tempfile
+import unittest.mock
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.download.download_manager_utils as mgr_utils
@@ -38,14 +39,14 @@ def test_create_download_db(tmp_dir_fixture):
 
 @pytest.mark.parametrize(
     "file_name, host, src, expected",
-    [("db0.db",
+    [("remove_record_db0.db",
       "h0",
       "s0",
       [("h1", "s0", "d/e/f", "ghijk", "lmnop"),
        ("h1", "s2", "j/k/l", "mnopq", "rstuv")
        ]
       ),
-     ("db1.db",
+     ("remove_record_db1.db",
       "h1",
       "s0",
       [("h0", "s0", "a/b/c", "efghi", "jklmn"),
@@ -112,3 +113,71 @@ def test_remove_records(
             """
         ).fetchall()
     assert set(result) == set(expected)
+
+
+def test_insert_record(tmp_dir_fixture):
+
+    db_path = pathlib.Path(tmp_dir_fixture) / "insert_record.db"
+    local_file = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='data_file_',
+        suffix='.txt',
+        delete=False
+    )
+    local_hash = file_utils.hash_from_path(local_file)
+    mgr_utils.create_download_db(db_path)
+
+    values = [
+        ("h0", "s0", "a/b/c", "efghi", "jklmn"),
+        ("h1", "s0", "d/e/f", "ghijk", "lmnop"),
+        ("h0", "s0", "g/h/i", "jklmn", "opqrs"),
+        ("h1", "s2", "j/k/l", "mnopq", "rstuv")
+    ]
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.executemany(
+            """
+            INSERT INTO downloads (
+                host,
+                src_path,
+                local_path,
+                hash,
+                downloaded_on
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            values
+        )
+
+    to_replace = "mmc_gene_mapper.utils.timestamp.get_timestamp"
+
+    def dummy_timestamp():
+        return "test-timestamp"
+
+    with unittest.mock.patch(to_replace, dummy_timestamp):
+        mgr_utils.insert_record(
+            db_path=db_path,
+            host="h2",
+            src_path="s3",
+            local_path=local_file
+        )
+
+    expected = values + [
+        ("h2", "s3", local_file, local_hash, "test-timestamp")
+    ]
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        actual = cursor.execute(
+            """
+            SELECT
+                host,
+                src_path,
+                local_path,
+                hash,
+                downloaded_on
+            FROM
+                downloads
+            """
+        ).fetchall()
+
+    assert set(actual) == set(expected)
