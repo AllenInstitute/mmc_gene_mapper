@@ -181,3 +181,22 @@ def test_insert_record(tmp_dir_fixture):
         ).fetchall()
 
     assert set(actual) == set(expected)
+
+
+def test_insert_record_failures(tmp_dir_fixture):
+    """
+    Test that correct exception is raised if you try to
+    insert a record in which local_path does not point to a valid
+    file
+    """
+    db_path = pathlib.Path(tmp_dir_fixture) / "insert_record_bad.db"
+    mgr_utils.create_download_db(db_path)
+
+    msg = "mmc_gene_mapper/dummy/file.txt is not a file"
+    with pytest.raises(file_utils.NotAFileError, match=msg):
+        mgr_utils.insert_record(
+            db_path=db_path,
+            host='h5',
+            src_path='s8',
+            local_path="mmc_gene_mapper/dummy/file.txt"
+        )
