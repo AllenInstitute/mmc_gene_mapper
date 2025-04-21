@@ -10,10 +10,15 @@ import mmc_gene_mapper.utils.file_utils as file_utils
 
 
 def create_download_db(db_path):
+    """
+    Create a database at db_path and initialize the downloads table.
+
+    Raise an exception of db_path already exists.
+    """
 
     db_path = pathlib.Path(db_path)
     if db_path.exists():
-        raise RuntimeError(f"{db_path} already exists")
+        raise ValueError(f"{db_path} already exists")
 
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
