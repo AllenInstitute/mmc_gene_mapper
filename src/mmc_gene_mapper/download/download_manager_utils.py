@@ -36,6 +36,26 @@ def create_download_db(db_path):
 
 
 def remove_record(db_path, host, src_path):
+    """
+    Delete all the records in the downloads table corresponding
+    to a specific (host, src) pair.
+
+    Parameters
+    ----------
+    db_path:
+        path to the database file being affected
+    host:
+        a string; the value in the 'host' field corresponding
+        to the records to be deleted
+    src_path:
+        a string; the value in the src_path field corresponding
+        to the records being deleted
+
+    Returns
+    -------
+    None
+        appropriate rows in the downloads table are deleted
+    """
     db_path = pathlib.Path(db_path)
     file_utils.assert_is_file(db_path)
     with sqlite3.connect(db_path) as conn:

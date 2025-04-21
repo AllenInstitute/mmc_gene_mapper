@@ -39,13 +39,21 @@ def test_create_download_db(tmp_dir_fixture):
 @pytest.mark.parametrize(
     "file_name, host, src, expected",
     [("db0.db",
-      "h0", 
+      "h0",
       "s0",
       [("h1", "s0", "d/e/f", "ghijk", "lmnop"),
        ("h1", "s2", "j/k/l", "mnopq", "rstuv")
        ]
-      )
-    ]
+      ),
+     ("db1.db",
+      "h1",
+      "s0",
+      [("h0", "s0", "a/b/c", "efghi", "jklmn"),
+       ("h0", "s0", "g/h/i", "jklmn", "opqrs"),
+       ("h1", "s2", "j/k/l", "mnopq", "rstuv")
+       ]
+      ),
+     ]
 )
 def test_remove_records(
         file_name,
@@ -53,6 +61,11 @@ def test_remove_records(
         src,
         expected,
         tmp_dir_fixture):
+    """
+    Test that mgr_utils.remove_reords really does remove all
+    the records matching the input fields
+    """
+
     db_path = pathlib.Path(tmp_dir_fixture) / file_name
     mgr_utils.create_download_db(db_path)
 
