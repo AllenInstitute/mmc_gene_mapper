@@ -3,6 +3,7 @@ import pytest
 import json
 import sqlite3
 
+import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
@@ -38,7 +39,7 @@ def pre_bkbit_database_fixture(
         metadata_utils.create_authority_table(conn.cursor())
         metadata_utils.insert_authority(
             conn=conn,
-            name="JABB",
+            name="ENSEMBL",
             strict=True
         )
 
@@ -72,7 +73,7 @@ def test_read_bkbit_data(
     for ii, el in enumerate(raw_data['@graph'][3:]):
         this = (
             0,
-            ii,
+            str_utils.int_from_identifier(el['source_id']),
             999,
             el['symbol'],
             el['source_id']
@@ -81,7 +82,7 @@ def test_read_bkbit_data(
         if el['symbol'] != el['name']:
             this = (
                 0,
-                ii,
+                str_utils.int_from_identifier(el['source_id']),
                 999,
                 el['name'],
                 el['source_id']
@@ -114,7 +115,7 @@ def test_ingest_bkbit_data(
     for ii, el in enumerate(raw_data['@graph'][3:]):
         this = (
             0,
-            ii,
+            str_utils.int_from_identifier(el['source_id']),
             999,
             el['symbol'],
             el['source_id'],
@@ -124,7 +125,7 @@ def test_ingest_bkbit_data(
         if el['symbol'] != el['name']:
             this = (
                 0,
-                ii,
+                str_utils.int_from_identifier(el['source_id']),
                 999,
                 el['name'],
                 el['source_id'],

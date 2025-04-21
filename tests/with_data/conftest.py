@@ -270,7 +270,9 @@ def dummy_download_mgr_fixture(
 
 
 @pytest.fixture(scope='session')
-def bkbit_data_fixture0(tmp_dir_fixture):
+def bkbit_data_fixture0(
+        ncbi_data_package_fixture,
+        tmp_dir_fixture):
     """
     Write out a simulated bkbit file. Return the path to
     that file.
@@ -300,20 +302,20 @@ def bkbit_data_fixture0(tmp_dir_fixture):
         "id": "J001-2025",
         "category": ["bican:GenomeAnnotation"],
         "version": "0",
-        "authority": "JABB"
+        "authority": "ENSEMBL"
     }
 
     graph = [taxon, assembly, genome_annotation]
+    for gene in ncbi_data_package_fixture:
+        if gene['ensembl_identifier'] is None:
+            continue
 
-    for gene_idx in range(5):
-        symbol = f"symbolJ{gene_idx}"
-        if gene_idx % 2 == 0:
-            name = symbol
-        else:
-            name = f"nameJ{gene_idx}"
+        symbol = f"{gene['symbol']}_ensembl"
+        name = f"{gene['symbol']}_name"
+
         gene = {
             "category": ["bican:GeneAnnotation"],
-            "source_id": f"jabb:{gene_idx}",
+            "source_id": gene['ensembl_identifier'],
             "symbol": symbol,
             "name": name,
             "in_taxon_label": "jabberwock"
