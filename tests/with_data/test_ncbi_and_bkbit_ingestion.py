@@ -146,3 +146,94 @@ def test_identifiers_from_symbols_error(
             species_name="flotsam",
             authority_name="NCBI"
         )
+
+
+def test_get_orthologs_from_ncbi(
+        mapper_fixture):
+
+    gene_idx_list = [0, 1, 2, 4, 7, 6]
+    gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
+    actual = mapper_fixture.ortholog_genes(
+        authority='NCBI',
+        src_species_name='human',
+        dst_species_name='jabberwock',
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+
+    expected = {
+        'NCBIGene:0': ['NCBIGene:14'],
+        'NCBIGene:1': ['NCBIGene:13'],
+        'NCBIGene:2': [],
+        'NCBIGene:4': ['NCBIGene:12'],
+        'NCBIGene:6': [],
+        'NCBIGene:7': ['NCBIGene:15']
+    }
+    assert actual['mapping'] == expected
+
+    gene_idx_list = [20, 21, 22, 23, 24, 27]
+    gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
+    actual = mapper_fixture.ortholog_genes(
+        authority='NCBI',
+        src_species_name='mouse',
+        dst_species_name='jabberwock',
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+
+    expected = {
+        'NCBIGene:20': [],
+        'NCBIGene:21': ['NCBIGene:14'],
+        'NCBIGene:22': [],
+        'NCBIGene:23': ['NCBIGene:12'],
+        'NCBIGene:24': [],
+        'NCBIGene:27': ['NCBIGene:13']
+    }
+    assert actual['mapping'] == expected
+
+    gene_idx_list = [20, 21, 22, 23, 24, 27]
+    gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
+    actual = mapper_fixture.ortholog_genes(
+        authority='NCBI',
+        src_species_name='mouse',
+        dst_species_name='human',
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+
+    expected = {
+        'NCBIGene:20': [],
+        'NCBIGene:21': ['NCBIGene:0'],
+        'NCBIGene:22': [],
+        'NCBIGene:23': ['NCBIGene:4'],
+        'NCBIGene:24': ['NCBIGene:6'],
+        'NCBIGene:27': ['NCBIGene:1']
+    }
+    assert actual['mapping'] == expected
+
+
+def test_get_equivalent_genes_from_ncbi(
+        mapper_fixture):
+
+    gene_idx_list = [1, 2, 3, 6, 14, 10]
+    gene_list = [f'ENS{ii}' for ii in gene_idx_list]
+    actual = mapper_fixture.equivalent_genes(
+        input_authority='ENSEMBL',
+        output_authority='NCBI',
+        gene_list=gene_list,
+        species_name='human',
+        citation_name='NCBI'
+    )
+
+    expected = {
+        'ENS1': [],
+        'ENS2': ['NCBIGene:1'],
+        'ENS3': [],
+        'ENS6': ['NCBIGene:3'],
+        'ENS14': ['NCBIGene:5', 'NCBIGene:7'],
+        'ENS10': ['NCBIGene:5']
+    }
+
+    assert set(expected.keys()) == set(actual['mapping'].keys())
+    for k in expected:
+        assert set(expected[k]) == set(actual['mapping'][k])
