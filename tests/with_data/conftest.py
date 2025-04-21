@@ -305,13 +305,18 @@ def bkbit_data_fixture0(
         "authority": "ENSEMBL"
     }
 
+    ct = 0
     graph = [taxon, assembly, genome_annotation]
     for gene in ncbi_data_package_fixture:
         if gene['ensembl_identifier'] is None:
             continue
 
         symbol = f"{gene['symbol']}_ensembl"
-        name = f"{gene['symbol']}_name"
+        if ct %2 == 1:
+            name = f"{gene['symbol']}_name"
+        else:
+            name = symbol
+        ct += 1
 
         gene = {
             "category": ["bican:GeneAnnotation"],
