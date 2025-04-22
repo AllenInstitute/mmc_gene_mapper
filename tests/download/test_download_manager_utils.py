@@ -200,3 +200,77 @@ def test_insert_record_failures(tmp_dir_fixture):
             src_path='s8',
             local_path="mmc_gene_mapper/dummy/file.txt"
         )
+
+
+def test_mgr_utils_get_records(
+        tmp_dir_fixture):
+
+    db_path = pathlib.Path(tmp_dir_fixture) / "mgr_utils_get_record_test.db"
+    mgr_utils.create_download_db(db_path)
+
+    values = [
+        ("h0", "s0", "a/b/c", "efghi", "jklmn"),
+        ("h1", "s0", "d/e/f", "ghijk", "lmnop"),
+        ("h0", "s0", "g/h/i", "jklmn", "opqrs"),
+        ("h1", "s2", "j/k/l", "mnopq", "rstuv")
+    ]
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.executemany(
+            """
+            INSERT INTO downloads (
+                host,
+                src_path,
+                local_path,
+                hash,
+                downloaded_on
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            values
+        )
+
+    assert mgr_utils.get_record(
+        db_path=db_path,
+        host="h4",
+        src_path="src4"
+    ) == []
+
+    actual = mgr_utils.get_record(
+        db_path=db_path,
+        host="h0",
+        src_path="s0"
+    )
+
+    expected = [
+        {"host": "h0",
+         "src_path": "s0",
+         "local_path": "a/b/c",
+         "hash": "efghi",
+         "downloaded_on": "jklmn"},
+        {"host": "h0",
+         "src_path": "s0",
+         "local_path": "g/h/i",
+         "hash": "jklmn",
+         "downloaded_on": "opqrs"}
+    ]
+
+    assert len(actual) == len(expected)
+    assert expected[0] in actual
+    assert expected[1] in actual
+
+    actual = mgr_utils.get_record(
+        db_path=db_path,
+        host="h1",
+        src_path="s0"
+    )
+
+    expected = [
+        {"host": "h1",
+         "src_path": "s0",
+         "local_path": "d/e/f",
+         "hash": "ghijk",
+         "downloaded_on": "lmnop"}
+    ]
+
+    assert actual == expected
