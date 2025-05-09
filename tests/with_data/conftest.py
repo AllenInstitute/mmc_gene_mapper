@@ -48,6 +48,51 @@ def ncbi_ortholog_group_fixture():
 
 
 @pytest.fixture(scope='session')
+def alt_ortholog_group_fixture():
+    """
+    Alternative grouping of orthologous genes
+    so that we can test querying orthologs from different
+    citations.
+    """
+    return [
+        [0, 11, 25],
+        [2, 26, 13],
+        [7, 12],
+    ]
+
+
+@pytest.fixture(scope='session')
+def alt_ortholog_file_fixture(
+        alt_ortholog_group_fixture,
+        tmp_dir_fixture):
+    """
+    Write alternative ortholog groupings to
+    a CSV file. Return the path to that file.
+    """
+
+    dst_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix="alternative_orthologs_",
+        suffix=".csv"
+    )
+
+    data = []
+    ct = 0
+    for row in alt_ortholog_group_fixture:
+        for g1 in row:
+            data.append(
+                {'ncbi_id': g1,
+                 'garbage': ct,
+                 'ortholog_id': row[-1],
+                 }
+            )
+            ct += 1
+
+    pd.DataFrame(data).to_csv(dst_path, index=False)
+    return dst_path
+
+
+@pytest.fixture(scope='session')
 def ncbi_data_package_fixture(
         species_id_fixture,
         ncbi_ortholog_group_fixture):
@@ -84,11 +129,15 @@ def ncbi_data_package_fixture(
     for gene_id in range(30):
         species_id = species_list[gene_id//10]
         symbol = f'symbol:{gene_id}'
+        if gene_id == 5:
+            symbol = "symbol:7"
 
         if gene_id % 2 == 1:
             ensembl = f'ENS{2*gene_id}'
+            ensembl_symbol = f'symbol:{2*(gene_id-1)}'
         else:
             ensembl = None
+            ensembl_symbol = None
 
         if gene_id in ortholog_lookup:
             orthologs = ortholog_lookup[gene_id]
@@ -99,6 +148,7 @@ def ncbi_data_package_fixture(
              'gene_id': gene_id,
              'symbol': symbol,
              'ensembl_identifier': ensembl,
+             'ensembl_symbol': ensembl_symbol,
              'orthologs': orthologs}
         )
     return result
@@ -225,6 +275,76 @@ def species_file_fixture(
 
 
 @pytest.fixture(scope='session')
+def bkbit_data_fixture0(
+        ncbi_data_package_fixture,
+        tmp_dir_fixture):
+    """
+    Write out a simulated bkbit file. Return the path to
+    that file.
+    """
+    json_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='test_bkbit_',
+        suffix='.jsonld'
+    )
+
+    graph = []
+
+    taxon = {
+        "id": "NCBITaxon:999",
+        "category": ["biolink:OrganismTaxon"],
+        "name": "jabberwock",
+        "full_name": "jabberwock"
+    }
+
+    assembly = {
+        "id": "jabberwockAssembly",
+        "category": ["bican:GenomeAssembly"],
+        "name": "J001"
+    }
+
+    genome_annotation = {
+        "id": "J001-2025",
+        "category": ["bican:GenomeAnnotation"],
+        "version": "0",
+        "authority": "ENSEMBL"
+    }
+
+    ct = 0
+    graph = [taxon, assembly, genome_annotation]
+    for gene in ncbi_data_package_fixture:
+        if gene['species'] != 999:
+            continue
+        if gene['ensembl_identifier'] is None:
+            continue
+
+        # give genes different symbols in ENSEMBL
+        # than NCBI
+        symbol = gene['ensembl_symbol']
+        if ct % 2 == 1:
+            name = f"name:{symbol.split(':')[-1]}"
+        else:
+            name = symbol
+        ct += 1
+
+        print(gene['ensembl_identifier'], symbol)
+
+        gene = {
+            "category": ["bican:GeneAnnotation"],
+            "source_id": gene['ensembl_identifier'],
+            "symbol": symbol,
+            "name": name,
+            "in_taxon_label": "jabberwock"
+        }
+        graph.append(gene)
+
+    data = {'@graph': graph}
+    with open(json_path, 'w') as dst:
+        dst.write(json.dumps(data))
+    return json_path
+
+
+@pytest.fixture(scope='session')
 def dummy_download_mgr_fixture(
         species_file_fixture,
         ncbi_file_package_fixture):
@@ -267,60 +387,3 @@ def dummy_download_mgr_fixture(
                 )
 
     return DummyDownloadManager
-
-
-@pytest.fixture(scope='session')
-def bkbit_data_fixture0(tmp_dir_fixture):
-    """
-    Write out a simulated bkbit file. Return the path to
-    that file.
-    """
-    json_path = file_utils.mkstemp_clean(
-        dir=tmp_dir_fixture,
-        prefix='test_bkbit_',
-        suffix='.jsonld'
-    )
-
-    graph = []
-
-    taxon = {
-        "id": "NCBITaxon:999",
-        "category": ["biolink:OrganismTaxon"],
-        "name": "jabberwock",
-        "full_name": "jabberwock"
-    }
-
-    assembly = {
-        "id": "jabberwockAssembly",
-        "category": ["bican:GenomeAssembly"],
-        "name": "J001"
-    }
-
-    genome_annotation = {
-        "id": "J001-2025",
-        "category": ["bican:GenomeAnnotation"],
-        "version": "0",
-        "authority": "JABB"
-    }
-
-    graph = [taxon, assembly, genome_annotation]
-
-    for gene_idx in range(5):
-        symbol = f"symbolJ{gene_idx}"
-        if gene_idx % 2 == 0:
-            name = symbol
-        else:
-            name = f"nameJ{gene_idx}"
-        gene = {
-            "category": ["bican:GeneAnnotation"],
-            "source_id": f"jabb:{gene_idx}",
-            "symbol": symbol,
-            "name": name,
-            "in_taxon_label": "jabberwock"
-        }
-        graph.append(gene)
-
-    data = {'@graph': graph}
-    with open(json_path, 'w') as dst:
-        dst.write(json.dumps(data))
-    return json_path
