@@ -1,5 +1,4 @@
 import json
-import numpy as np
 import pathlib
 import sqlite3
 
@@ -37,6 +36,7 @@ def get_species_taxon(
             strict=strict)
     return result
 
+
 def _get_species_taxon(
         cursor,
         species_name,
@@ -70,7 +70,7 @@ def _get_species_taxon(
            name=?
        """,
        (species_name,)
-   ).fetchall()
+    ).fetchall()
 
     if len(results) > 1:
         raise ValueError(
@@ -450,7 +450,7 @@ def _get_equivalent_genes(
                 ii for ii in input_id_list[i0:i0+chunk_size]
             ]
             n_values = len(values)
-            query="""
+            query = """
             SELECT
                 gene0,
                 gene1
@@ -811,8 +811,8 @@ def _strict_mapping(
             else:
                 error_msg += (
                    f"id: {val} authority: {authority_name} "
-                    f"species: {species_taxon} "
-                    f"n: {len(mapping[val])}\n"
+                   f"species: {species_taxon} "
+                   f"n: {len(mapping[val])}\n"
                 )
     return mapping, error_msg
 

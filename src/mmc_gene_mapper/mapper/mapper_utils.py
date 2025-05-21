@@ -2,11 +2,8 @@
 utility functions for gene mapper class
 """
 
-import pathlib
 import sqlite3
-import tempfile
 
-import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils

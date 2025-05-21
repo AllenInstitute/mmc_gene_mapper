@@ -4,11 +4,8 @@ files
 """
 
 import pathlib
-import sqlite3
-import tempfile
 
 import mmc_gene_mapper
-import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.download.download_utils as download_utils
 import mmc_gene_mapper.download.download_manager_utils as mgr_utils
@@ -91,7 +88,7 @@ class DownloadManager(object):
                     return record
         else:
             do_download = True
-        
+
         if do_download:
             if len(pre_existing) > 0:
                 mgr_utils.remove_record(
@@ -108,7 +105,9 @@ class DownloadManager(object):
                 if suffix == '':
                     dst_path = self.dst_dir / f'{fname}.{salt}'
                 else:
-                    dst_path = self.dst_dir / fname.replace(suffix, f'.{salt}{suffix}')
+                    dst_path = self.dst_dir / fname.replace(
+                        suffix, f'.{salt}{suffix}'
+                    )
                 if not dst_path.exists():
                     break
                 salt += 1

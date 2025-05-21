@@ -42,7 +42,7 @@ def download_file(
             file_utils.clean_up(dst_path)
         else:
             raise RuntimeError(
-                f"{dst} already exists"
+                f"{dst_path} already exists"
             )
 
     metadata = {
@@ -60,7 +60,7 @@ def download_file(
     dst_url = (
         f'{str(dst_path.resolve().absolute())}'
     )
-    process_args=[
+    process_args = [
         "wget",
         src_url,
         "-O",

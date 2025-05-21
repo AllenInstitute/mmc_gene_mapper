@@ -175,7 +175,7 @@ def read_bkbit_data(bkbit_path, db_path):
                         if citation_name != candidate_name:
                             raise RuntimeError(
                                 "More than one GenomeAnnotation in "
-                                f"{bkbit_pat}: ({citation_name} and "
+                                f"{bkbit_path}: ({citation_name} and "
                                 f"{candidate_name}). Unsure how to proceed."
                             )
                 if category in metadata_dict:

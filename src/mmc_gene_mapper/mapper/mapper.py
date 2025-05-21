@@ -57,7 +57,6 @@ class MMCGeneMapper(object):
             )
         )
 
-
         tmp_dir = pathlib.Path(
             tempfile.mkdtemp(
                 dir=dst_dir,

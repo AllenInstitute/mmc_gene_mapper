@@ -1,19 +1,13 @@
-import gzip
-import json
 import pandas as pd
 import pathlib
 import sqlite3
 import time
 
-import mmc_gene_mapper
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.str_utils as str_utils
-import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
-import mmc_gene_mapper.query_db.query as db_query
-import mmc_gene_mapper.download.download_utils as download_utils
 import mmc_gene_mapper.create_db.ortholog_ingestion as ortholog_ingestion
 
 
@@ -39,7 +33,6 @@ def ingest_ncbi_data(
         )
         fname = pathlib.Path(src_path).name
         metadata_dict[fname] = record
-
 
     ensembl_path = metadata_dict['gene2ensembl.gz'].pop('local_path')
     ortholog_path = metadata_dict['gene_orthologs.gz'].pop('local_path')
@@ -133,7 +126,6 @@ def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     """
     i0 = 0
 
-    #with open_fn(data_path, mode=mode) as src:
     with pd.read_csv(data_path,
                      delimiter='\t',
                      chunksize=chunk_size,
@@ -179,8 +171,6 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
     )["idx"]
 
     cursor = conn.cursor()
-    data = pd.read_csv(data_path, delimiter='\t')
-    n_rows = len(data)
     chunk_size = 100000
 
     query = """

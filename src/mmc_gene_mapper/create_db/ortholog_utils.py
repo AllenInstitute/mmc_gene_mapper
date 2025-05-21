@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def assign_ortholog_group(gene0_list, gene1_list):
     filtered0 = []
     filtered1 = []
@@ -112,7 +113,10 @@ def assign_ortholog_group_from_graph(
         n1 = len(graph)
         decrement = n0-n1
         if group_idx == 1 or decrement > last_decrement*10:
-            print(f"    group {group_idx} decrement {decrement:.3e} of {n0:.3e}")
+            print(
+                f"    group {group_idx} "
+                f"decrement {decrement:.3e} of {n0:.3e}"
+            )
             last_decrement = decrement
 
     return gene_to_group

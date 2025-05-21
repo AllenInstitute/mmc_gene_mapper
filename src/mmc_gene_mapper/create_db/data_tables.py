@@ -147,7 +147,6 @@ def create_gene_ortholog_index(cursor):
     )
 
 
-
 def delete_gene_ortholog_index(cursor):
     db_utils.delete_index(
         cursor=cursor,
