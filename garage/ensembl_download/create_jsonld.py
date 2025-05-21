@@ -1,3 +1,4 @@
+import ftplib
 import json
 import pandas as pd
 import pathlib
@@ -5,6 +6,8 @@ import time
 import warnings
 
 import bkbit.data_translators.genome_annotation_translator as gene_translator
+
+import mmc_gene_mapper.utils.file_utils as file_utils
 
 
 class Gff3Patch(gene_translator.Gff3):
@@ -51,33 +54,44 @@ class Gff3Patch(gene_translator.Gff3):
 
 
 def main():
-    df = pd.read_csv(
-        'data/20240125_gars_genome_annotation_tracking.csv'
-    )
+    #df = pd.read_csv(
+    #    'data/20240125_gars_genome_annotation_tracking.csv'
+    #)
 
     dst_dir = pathlib.Path('output')
-    assert dst_dir.is_dir()
 
     t0 = time.time()
-    df = df[df.genome_annotation_content_url.str.contains('ensembl.org')]
-    this_pass = set()
-    for entry in df.iterrows():
-        entry = entry[1]
-        species = entry.organism_taxon_full_name.lower()
-        print(f'PROCESSING {species} {time.time()-t0:.2e}')
-        species = species.replace(' ', '_')
-        dst_path = dst_dir / f'{species}.jsonld'
-        if dst_path in this_pass:
-            print(f'    duplicate {dst_path}')
-        this_pass.add(dst_path)
-        parse_gff3(entry, dst_path=dst_path)
-
+    host = ftplib.FTP('ftp.ensembl.org')
+    host.login()
+    release_dir = 'pub/release-114/gff3'
+    directory_list = list(host.nlst(release_dir))
+    failed_file_list = []
+    for entry in directory_list:
+        print(entry,time.time()-t0)
+        file_path_list = list(host.nlst(entry))
+        chosen = None
+        for file_path in file_path_list:
+            if file_path.endswith('114.gff3.gz'):
+                assert chosen is None
+                chosen = file_path
+        assert chosen is not None
+        try:
+            serialize_bkbit_gff3(
+                content_url=f'https://ftp.ensembl.org/{chosen}',
+                assembly_id='placeholder.000',
+                dst_dir=dst_dir
+            )
+        except Exception:
+            print(f'    {chosen} failed')
+            failed_file_list.append(chosen)
+    print(f'failed files\n{json.dumps(failed_file_list, indent=2)}')
     dur = (time.time()-t0)/60.0
-    print(f'that took {dur:.2e} minutes')
+    print(f'SUCCESS\nthat took {dur:.2e} minutes')
 
-def parse_gff3(entry, dst_path):
-    content_url = entry.genome_annotation_content_url
-    assembly_id = entry.genome_assembly_id
+def serialize_bkbit_gff3(
+        content_url,
+        assembly_id,
+        dst_dir):
 
     gff3 = Gff3Patch(
         content_url=content_url,
@@ -91,6 +105,19 @@ def parse_gff3(entry, dst_path):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         result = gff3.serialize_to_jsonld()
+
+    taxon = None
+    for element in result['@graph']:
+        if element['category'][0] == 'biolink:OrganismTaxon':
+            taxon = element
+    if taxon is None:
+        raise RuntimeError(
+            f"Could not find taxon for {content_url}"
+        )
+    species_name = taxon['full_name'].lower().replace(' ', '_')
+    dst_path = dst_dir / f'{species_name}.jsonld'
+    if dst_path.exists():
+        print(f"duplicate {dst_path}")
 
     with open(dst_path, 'w') as dst:
         dst.write(json.dumps(result, indent=2))
