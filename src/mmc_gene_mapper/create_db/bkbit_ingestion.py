@@ -121,6 +121,12 @@ def read_bkbit_data(bkbit_path, db_path):
             if 'bican:Checksum' in record['category']:
                 continue
             elif 'bican:GeneAnnotation' in record['category']:
+
+                if 'symbol' not in record:
+                    record['symbol'] = None
+                if 'name' not in record:
+                    record['name'] = None
+
                 gene_idx = str_utils.int_from_identifier(
                     record['source_id']
                 )
