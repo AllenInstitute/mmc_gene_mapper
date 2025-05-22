@@ -3,8 +3,10 @@ import json
 import pandas as pd
 import pathlib
 import time
+from urllib.parse import urlparse
 import warnings
 
+from bkbit.models import genome_annotation as ga
 import bkbit.data_translators.genome_annotation_translator as gene_translator
 
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -27,7 +29,12 @@ class Gff3Patch(gene_translator.Gff3):
             exclude_unset (bool): Whether to exclude unset values in the output.
 
         Returns:
-            None
+            Dict
+
+        Notes
+        -----
+        Overrode default implementation so that we can return the dict
+        containing the jsonld graph
         """
 
         data = [
@@ -53,6 +60,74 @@ class Gff3Patch(gene_translator.Gff3):
         return output_data
 
 
+    def parse_url(self):
+        """
+        Parses the content URL and extracts information about the genome annotation.
+
+        Returns:
+            A dictionary containing the following information:
+            - 'authority': The authority type (NCBI or ENSEMBL).
+            - 'taxonid': The taxon ID of the genome.
+            - 'release_version': The release version of the genome annotation.
+            - 'assembly_accession': The assembly accession of the genome.
+            - 'assembly_name': The name of the assembly.
+            - 'species': The species name (only for ENSEMBL URLs).
+
+        Notes
+        -----
+        Overrode default implementation so that we can parse URLs with
+        non-default file name schemas
+        """
+        # Define regex patterns for NCBI and Ensembl URLs
+        # NCBI : [assembly accession.version]_[assembly name]_[content type].[optional format]
+        # ENSEMBL :  <species>.<assembly>.<_version>.gff3.gz -> organism full name, assembly name, genome version
+        ncbi_pattern = r"/genomes/all/annotation_releases/(\d+)(?:/(\d+))?/(GCF_\d+\.\d+)[_-]([^/]+)/(GCF_\d+\.\d+)[_-]([^/]+)_genomic\.gff\.gz"
+        ensembl_pattern = (
+            r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+        )
+
+        # Parse the URL to get the path
+        parsed_url = urlparse(self.content_url)
+        path = parsed_url.path
+
+        # Determine if the URL is from NCBI or Ensembl and extract information
+        if "ncbi" in parsed_url.netloc:
+            ncbi_match = re.search(ncbi_pattern, path)
+            if ncbi_match:
+                return {
+                    "authority": ga.AuthorityType.NCBI,
+                    "taxonid": ncbi_match.group(1),
+                    "release_version": (
+                        ncbi_match.group(2)
+                        if ncbi_match.group(2)
+                        else ncbi_match.group(4)
+                    ),
+                    "assembly_accession": ncbi_match.group(3),
+                    "assembly_name": ncbi_match.group(6),
+                }
+
+        elif "ensembl" in parsed_url.netloc:
+            file_path = pathlib.Path(parsed_url.path).name
+            file_path = file_path.replace('.gff3.gz', '')
+
+            scientific_name = file_path.split('.')[0]
+            file_path = file_path.replace(scientific_name+'.', '')
+            release_version = file_path.split('.')[-1]
+            file_path = file_path.replace('.' + release_version, '')
+            assembly_name = file_path
+
+            return {
+                "authority": ga.AuthorityType.ENSEMBL,
+                "release_version": release_version,
+                "scientific_name": scientific_name,
+                "assembly_name":assembly_name,
+            }
+
+        # If no match is found, return None
+        return None
+
+
+
 def main():
     #df = pd.read_csv(
     #    'data/20240125_gars_genome_annotation_tracking.csv'
@@ -64,7 +139,7 @@ def main():
     host = ftplib.FTP('ftp.ensembl.org')
     host.login()
     release_dir = 'pub/release-114/gff3'
-    directory_list = list(host.nlst(release_dir))
+    directory_list = sorted(list(host.nlst(release_dir)))
     failed_file_list = []
     for entry in directory_list:
         print(entry,time.time()-t0)
