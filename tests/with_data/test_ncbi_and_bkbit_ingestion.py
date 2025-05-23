@@ -116,14 +116,14 @@ def test_get_all_citations(mapper_fixture):
       )
     ]
 )
-def test_identifiers_from_symbols(
+def test_identifiers_from_symbols_mapping(
         mapper_fixture,
         species,
         authority,
         symbol_list,
         expected_mapping):
 
-    actual = mapper_fixture.identifiers_from_symbols(
+    actual = mapper_fixture.identifiers_from_symbols_mapping(
         gene_symbol_list=symbol_list,
         species_name=species,
         authority_name=authority
@@ -131,14 +131,14 @@ def test_identifiers_from_symbols(
     assert actual['mapping'] == expected_mapping
 
 
-def test_identifiers_from_symbols_error(
+def test_identifiers_from_symbols_mapping_error(
         mapper_fixture):
 
     # case where there are no citations linking a species
     # to an authority
     msg = "There are 0 citations associated with authority"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols(
+        mapper_fixture.identifiers_from_symbols_mapping(
             gene_symbol_list=["a", "b", "c"],
             species_name="human",
             authority_name="ENSEMBL"
@@ -147,19 +147,19 @@ def test_identifiers_from_symbols_error(
     # case where there is no such species
     msg = "no species match for flotsam"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols(
+        mapper_fixture.identifiers_from_symbols_mapping(
             gene_symbol_list=["a", "b", "c"],
             species_name="flotsam",
             authority_name="NCBI"
         )
 
 
-def test_get_orthologs_from_ncbi(
+def test_get_orthologs_mapping_from_ncbi(
         mapper_fixture):
 
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapper_fixture.ortholog_genes_mapping(
         authority='NCBI',
         src_species_name='human',
         dst_species_name='jabberwock',
@@ -179,7 +179,7 @@ def test_get_orthologs_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapper_fixture.ortholog_genes_mapping(
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='jabberwock',
@@ -199,7 +199,7 @@ def test_get_orthologs_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapper_fixture.ortholog_genes_mapping(
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='human',
@@ -218,12 +218,12 @@ def test_get_orthologs_from_ncbi(
     assert actual['mapping'] == expected
 
 
-def test_get_equivalent_genes_from_ncbi(
+def test_get_equivalent_genes_mapping_from_ncbi(
         mapper_fixture):
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENS{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.equivalent_genes(
+    actual = mapper_fixture.equivalent_genes_mapping(
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
@@ -305,7 +305,7 @@ def test_get_equivalent_genes_from_ncbi(
       ),
      ]
 )
-def test_alternative_orthologs(
+def test_alternative_orthologs_mapping(
         mapper_fixture,
         src_species,
         dst_species,
@@ -313,7 +313,7 @@ def test_alternative_orthologs(
         gene_list,
         expected_mapping):
 
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapper_fixture.ortholog_genes_mapping(
         authority="NCBI",
         src_species_name=src_species,
         dst_species_name=dst_species,

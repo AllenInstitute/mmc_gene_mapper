@@ -152,7 +152,7 @@ class MMCGeneMapper(object):
             row[0] for row in raw
         ]
 
-    def identifiers_from_symbols(
+    def identifiers_from_symbols_mapping(
             self,
             gene_symbol_list,
             species_name,
@@ -204,7 +204,7 @@ class MMCGeneMapper(object):
         )
         return result
 
-    def equivalent_genes(
+    def equivalent_genes_mapping(
             self,
             input_authority,
             output_authority,
@@ -259,7 +259,7 @@ class MMCGeneMapper(object):
             chunk_size=500
         )
 
-    def ortholog_genes(
+    def ortholog_genes_mapping(
             self,
             authority,
             src_species_name,
