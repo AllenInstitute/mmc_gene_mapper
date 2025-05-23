@@ -27,6 +27,12 @@ def get_species_taxon(
     -------
     an integer; the taxon ID of the species
     """
+    try:
+        species_taxon = int(species_name)
+        return species_taxon
+    except ValueError:
+        pass
+
     does_path_exist(db_path)
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
