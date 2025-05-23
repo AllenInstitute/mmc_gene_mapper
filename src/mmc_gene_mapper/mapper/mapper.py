@@ -402,6 +402,79 @@ class MMCGeneMapper(object):
             chunk_size=500
         )
 
+    def ortholog_genes(
+            self,
+            authority,
+            src_species_name,
+            dst_species_name,
+            gene_list,
+            citation_name,
+            assign_placeholders=True,
+            placeholder_prefix=None):
+        """
+        Return a mapping between gene identifiers from
+        different species
+
+        Parameters
+        ----------
+        authority:
+            a str; the name of the authority (ENSEMBL, NCBI etc.)
+            we are working in
+        src_species_name:
+            a str; the name of the species we are starting from
+        dst_species_name:
+            as str; the name of the species we are mapping to
+        gene_list:
+            list of gene identifiers (in src_species) to be
+            mapped
+        citation_name:
+            name of citation to use to assess gene eqivalence
+        assign_placeholders:
+            a boolean. If True, assign placeholder names
+            to any genes that cannot be mapped
+        placeholder_prefix:
+            optional prefix to apply to the placeholer names
+            given to unmappable genes.
+
+        Returns
+        -------
+        A dict
+            {
+              "metadata": {
+                  a dict describing the citation according
+                  to which these symbols map to these
+                  identifiers
+              },
+              "failure_log": {
+                 summary of how many genes failed to be mapped
+                 for what reasons
+              }
+              "gene_list": [
+                  list of mapped gene identifiers
+              ]
+            }
+        """
+        mapping = self.ortholog_genes_mapping(
+            authority=authority,
+            src_species_name=src_species_name,
+            dst_species_name=dst_species_name,
+            gene_list=gene_list,
+            citation_name=citation_name
+        )
+
+        mapped_result = mapper_utils.apply_mapping(
+            gene_list=gene_list,
+            mapping=mapping['mapping'],
+            assign_placeholders=assign_placeholders,
+            placeholder_prefix=placeholder_prefix
+        )
+
+        return {
+            'metadata': mapping['metadata'],
+            'failure_log': mapped_result['failure_log'],
+            'gene_list': mapped_result['gene_list']
+        }
+
     def ortholog_genes_mapping(
             self,
             authority,
