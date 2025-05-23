@@ -152,6 +152,72 @@ class MMCGeneMapper(object):
             row[0] for row in raw
         ]
 
+    def identifiers_from_symbols(
+            self,
+            gene_symbol_list,
+            species_name,
+            authority_name,
+            assign_placeholders=True,
+            placeholder_prefix=None):
+        """
+        Find the mapping that converts gene symbols into
+        gene identifiers. Apply that mapping and return
+        the list of relevant gene identifiers.
+
+        Parameters
+        ----------
+        gene_symbol_list:
+            list of gene symbols
+        species_name:
+            name of the species we are working with
+        authority_name:
+            name of the authority in whose identifiers
+            we want the genes listed
+        assign_placeholders:
+            a boolean. If True, assign placeholder names
+            to any genes that cannot be mapped
+        placeholder_prefix:
+            optional prefix to apply to the placeholer names
+            given to unmappable genes.
+
+        Returns
+        -------
+        A dict
+            {
+              "metadata": {
+                  a dict describing the citation according
+                  to which these symbols map to these
+                  identifiers
+              },
+              "failure_log": {
+                 summary of how many genes failed to be mapped
+                 for what reasons
+              }
+              "gene_list": [
+                  list of mapped gene identifiers
+              ]
+            }
+        """
+        mapping = self.identifiers_from_symbols_mapping(
+            gene_symbol_list=gene_symbol_list,
+            species_name=species_name,
+            authority_name=authority_name
+        )
+
+        mapped_result = mapper_utils.apply_mapping(
+            gene_list=gene_symbol_list,
+            mapping=mapping['mapping'],
+            assign_placeholders=assign_placeholders,
+            placeholder_prefix=placeholder_prefix
+        )
+
+        result = {
+            "metadata": mapping["metadata"],
+            "failure_log": mapped_result["failure_log"],
+            "gene_list": mapped_result["gene_list"]
+        }
+        return result
+
     def identifiers_from_symbols_mapping(
             self,
             gene_symbol_list,

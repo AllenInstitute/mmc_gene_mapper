@@ -131,6 +131,52 @@ def test_identifiers_from_symbols_mapping(
     assert actual['mapping'] == expected_mapping
 
 
+@pytest.mark.parametrize(
+    "species, authority, symbol_list, expected_gene_list",
+    [
+     ("human",
+      "NCBI",
+      ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
+      ["NCBIGene:0", "NCBIGene:6", "test:UNMAPPABLE_NO_MATCH_0",
+       "test:UNMAPPABLE_MANY_MATCHES_0",
+       "test:UNMAPPABLE_NO_MATCH_1"]
+      ),
+     ("jabberwock",
+      "ENSEMBL",
+      ["symbol:24", "symbol:8", "symbol:28", "nope"],
+      ["ENS26", "test:UNMAPPABLE_NO_MATCH_0", "ENS30",
+       "test:UNMAPPABLE_NO_MATCH_1"]
+      ),
+     ("jabberwock",
+      "ENSEMBL",
+      ["name:24", "name:8", "name:28", "nope"],
+      ["ENS26",
+       "test:UNMAPPABLE_NO_MATCH_0",
+       "test:UNMAPPABLE_NO_MATCH_1",
+       "test:UNMAPPABLE_NO_MATCH_2"]
+      )
+    ]
+)
+def test_identifiers_from_symbols(
+        mapper_fixture,
+        species,
+        authority,
+        symbol_list,
+        expected_gene_list):
+
+    # now test the method that returns a list of genes
+    # with placeholder names applied to unmappable genes
+
+    actual = mapper_fixture.identifiers_from_symbols(
+        gene_symbol_list=symbol_list,
+        species_name=species,
+        authority_name=authority,
+        assign_placeholders=True,
+        placeholder_prefix="test"
+    )
+    assert actual['gene_list'] == expected_gene_list
+
+
 def test_identifiers_from_symbols_mapping_error(
         mapper_fixture):
 
@@ -148,6 +194,29 @@ def test_identifiers_from_symbols_mapping_error(
     msg = "no species match for flotsam"
     with pytest.raises(ValueError, match=msg):
         mapper_fixture.identifiers_from_symbols_mapping(
+            gene_symbol_list=["a", "b", "c"],
+            species_name="flotsam",
+            authority_name="NCBI"
+        )
+
+
+def test_identifiers_from_symbols_error(
+        mapper_fixture):
+
+    # case where there are no citations linking a species
+    # to an authority
+    msg = "There are 0 citations associated with authority"
+    with pytest.raises(ValueError, match=msg):
+        mapper_fixture.identifiers_from_symbols(
+            gene_symbol_list=["a", "b", "c"],
+            species_name="human",
+            authority_name="ENSEMBL"
+        )
+
+    # case where there is no such species
+    msg = "no species match for flotsam"
+    with pytest.raises(ValueError, match=msg):
+        mapper_fixture.identifiers_from_symbols(
             gene_symbol_list=["a", "b", "c"],
             species_name="flotsam",
             authority_name="NCBI"
