@@ -96,6 +96,26 @@ def test_get_all_citations(mapper_fixture):
        "nope": []
        }
       ),
+     ("9606",
+      "NCBI",
+      ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
+      {"symbol:0": ["NCBIGene:0"],
+       "symbol:6": ["NCBIGene:6"],
+       "symbol:5": [],
+       "symbol:7": ["NCBIGene:5", "NCBIGene:7"],
+       "nope": []
+       }
+      ),
+     (9606,
+      "NCBI",
+      ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
+      {"symbol:0": ["NCBIGene:0"],
+       "symbol:6": ["NCBIGene:6"],
+       "symbol:5": [],
+       "symbol:7": ["NCBIGene:5", "NCBIGene:7"],
+       "nope": []
+       }
+      ),
      ("jabberwock",
       "ENSEMBL",
       ["symbol:24", "symbol:8", "symbol:28", "nope"],
@@ -135,6 +155,20 @@ def test_identifiers_from_symbols_mapping(
     "species, authority, symbol_list, expected_gene_list",
     [
      ("human",
+      "NCBI",
+      ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
+      ["NCBIGene:0", "NCBIGene:6", "test:UNMAPPABLE_NO_MATCH_0",
+       "test:UNMAPPABLE_MANY_MATCHES_0",
+       "test:UNMAPPABLE_NO_MATCH_1"]
+      ),
+     ("9606",
+      "NCBI",
+      ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
+      ["NCBIGene:0", "NCBIGene:6", "test:UNMAPPABLE_NO_MATCH_0",
+       "test:UNMAPPABLE_MANY_MATCHES_0",
+       "test:UNMAPPABLE_NO_MATCH_1"]
+      ),
+     (9606,
       "NCBI",
       ["symbol:0", "symbol:6", "symbol:5", "symbol:7", "nope"],
       ["NCBIGene:0", "NCBIGene:6", "test:UNMAPPABLE_NO_MATCH_0",
@@ -246,6 +280,24 @@ def test_get_orthologs_mapping_from_ncbi(
     }
     assert actual['mapping'] == expected
 
+    actual = mapper_fixture.ortholog_genes_mapping(
+        authority='NCBI',
+        src_species_name=9606,
+        dst_species_name='jabberwock',
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+    assert actual['mapping'] == expected
+
+    actual = mapper_fixture.ortholog_genes_mapping(
+        authority='NCBI',
+        src_species_name=9606,
+        dst_species_name=999,
+        gene_list=gene_list,
+        citation_name='NCBI'
+    )
+    assert actual['mapping'] == expected
+
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapper_fixture.ortholog_genes_mapping(
@@ -288,28 +340,37 @@ def test_get_orthologs_mapping_from_ncbi(
 
 
 @pytest.mark.parametrize(
-    "assign_placeholders, placeholder_prefix",
-    [(True, None),
-     (True, "silly"),
-     (False, None)
+    "assign_placeholders, placeholder_prefix, species_as_int",
+    [(True, None, True),
+     (True, None, False),
+     (True, "silly", False),
+     (False, None, False)
      ]
 )
 def test_get_orthologs_from_ncbi(
         mapper_fixture,
         assign_placeholders,
-        placeholder_prefix):
+        placeholder_prefix,
+        species_as_int):
 
     if placeholder_prefix is None:
         prefix = "UNMAPPABLE"
     else:
         prefix = f"{placeholder_prefix}:UNMAPPABLE"
 
+    if species_as_int:
+        src_species = 9606
+        dst_species = 999
+    else:
+        src_species = "human"
+        dst_species = "jabberwock"
+
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapper_fixture.ortholog_genes(
         authority='NCBI',
-        src_species_name='human',
-        dst_species_name='jabberwock',
+        src_species_name=src_species,
+        dst_species_name=dst_species,
         gene_list=gene_list,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
@@ -404,8 +465,15 @@ def test_get_orthologs_from_ncbi(
     assert actual['gene_list'] == expected
 
 
+@pytest.mark.parametrize("species_as_int", [True, False])
 def test_get_equivalent_genes_mapping_from_ncbi(
-        mapper_fixture):
+        mapper_fixture,
+        species_as_int):
+
+    if species_as_int:
+        species = "9606"
+    else:
+        species = "human"
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENS{ii}' for ii in gene_idx_list]
@@ -413,7 +481,7 @@ def test_get_equivalent_genes_mapping_from_ncbi(
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
-        species_name='human',
+        species_name=species,
         citation_name='NCBI'
     )
 
@@ -432,15 +500,22 @@ def test_get_equivalent_genes_mapping_from_ncbi(
 
 
 @pytest.mark.parametrize(
-    "assign_placeholders, placeholder_prefix",
-    [(True, "test"),
-     (True, "silly"),
-     (False, None)]
+    "assign_placeholders, placeholder_prefix, species_as_int",
+    [(True, "test", False),
+     (True, "test", True),
+     (True, "silly", False),
+     (False, None, False)]
 )
 def test_get_equivalent_genes_from_ncbi(
         mapper_fixture,
         assign_placeholders,
-        placeholder_prefix):
+        placeholder_prefix,
+        species_as_int):
+
+    if species_as_int:
+        species = 9606
+    else:
+        species = "human"
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENS{ii}' for ii in gene_idx_list]
@@ -448,7 +523,7 @@ def test_get_equivalent_genes_from_ncbi(
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
-        species_name='human',
+        species_name=species,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
         placeholder_prefix=placeholder_prefix
