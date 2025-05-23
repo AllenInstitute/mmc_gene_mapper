@@ -201,7 +201,7 @@ def get_authority_and_citation(
         require_symbols=False):
     """
     Return the full dicts characterizing authority
-    and citaiton for a given (authority, species)
+    and citation for a given (authority, species)
     combination
 
     Parameters
