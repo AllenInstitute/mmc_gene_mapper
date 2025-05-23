@@ -556,3 +556,64 @@ def test_alternative_orthologs_mapping(
         gene_list=gene_list
     )
     assert actual['mapping'] == expected_mapping
+
+
+@pytest.mark.parametrize(
+    "src_species, dst_species, citation, gene_list, expected_gene_list",
+    [("human",
+      "jabberwock",
+      "alternative_orthologs",
+      ["NCBIGene:0", "NCBIGene:2", "NCBIGene:7", "NCBIGene:4", "NCBIGene:6"],
+      ["NCBIGene:11", "NCBIGene:13", "NCBIGene:12",
+       "UNMAPPABLE_NO_MATCH_0", "UNMAPPABLE_NO_MATCH_1"]
+      ),
+     ("mouse",
+      "human",
+      "alternative_orthologs",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      ["UNMAPPABLE_NO_MATCH_0", "UNMAPPABLE_NO_MATCH_1",
+       "UNMAPPABLE_NO_MATCH_2", "UNMAPPABLE_NO_MATCH_3",
+       "NCBIGene:0", "NCBIGene:2", "UNMAPPABLE_NO_MATCH_4"]
+      ),
+     ("mouse",
+      "human",
+      "NCBI",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      ["NCBIGene:0", "UNMAPPABLE_NO_MATCH_0", "NCBIGene:4",
+       "NCBIGene:6", "UNMAPPABLE_NO_MATCH_1", "UNMAPPABLE_NO_MATCH_2",
+       "NCBIGene:1"]
+      ),
+     ("mouse",
+      "jabberwock",
+      "NCBI",
+      ["NCBIGene:21", "NCBIGene:22", "NCBIGene:23",
+       "NCBIGene:24", "NCBIGene:25", "NCBIGene:26",
+       "NCBIGene:27"],
+      ["NCBIGene:14", "UNMAPPABLE_NO_MATCH_0", "NCBIGene:12",
+       "UNMAPPABLE_NO_MATCH_1", "UNMAPPABLE_NO_MATCH_2",
+       "UNMAPPABLE_NO_MATCH_3", "NCBIGene:13"]
+      ),
+     ]
+)
+def test_alternative_orthologs(
+        mapper_fixture,
+        src_species,
+        dst_species,
+        citation,
+        gene_list,
+        expected_gene_list):
+
+    actual = mapper_fixture.ortholog_genes(
+        authority="NCBI",
+        src_species_name=src_species,
+        dst_species_name=dst_species,
+        citation_name=citation,
+        gene_list=gene_list,
+        assign_placeholders=True,
+        placeholder_prefix=None
+    )
+    assert actual['gene_list'] == expected_gene_list
