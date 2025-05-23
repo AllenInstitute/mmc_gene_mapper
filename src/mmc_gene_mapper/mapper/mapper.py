@@ -351,13 +351,10 @@ class MMCGeneMapper(object):
               }
             }
         """
-        try:
-            species_taxon = int(species_name)
-        except ValueError:
-            species_taxon = query_utils.get_species_taxon(
-                db_path=self.db_path,
-                species_name=species_name,
-                strict=True)
+        species_taxon = query_utils.get_species_taxon(
+            db_path=self.db_path,
+            species_name=species_name,
+            strict=True)
 
         result = query_utils.translate_gene_identifiers(
             db_path=self.db_path,
