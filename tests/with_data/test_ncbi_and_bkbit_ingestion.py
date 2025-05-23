@@ -717,6 +717,17 @@ def test_determine_species_and_authority_from_data(
         "species_taxon": 999}
     assert actual == expected
 
+    jabberwock_genes = [f'a{ii}' for ii in range(45)] + ["ENS22", "ENS26"]
+    assert len(jabberwock_genes) > 25
+    actual = mapper_fixture.detect_species_and_authority(
+        gene_list=jabberwock_genes
+    )
+    expected = {
+        "authority": "ENSEMBL",
+        "species": "jabberwock",
+        "species_taxon": 999}
+    assert actual == expected
+
     jabberwock_genes = ["NCBIGene:11", "NCBIGene:13"]
     actual = mapper_fixture.detect_species_and_authority(
         gene_list=jabberwock_genes

@@ -181,73 +181,83 @@ class MMCGeneMapper(object):
 
         Notes
         -----
-        This function will query all the genes in gene_list.
-        If inconsistent answers are returned, an exception will
-        be raised
+        This function will loop over the genes 25 at a time
+        to try to minimize expensive queries on the string
+        gene identifiers. Once a self-consistent answer is found,
+        that will be returned. If an inconsistent answer is found,
+        an exception will be raised.
 
         If the genes do not exist in the gene table, a "None"
         will be returned for all fields in the output.
         """
 
-        query = """
-        SELECT
-            gene.species_taxon,
-            authority.name
-        FROM gene
-        JOIN authority on authority.id = gene.authority
-        WHERE
-            gene.identifier IN (
-        """
-        query += ",".join(["?"]*len(gene_list))
-        query += ")"
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            results = cursor.execute(
-                query,
-                gene_list
-            ).fetchall()
+        bad_result = {
+            "authority": None,
+            "species": None,
+            "species_taxon": None
+        }
 
-            if len(results) == 0:
+        chunk_size = 25
+        n_genes = len(gene_list)
+        with sqlite3.connect(self.db_path) as conn:
+            for i0 in range(0, n_genes, chunk_size):
+                sub_list = gene_list[i0:i0+chunk_size]
+                query = """
+                SELECT
+                    gene.species_taxon,
+                    authority.name
+                FROM gene
+                JOIN authority on authority.id = gene.authority
+                WHERE
+                    gene.identifier IN (
+                """
+                query += ",".join(["?"]*len(sub_list))
+                query += ")"
+                cursor = conn.cursor()
+                results = cursor.execute(
+                    query,
+                    sub_list
+                ).fetchall()
+
+                if len(results) == 0:
+                    continue
+
+                authority_set = sorted(set(r[1] for r in results))
+                species_set = sorted(set(r[0] for r in results))
+                error_msg = ""
+                if len(authority_set) > 1:
+                    error_msg += (
+                        f"\nMultiple authorities inferred: {authority_set}"
+                    )
+                if len(species_set) > 1:
+                    error_msg += f"\nMultiple species inferred : {species_set}"
+                if len(error_msg) > 0:
+                    error_msg = (
+                        "Could not infer species and authority from gene list."
+                        f"{error_msg}"
+                    )
+                    raise InconsistentSpeciesError(error_msg)
+
+                species_query = """
+                SELECT
+                    name
+                FROM NCBI_species
+                WHERE
+                    id=?
+                LIMIT 1
+                """
+                species_name = cursor.execute(
+                    species_query,
+                    species_set
+                ).fetchall()
+
                 return {
-                    "authority": None,
-                    "species": None,
-                    "species_taxon": None
+                    "authority": authority_set[0],
+                    "species": species_name[0][0],
+                    "species_taxon": species_set[0]
                 }
 
-            authority_set = sorted(set(r[1] for r in results))
-            species_set = sorted(set(r[0] for r in results))
-            error_msg = ""
-            if len(authority_set) > 1:
-                error_msg += (
-                    f"\nMultiple authorities inferred: {authority_set}"
-                )
-            if len(species_set) > 1:
-                error_msg += f"\nMultiple species inferred : {species_set}"
-            if len(error_msg) > 0:
-                error_msg = (
-                    "Could not infer species and authority from gene list."
-                    f"{error_msg}"
-                )
-                raise InconsistentSpeciesError(error_msg)
-
-            species_query = """
-            SELECT
-                name
-            FROM NCBI_species
-            WHERE
-                id=?
-            LIMIT 1
-            """
-            species_name = cursor.execute(
-                species_query,
-                species_set
-            ).fetchall()
-
-        return {
-            "authority": authority_set[0],
-            "species": species_name[0][0],
-            "species_taxon": species_set[0]
-        }
+        return bad_result
 
     def identifiers_from_symbols(
             self,
@@ -625,6 +635,33 @@ class MMCGeneMapper(object):
             citation_name=citation_name,
             chunk_size=500
         )
+
+    def map_arbitrary_genes(
+            self,
+            gene_list,
+            dst_species,
+            dst_authority,
+            ortholog_citation='NCBI'):
+        """
+        Map genes into an arbitrary (species, authority)
+        space. Infer the species and authority of the input
+        genes from the data.
+
+        Parameters
+        ----------
+        gene_list:
+            list of str. The genes being mapped
+        dst_species:
+            the species into which we are mapping the
+            input genes
+        dst_authority:
+            the authority into which we are mapping the
+            input genes
+        ortholog_citation:
+            the citation to use for any ortholog mappings
+            (if they are needed)
+        """
+        pass
 
     def _initialize(
             self,
