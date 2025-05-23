@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import pathlib
 import time
+import traceback
 from urllib.parse import urlparse
 import warnings
 
@@ -140,7 +141,8 @@ def main():
     host.login()
     release_dir = 'pub/release-114/gff3'
     directory_list = sorted(list(host.nlst(release_dir)))
-    failed_file_list = []
+    failed_file_list = dict()
+    serialized_species = set()
     for entry in directory_list:
         print(entry,time.time()-t0)
         file_path_list = list(host.nlst(entry))
@@ -154,19 +156,24 @@ def main():
             serialize_bkbit_gff3(
                 content_url=f'https://ftp.ensembl.org/{chosen}',
                 assembly_id='placeholder.000',
-                dst_dir=dst_dir
+                dst_dir=dst_dir,
+                serialized_species=serialized_species
             )
         except Exception:
-            print(f'    {chosen} failed')
-            failed_file_list.append(chosen)
+            msg = traceback.format_exc()
+            print(f'    {chosen} failed -- {msg}')
+            failed_file_list[chosen] = msg
     print(f'failed files\n{json.dumps(failed_file_list, indent=2)}')
     dur = (time.time()-t0)/60.0
     print(f'SUCCESS\nthat took {dur:.2e} minutes')
+    with open("jsonld_failures.json", "w") as dst:
+        dst.write(json.dumps(failed_file_list))
 
 def serialize_bkbit_gff3(
         content_url,
         assembly_id,
-        dst_dir):
+        dst_dir,
+        serialized_species):
 
     gff3 = Gff3Patch(
         content_url=content_url,
@@ -189,6 +196,15 @@ def serialize_bkbit_gff3(
         raise RuntimeError(
             f"Could not find taxon for {content_url}"
         )
+
+    taxon_id = taxon['id']
+    if taxon_id in serialized_species:
+        print(
+            f"    == skipping {content_url.split('/')[-1]}; "
+            "already serialized"
+        )
+        raise RuntimeError(f"{taxon_id} already serialized")
+
     species_name = taxon['full_name'].lower().replace(' ', '_')
     dst_path = dst_dir / f'{species_name}.jsonld'
     if dst_path.exists():
@@ -196,6 +212,7 @@ def serialize_bkbit_gff3(
 
     with open(dst_path, 'w') as dst:
         dst.write(json.dumps(result, indent=2))
+    serialized_species.add(taxon_id)
 
 
 if __name__ == "__main__":
