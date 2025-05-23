@@ -356,11 +356,14 @@ def get_equivalent_genes_from_identifiers(
         citation_name,
         chunk_size=100):
 
-    species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=species_name,
-        strict=True
-    )
+    try:
+        species_taxon = int(species_name)
+    except ValueError:
+        species_taxon = get_species_taxon(
+            db_path=db_path,
+            species_name=species_name,
+            strict=True
+        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
@@ -497,17 +500,23 @@ def get_ortholog_genes_from_identifiers(
         citation_name,
         chunk_size=100):
 
-    src_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=src_species_name,
-        strict=True
-    )
+    try:
+        src_species_taxon = int(src_species_name)
+    except ValueError:
+        src_species_taxon = get_species_taxon(
+            db_path=db_path,
+            species_name=src_species_name,
+            strict=True
+        )
 
-    dst_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=dst_species_name,
-        strict=True
-    )
+    try:
+        dst_species_taxon = int(dst_species_name)
+    except ValueError:
+        dst_species_taxon = get_species_taxon(
+            db_path=db_path,
+            species_name=dst_species_name,
+            strict=True
+        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
