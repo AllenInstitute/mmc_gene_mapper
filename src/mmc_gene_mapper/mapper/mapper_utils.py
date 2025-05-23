@@ -163,7 +163,9 @@ def create_bibliography_table(
 
 def apply_mapping(
         gene_list,
-        mapping):
+        mapping,
+        assign_placeholders=True,
+        placeholder_prefix=None):
     """
     Apply a mapping to a gene list, only keeping 1:1 matches.
 
@@ -174,6 +176,16 @@ def apply_mapping(
     mapping:
         a dict mapping the genes in gene_list
         to the lists of matches produced by the MMCGeneMapper
+    assign_placeholders:
+        a boolean.
+        If True, genes that have zero or many matches will be given
+        placeholder names. If false, their original names will
+        be passed through. Genes with degenerate mappings will
+        always be given placeholder names.
+    placeholder_prefix:
+        an optional string to be added to the placeholder
+        names given to unmappable genes to indicate at what
+        point in the mapping they became unmappable
 
     Returns
     -------
@@ -203,11 +215,26 @@ def apply_mapping(
         else:
             if len(this) == 0:
                 ct = failure_log['zero matches']
-                assn = f'UNMAPPABLE_NO_MATCH_{ct}'
+                if assign_placeholders:
+                    if placeholder_prefix is None:
+                        assn = f'UNMAPPABLE_NO_MATCH_{ct}'
+                    else:
+                        assn = f'{placeholder_prefix}:UNMAPPABLE_NO_MATCH_{ct}'
+                else:
+                    assn = gene
                 failure_log['zero matches'] += 1
             else:
                 ct = failure_log['many matches']
-                assn = f'UNMAPPABLE_MANY_MATCHES_{ct}'
+                if assign_placeholders:
+                    if placeholder_prefix is None:
+                        assn = f'UNMAPPABLE_MANY_MATCHES_{ct}'
+                    else:
+                        assn = (
+                            f'{placeholder_prefix}:UNMAPPABLE_MANY_MATCHES'
+                            f'_{ct}'
+                        )
+                else:
+                    assn = gene
                 failure_log['many matches'] += 1
         new_gene_list.append(assn)
 
@@ -228,7 +255,13 @@ def apply_mapping(
             if gene in degen_gene_to_idx:
                 pair = degen_gene_to_idx[gene]
                 ct = degen_gene_to_ct[gene]
-                assn = f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                if placeholder_prefix is None:
+                    assn = f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                else:
+                    assn = (
+                        f'{placeholder_prefix}:'
+                        f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                    )
                 new_gene_list[ii] = assn
                 degen_gene_to_ct[gene] += 1
 
