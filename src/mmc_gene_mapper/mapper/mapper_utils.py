@@ -2,6 +2,7 @@
 utility functions for gene mapper class
 """
 
+import numpy as np
 import sqlite3
 
 import mmc_gene_mapper.create_db.utils as db_utils
@@ -158,3 +159,80 @@ def create_bibliography_table(
             table_name=table_name,
             column_tuple=("species_taxon", "authority", "has_symbols")
         )
+
+
+def apply_mapping(
+        gene_list,
+        mapping):
+    """
+    Apply a mapping to a gene list, only keeping 1:1 matches.
+
+    Parameters
+    ----------
+    gene_list:
+        list of str. The input genes
+    mapping:
+        a dict mapping the genes in gene_list
+        to the lists of matches produced by the MMCGeneMapper
+
+    Returns
+    -------
+    A dict
+        'failure_log': tally of how many genes failed and why
+        'gene_list': the mapped gene list
+
+    Notes
+    -----
+    Genes that fail to map in a 1:1 way will be assigned
+    a name like UNMAPPABLE_{REASON}_{ii}
+
+    Genes that are degenerate (i.e. that map to the same
+    identifier) will also be marked as unmappable
+    """
+    failure_log = {
+        'zero matches': 0,
+        'many matches': 0,
+        'degenerate matches': 0
+    }
+
+    new_gene_list = []
+    for gene in gene_list:
+        this = mapping[gene]
+        if len(this) == 1:
+            assn = this[0]
+        else:
+            if len(this) == 0:
+                ct = failure_log['zero matches']
+                assn = f'UNMAPPABLE_NO_MATCH_{ct}'
+                failure_log['zero matches'] += 1
+            else:
+                ct = failure_log['many matches']
+                assn = f'UNMAPPABLE_MANY_MATCHES_{ct}'
+                failure_log['many matches'] += 1
+        new_gene_list.append(assn)
+
+    # make sure genes have unique names
+    unq, ct = np.unique(new_gene_list, return_counts=True)
+    degen = (ct > 1)
+    unq = unq[degen]
+    degen_gene_to_idx = {
+        u: ii for ii, u in enumerate(unq)
+    }
+    degen_gene_to_ct = {
+        g: 0 for g in degen_gene_to_idx
+    }
+    if len(degen_gene_to_idx) > 0:
+        failure_log['degenerate matches'] = len(degen_gene_to_idx)*2
+        for ii in range(len(new_gene_list)):
+            gene = new_gene_list[ii]
+            if gene in degen_gene_to_idx:
+                pair = degen_gene_to_idx[gene]
+                ct = degen_gene_to_ct[gene]
+                assn = f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                new_gene_list[ii] = assn
+                degen_gene_to_ct[gene] += 1
+
+    return {
+        'failure_log': failure_log,
+        'gene_list': new_gene_list
+    }
