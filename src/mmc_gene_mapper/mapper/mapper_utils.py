@@ -2,6 +2,7 @@
 utility functions for gene mapper class
 """
 
+import copy
 import numpy as np
 import sqlite3
 
@@ -203,8 +204,7 @@ def apply_mapping(
     """
     failure_log = {
         'zero matches': 0,
-        'many matches': 0,
-        'degenerate matches': 0
+        'many matches': 0
     }
 
     new_gene_list = []
@@ -238,8 +238,44 @@ def apply_mapping(
                 failure_log['many matches'] += 1
         new_gene_list.append(assn)
 
+    (new_gene_list,
+     n_degen) = mask_degenerate_genes(
+                    new_gene_list,
+                    placeholder_prefix=placeholder_prefix)
+
+    failure_log['degenerate matches'] = n_degen
+
+    return {
+        'failure_log': failure_log,
+        'gene_list': new_gene_list
+    }
+
+
+def mask_degenerate_genes(
+        gene_list,
+        placeholder_prefix=None):
+    """
+    Take a list of gene identifiers and replace any genes
+    that have identical identifiers with unique placeholder
+    identifiers.
+
+    Parameters
+    ----------
+    gene_list:
+        list of str. The input genes
+    placeholder_prefix:
+        an optional string to be added to the placeholder
+        names given to degenerate genes
+
+    Returns
+    -------
+    List of unique gene identifiers
+
+    Number of degenerate genes found.
+    """
     # make sure genes have unique names
-    unq, ct = np.unique(new_gene_list, return_counts=True)
+    salt = 0
+    unq, ct = np.unique(gene_list, return_counts=True)
     degen = (ct > 1)
     unq = unq[degen]
     degen_gene_to_idx = {
@@ -248,24 +284,26 @@ def apply_mapping(
     degen_gene_to_ct = {
         g: 0 for g in degen_gene_to_idx
     }
+    n_degen = 0
     if len(degen_gene_to_idx) > 0:
-        failure_log['degenerate matches'] = len(degen_gene_to_idx)*2
-        for ii in range(len(new_gene_list)):
-            gene = new_gene_list[ii]
+        new_gene_list = []
+        n_degen = len(degen_gene_to_idx)*2
+        for ii in range(len(gene_list)):
+            gene = gene_list[ii]
             if gene in degen_gene_to_idx:
                 pair = degen_gene_to_idx[gene]
-                ct = degen_gene_to_ct[gene]
+                salt = degen_gene_to_ct[gene]
                 if placeholder_prefix is None:
-                    assn = f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                    assn = f'UNMAPPABLE_DEGENERATE_{pair}_{salt}'
                 else:
                     assn = (
                         f'{placeholder_prefix}:'
-                        f'UNMAPPABLE_DEGENERATE_{pair}_{ct}'
+                        f'UNMAPPABLE_DEGENERATE_{pair}_{salt}'
                     )
-                new_gene_list[ii] = assn
+                new_gene_list.append(assn)
                 degen_gene_to_ct[gene] += 1
-
-    return {
-        'failure_log': failure_log,
-        'gene_list': new_gene_list
-    }
+            else:
+                new_gene_list.append(gene)
+    else:
+        new_gene_list = copy.deepcopy(gene_list)
+    return new_gene_list, n_degen

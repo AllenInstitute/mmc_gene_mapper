@@ -3,6 +3,49 @@ import pytest
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 
 
+
+@pytest.mark.parametrize(
+    "gene_list, prefix, expected_list, expected_n",
+    [(['a', 'b', 'c', 'd'], None, ['a', 'b', 'c', 'd'], 0),
+     (['a', 'b', 'c', 'b', 'd', 'e'],
+      None,
+      ['a', 'UNMAPPABLE_DEGENERATE_0_0',
+       'c', 'UNMAPPABLE_DEGENERATE_0_1',
+       'd', 'e'],
+      2),
+     (['a', 'b', 'c', 'b', 'd', 'e'],
+      'silly',
+      ['a', 'silly:UNMAPPABLE_DEGENERATE_0_0',
+       'c', 'silly:UNMAPPABLE_DEGENERATE_0_1',
+       'd', 'e'],
+      2),
+     (['a', 'f', 'c', 'f', 'd', 'e', 'b', 'g', 'b'],
+      None,
+      ['a', 'UNMAPPABLE_DEGENERATE_1_0',
+       'c', 'UNMAPPABLE_DEGENERATE_1_1',
+       'd', 'e',
+       'UNMAPPABLE_DEGENERATE_0_0',
+       'g',
+       'UNMAPPABLE_DEGENERATE_0_1'],
+      4),
+    ]
+)
+def test_mask_degenerate_ids(
+        gene_list,
+        prefix,
+        expected_list,
+        expected_n):
+
+    (new_gene_list,
+     n_degen) = mapper_utils.mask_degenerate_genes(
+                     gene_list,
+                     placeholder_prefix=prefix)
+
+    assert n_degen == expected_n
+    assert new_gene_list == expected_list
+    assert new_gene_list is not gene_list
+
+
 @pytest.mark.parametrize(
     "assign_placeholders, placeholder_prefix",
     [(True, None), (True, "test"), (False, "test")]
