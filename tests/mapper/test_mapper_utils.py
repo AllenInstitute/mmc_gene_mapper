@@ -54,7 +54,10 @@ def test_apply_mapping(
         assign_placeholders,
         placeholder_prefix):
 
-    input_genes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+    input_genes = [
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'UNMAPPABLE_INPUT'
+    ]
+
     mapping = {
         'a': [],
         'b': ['bb'],
@@ -73,7 +76,7 @@ def test_apply_mapping(
         placeholder_prefix=placeholder_prefix
     )
     expected_failure_log = {
-            'zero matches': 2,
+            'zero matches': 3,
             'many matches': 1,
             'degenerate matches': 4
         }
@@ -89,7 +92,8 @@ def test_apply_mapping(
                 'UNMAPPABLE_DEGENERATE_1_0',
                 'UNMAPPABLE_DEGENERATE_0_1',
                 'hh',
-                'UNMAPPABLE_DEGENERATE_1_1'
+                'UNMAPPABLE_DEGENERATE_1_1',
+                'UNMAPPABLE_INPUT'
             ]
         else:
             expected_gene_list = [
@@ -101,7 +105,8 @@ def test_apply_mapping(
                 'test:UNMAPPABLE_DEGENERATE_1_0',
                 'test:UNMAPPABLE_DEGENERATE_0_1',
                 'hh',
-                'test:UNMAPPABLE_DEGENERATE_1_1'
+                'test:UNMAPPABLE_DEGENERATE_1_1',
+                'UNMAPPABLE_INPUT'
             ]
     else:
         expected_gene_list = [
@@ -110,7 +115,8 @@ def test_apply_mapping(
             'test:UNMAPPABLE_DEGENERATE_1_0',
             'test:UNMAPPABLE_DEGENERATE_0_1',
             'hh',
-            'test:UNMAPPABLE_DEGENERATE_1_1'
+            'test:UNMAPPABLE_DEGENERATE_1_1',
+            'UNMAPPABLE_INPUT'
         ]
 
     expected = {
@@ -119,3 +125,50 @@ def test_apply_mapping(
     }
 
     assert result == expected
+
+
+def test_apply_mapping_override_degenerate_placeholder():
+    """
+    Test that two genes which come in with degenerate placeholder
+    identifiers get mapped to unique identifiers
+    """
+    gene_list = ['a', 'UNMAPPABLE', 'b']
+    mapping = {
+        'a': ['aa'],
+        'b': ['bb']
+    }
+    actual = mapper_utils.apply_mapping(
+        gene_list=gene_list,
+        mapping=mapping,
+        assign_placeholders=False,
+        placeholder_prefix=None
+    )
+    assert actual['gene_list'] == ['aa', 'UNMAPPABLE', 'bb']
+
+    gene_list = ['a', 'UNMAPPABLE', 'b', 'UNMAPPABLE']
+    actual = mapper_utils.apply_mapping(
+        gene_list=gene_list,
+        mapping=mapping,
+        assign_placeholders=False,
+        placeholder_prefix=None
+    )
+    assert actual['gene_list'] == [
+        'aa',
+        'UNMAPPABLE_DEGENERATE_0_0',
+        'bb',
+        'UNMAPPABLE_DEGENERATE_0_1'
+    ]
+
+    gene_list = ['a', 'UNMAPPABLE', 'b', 'UNMAPPABLE']
+    actual = mapper_utils.apply_mapping(
+        gene_list=gene_list,
+        mapping=mapping,
+        assign_placeholders=False,
+        placeholder_prefix='silly'
+    )
+    assert actual['gene_list'] == [
+        'aa',
+        'silly:UNMAPPABLE_DEGENERATE_0_0',
+        'bb',
+        'silly:UNMAPPABLE_DEGENERATE_0_1'
+    ]

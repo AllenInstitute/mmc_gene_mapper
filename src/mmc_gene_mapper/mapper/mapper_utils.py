@@ -210,13 +210,13 @@ def apply_mapping(
 
     new_gene_list = []
     for gene in gene_list:
-        this = mapping[gene]
+        this = mapping.get(gene, [])
         if len(this) == 1:
             assn = this[0]
         else:
             if len(this) == 0:
                 ct = failure_log['zero matches']
-                if assign_placeholders:
+                if assign_placeholders and 'UNMAPPABLE' not in gene:
                     if placeholder_prefix is None:
                         assn = f'UNMAPPABLE_NO_MATCH_{ct}'
                     else:
@@ -226,7 +226,7 @@ def apply_mapping(
                 failure_log['zero matches'] += 1
             else:
                 ct = failure_log['many matches']
-                if assign_placeholders:
+                if assign_placeholders and 'UNMAPPABLE' not in gene:
                     if placeholder_prefix is None:
                         assn = f'UNMAPPABLE_MANY_MATCHES_{ct}'
                     else:
