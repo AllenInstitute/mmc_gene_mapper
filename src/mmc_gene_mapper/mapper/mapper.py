@@ -16,6 +16,7 @@ import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
+import mmc_gene_mapper.mapper.mapping_functions as mapping_functions
 
 
 class MMCGeneMapper(object):
@@ -201,77 +202,15 @@ class MMCGeneMapper(object):
               ]
             }
         """
-        mapping = self.identifiers_from_symbols_mapping(
+        return mapping_functions.identifiers_from_symbols(
+            db_path=self.db_path,
             gene_symbol_list=gene_symbol_list,
             species_name=species_name,
-            authority_name=authority_name
-        )
-
-        mapped_result = mapper_utils.apply_mapping(
-            gene_list=gene_symbol_list,
-            mapping=mapping['mapping'],
+            authority_name=authority_name,
             assign_placeholders=assign_placeholders,
             placeholder_prefix=placeholder_prefix
         )
 
-        result = {
-            "metadata": mapping["metadata"],
-            "failure_log": mapped_result["failure_log"],
-            "gene_list": mapped_result["gene_list"]
-        }
-        return result
-
-    def identifiers_from_symbols_mapping(
-            self,
-            gene_symbol_list,
-            species_name,
-            authority_name):
-        """
-        Find the mapping that converts gene symbols into
-        gene identifiers
-
-        Parameters
-        ----------
-        gene_symbol_list:
-            list of gene symbols
-        species_name:
-            name of the species we are working with
-        authority_name:
-            name of the authority in whose identifiers
-            we want the genes listed
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "mapping": {
-                  a dict keyed on input symbols. Each symbol
-                  maps to the list of all gene identifiers
-                  that are associated with that symbol according
-                  to the source described in "metadata"
-              }
-            }
-        """
-        species_taxon = query_utils.get_species_taxon(
-            db_path=self.db_path,
-            species_name=species_name,
-            strict=True)
-
-        result = query_utils.translate_gene_identifiers(
-            db_path=self.db_path,
-            src_column="symbol",
-            dst_column="identifier",
-            src_list=gene_symbol_list,
-            authority_name=authority_name,
-            species_taxon=species_taxon,
-            chunk_size=500
-        )
-        return result
 
     def equivalent_genes(
             self,

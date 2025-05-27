@@ -4,6 +4,8 @@ NCBI data package and our simulated bkbit data package
 """
 import pytest
 
+import mmc_gene_mapper.mapper.mapping_functions as mapping_functions
+
 
 def test_get_all_authorities(mapper_fixture):
     actual = mapper_fixture.get_all_authorities()
@@ -94,7 +96,8 @@ def test_identifiers_from_symbols_mapping(
         symbol_list,
         expected_mapping):
 
-    actual = mapper_fixture.identifiers_from_symbols_mapping(
+    actual = mapping_functions.identifiers_from_symbols_mapping(
+        db_path=mapper_fixture.db_path,
         gene_symbol_list=symbol_list,
         species_name=species,
         authority_name=authority
@@ -152,7 +155,8 @@ def test_identifiers_from_symbols(
     # now test the method that returns a list of genes
     # with placeholder names applied to unmappable genes
 
-    actual = mapper_fixture.identifiers_from_symbols(
+    actual = mapping_functions.identifiers_from_symbols(
+        db_path=mapper_fixture.db_path,
         gene_symbol_list=symbol_list,
         species_name=species,
         authority_name=authority,
@@ -169,7 +173,8 @@ def test_identifiers_from_symbols_mapping_error(
     # to an authority
     msg = "There are 0 citations associated with authority"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols_mapping(
+        mapping_functions.identifiers_from_symbols_mapping(
+            db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
             species_name="human",
             authority_name="ENSEMBL"
@@ -178,7 +183,8 @@ def test_identifiers_from_symbols_mapping_error(
     # case where there is no such species
     msg = "no species match for flotsam"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols_mapping(
+        mapping_functions.identifiers_from_symbols_mapping(
+            db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
             species_name="flotsam",
             authority_name="NCBI"
@@ -192,7 +198,8 @@ def test_identifiers_from_symbols_error(
     # to an authority
     msg = "There are 0 citations associated with authority"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols(
+        mapping_functions.identifiers_from_symbols(
+            db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
             species_name="human",
             authority_name="ENSEMBL"
@@ -201,7 +208,8 @@ def test_identifiers_from_symbols_error(
     # case where there is no such species
     msg = "no species match for flotsam"
     with pytest.raises(ValueError, match=msg):
-        mapper_fixture.identifiers_from_symbols(
+        mapping_functions.identifiers_from_symbols(
+            db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
             species_name="flotsam",
             authority_name="NCBI"
