@@ -436,7 +436,8 @@ def test_get_equivalent_genes_mapping_from_ncbi(
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.equivalent_genes_mapping(
+    actual = mapping_functions.equivalent_genes_mapping(
+        db_path=mapper_fixture.db_path,
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
@@ -478,7 +479,8 @@ def test_get_equivalent_genes_from_ncbi(
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.equivalent_genes(
+    actual = mapping_functions.equivalent_genes(
+        db_path=mapper_fixture.db_path,
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,

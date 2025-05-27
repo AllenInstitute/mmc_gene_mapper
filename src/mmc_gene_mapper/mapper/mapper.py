@@ -266,83 +266,17 @@ class MMCGeneMapper(object):
             }
         """
 
-        mapping = self.equivalent_genes_mapping(
+        return mapping_functions.equivalent_genes(
+            db_path=self.db_path,
             input_authority=input_authority,
             output_authority=output_authority,
             gene_list=gene_list,
             species_name=species_name,
-            citation_name=citation_name
-        )
-
-        mapped_result = mapper_utils.apply_mapping(
-            gene_list=gene_list,
-            mapping=mapping['mapping'],
+            citation_name=citation_name,
             assign_placeholders=assign_placeholders,
             placeholder_prefix=placeholder_prefix
         )
 
-        result = {
-            'metadata': mapping['metadata'],
-            'failure_log': mapped_result['failure_log'],
-            'gene_list': mapped_result['gene_list']
-        }
-
-        return result
-
-    def equivalent_genes_mapping(
-            self,
-            input_authority,
-            output_authority,
-            gene_list,
-            species_name,
-            citation_name):
-        """
-        Return a mapping between gene identifiers from
-        different authorities (NCBI vs ENSEMBL)
-
-        Parameters
-        ----------
-        input_authority:
-            a str; the name of the authority in which the input
-            genes are identified
-        output_authority:
-            a str; the name of the authority you want to convert
-            the identifiers to
-        gene_list:
-            list of gene identifiers (in input_authority) to be
-            mapped
-        species_name:
-            name of species we are working with
-        citation_name:
-            name of citation to use to assess gene eqivalence
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "mapping": {
-                  a dict keyed on input genes. Each gene
-                  maps to the list of all genes
-                  that are considered equivalent to that
-                  gene according to the source described
-                  in "metadata"
-              }
-            }
-        """
-        return query_utils.get_equivalent_genes_from_identifiers(
-            db_path=self.db_path,
-            input_authority_name=input_authority,
-            output_authority_name=output_authority,
-            input_gene_list=gene_list,
-            species_name=species_name,
-            citation_name=citation_name,
-            chunk_size=500
-        )
 
     def ortholog_genes(
             self,

@@ -17,6 +17,7 @@ import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
+
 def identifiers_from_symbols(
         db_path,
         gene_symbol_list,
@@ -141,3 +142,142 @@ def identifiers_from_symbols_mapping(
         chunk_size=500
     )
     return result
+
+
+def equivalent_genes(
+        db_path,
+        input_authority,
+        output_authority,
+        gene_list,
+        species_name,
+        citation_name,
+        assign_placeholders=True,
+        placeholder_prefix=None):
+    """
+    Return a mapping between gene identifiers from
+    different authorities (NCBI vs ENSEMBL)
+
+    Parameters
+    ----------
+    db_path:
+        the path to the database being queried
+    input_authority:
+        a str; the name of the authority in which the input
+        genes are identified
+    output_authority:
+        a str; the name of the authority you want to convert
+        the identifiers to
+    gene_list:
+        list of gene identifiers (in input_authority) to be
+        mapped
+    species_name:
+        name of species we are working with
+    citation_name:
+        name of citation to use to assess gene eqivalence
+    assign_placeholders:
+        a boolean. If True, assign placeholder names
+        to any genes that cannot be mapped
+    placeholder_prefix:
+        optional prefix to apply to the placeholer names
+        given to unmappable genes.
+
+    Returns
+    -------
+    A dict
+        {
+          "metadata": {
+              a dict describing the citation according
+              to which these symbols map to these
+              identifiers
+          },
+          "failure_log": {
+             summary of how many genes failed to be mapped
+             for what reasons
+          }
+          "gene_list": [
+              list of mapped gene identifiers
+          ]
+        }
+    """
+
+    mapping = equivalent_genes_mapping(
+        db_path=db_path,
+        input_authority=input_authority,
+        output_authority=output_authority,
+        gene_list=gene_list,
+        species_name=species_name,
+        citation_name=citation_name
+    )
+
+    mapped_result = mapper_utils.apply_mapping(
+        gene_list=gene_list,
+        mapping=mapping['mapping'],
+        assign_placeholders=assign_placeholders,
+        placeholder_prefix=placeholder_prefix
+    )
+
+    result = {
+        'metadata': mapping['metadata'],
+        'failure_log': mapped_result['failure_log'],
+        'gene_list': mapped_result['gene_list']
+    }
+
+    return result
+
+
+def equivalent_genes_mapping(
+        db_path,
+        input_authority,
+        output_authority,
+        gene_list,
+        species_name,
+        citation_name):
+    """
+    Return a mapping between gene identifiers from
+    different authorities (NCBI vs ENSEMBL)
+
+    Parameters
+    ----------
+    db_path:
+        path to the database being queried
+    input_authority:
+        a str; the name of the authority in which the input
+        genes are identified
+    output_authority:
+        a str; the name of the authority you want to convert
+        the identifiers to
+    gene_list:
+        list of gene identifiers (in input_authority) to be
+        mapped
+    species_name:
+        name of species we are working with
+    citation_name:
+        name of citation to use to assess gene eqivalence
+
+    Returns
+    -------
+    A dict
+        {
+          "metadata": {
+              a dict describing the citation according
+              to which these symbols map to these
+              identifiers
+          },
+          "mapping": {
+              a dict keyed on input genes. Each gene
+              maps to the list of all genes
+              that are considered equivalent to that
+              gene according to the source described
+              in "metadata"
+          }
+        }
+    """
+    return query_utils.get_equivalent_genes_from_identifiers(
+        db_path=db_path,
+        input_authority_name=input_authority,
+        output_authority_name=output_authority,
+        input_gene_list=gene_list,
+        species_name=species_name,
+        citation_name=citation_name,
+        chunk_size=500
+    )
