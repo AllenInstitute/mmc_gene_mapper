@@ -70,16 +70,16 @@ def test_get_all_citations(mapper_fixture):
      ("jabberwock",
       "ENSEMBL",
       ["symbol:24", "symbol:8", "symbol:28", "nope"],
-      {"symbol:24": ["ENS26"],
+      {"symbol:24": ["ENSX26"],
        "symbol:8": [],
-       "symbol:28": ["ENS30"],
+       "symbol:28": ["ENSX30"],
        "nope": []
        }
       ),
      ("jabberwock",
       "ENSEMBL",
       ["name:24", "name:8", "name:28", "nope"],
-      {"name:24": ["ENS26"],
+      {"name:24": ["ENSX26"],
        "name:8": [],
        "name:28": [],
        "nope": []
@@ -129,13 +129,13 @@ def test_identifiers_from_symbols_mapping(
      ("jabberwock",
       "ENSEMBL",
       ["symbol:24", "symbol:8", "symbol:28", "nope"],
-      ["ENS26", "test:UNMAPPABLE_NO_MATCH_0", "ENS30",
+      ["ENSX26", "test:UNMAPPABLE_NO_MATCH_0", "ENSX30",
        "test:UNMAPPABLE_NO_MATCH_1"]
       ),
      ("jabberwock",
       "ENSEMBL",
       ["name:24", "name:8", "name:28", "nope"],
-      ["ENS26",
+      ["ENSX26",
        "test:UNMAPPABLE_NO_MATCH_0",
        "test:UNMAPPABLE_NO_MATCH_1",
        "test:UNMAPPABLE_NO_MATCH_2"]
@@ -427,7 +427,7 @@ def test_get_equivalent_genes_mapping_from_ncbi(
         species = "human"
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
-    gene_list = [f'ENS{ii}' for ii in gene_idx_list]
+    gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
     actual = mapper_fixture.equivalent_genes_mapping(
         input_authority='ENSEMBL',
         output_authority='NCBI',
@@ -437,12 +437,12 @@ def test_get_equivalent_genes_mapping_from_ncbi(
     )
 
     expected = {
-        'ENS1': [],
-        'ENS2': ['NCBIGene:1'],
-        'ENS3': [],
-        'ENS6': ['NCBIGene:3'],
-        'ENS14': ['NCBIGene:5', 'NCBIGene:7'],
-        'ENS10': ['NCBIGene:5']
+        'ENSX1': [],
+        'ENSX2': ['NCBIGene:1'],
+        'ENSX3': [],
+        'ENSX6': ['NCBIGene:3'],
+        'ENSX14': ['NCBIGene:5', 'NCBIGene:7'],
+        'ENSX10': ['NCBIGene:5']
     }
 
     assert set(expected.keys()) == set(actual['mapping'].keys())
@@ -469,7 +469,7 @@ def test_get_equivalent_genes_from_ncbi(
         species = "human"
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
-    gene_list = [f'ENS{ii}' for ii in gene_idx_list]
+    gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
     actual = mapper_fixture.equivalent_genes(
         input_authority='ENSEMBL',
         output_authority='NCBI',
@@ -482,11 +482,11 @@ def test_get_equivalent_genes_from_ncbi(
 
     if not assign_placeholders:
         expected = [
-            "ENS1",
+            "ENSX1",
             "NCBIGene:1",
-            "ENS3",
+            "ENSX3",
             "NCBIGene:3",
-            "ENS14",
+            "ENSX14",
             "NCBIGene:5"
         ]
     else:

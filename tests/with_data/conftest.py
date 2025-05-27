@@ -136,7 +136,7 @@ def ncbi_data_package_fixture(
             symbol = "symbol:7"
 
         if gene_id % 2 == 1:
-            ensembl = f'ENS{2*gene_id}'
+            ensembl = f'ENSX{2*gene_id}'
             ensembl_symbol = f'symbol:{2*(gene_id-1)}'
         else:
             ensembl = None
@@ -202,7 +202,7 @@ def ncbi_file_package_fixture(
     gene_2_ensembl_data.append(
         {'#tax_id': species_id_fixture['human'],
          'GeneID': 5,
-         'Ensembl_gene_identifier': 'ENS14'}
+         'Ensembl_gene_identifier': 'ENSX14'}
     )
 
     pd.DataFrame(gene_2_ensembl_data).to_csv(

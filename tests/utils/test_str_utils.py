@@ -7,6 +7,7 @@ import mmc_gene_mapper.utils.str_utils as str_utils
 
 def test_int_from_identifier():
     assert str_utils.int_from_identifier('ENS009991') == 9991
+    assert str_utils.int_from_identifier('ENSX17') == 17
     assert str_utils.int_from_identifier('ABC89910') == 89910
     assert str_utils.int_from_identifier('AB123DEF8910') == 8910
 
