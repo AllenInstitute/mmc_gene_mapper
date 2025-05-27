@@ -154,6 +154,7 @@ def ncbi_data_package_fixture(
              'ensembl_symbol': ensembl_symbol,
              'orthologs': orthologs}
         )
+
     return result
 
 

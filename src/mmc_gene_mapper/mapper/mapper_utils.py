@@ -240,23 +240,10 @@ def apply_mapping(
                 failure_log['many matches'] += 1
         new_gene_list.append(assn)
 
-    # find offset for degenerate cell labels
-    degen_offset = 0
-    offset_pattern = re.compile(
-        '(UNMAPPABLE_DEGENERATE_)([0-9]+)'
-    )
-    for label in new_gene_list:
-        mtch = offset_pattern.search(label)
-        if mtch is not None:
-            this = int(mtch.group(2))
-            if this >= degen_offset:
-                degen_offset = this+1
-
     (new_gene_list,
      n_degen) = mask_degenerate_genes(
                     new_gene_list,
-                    placeholder_prefix=placeholder_prefix,
-                    offset=degen_offset)
+                    placeholder_prefix=placeholder_prefix)
 
     failure_log['degenerate matches'] = n_degen
 
@@ -268,8 +255,7 @@ def apply_mapping(
 
 def mask_degenerate_genes(
         gene_list,
-        placeholder_prefix=None,
-        offset=0):
+        placeholder_prefix=None):
     """
     Take a list of gene identifiers and replace any genes
     that have identical identifiers with unique placeholder
@@ -293,6 +279,19 @@ def mask_degenerate_genes(
 
     Number of degenerate genes found.
     """
+
+    # find offset for degenerate cell labels
+    offset = 0
+    offset_pattern = re.compile(
+        '(UNMAPPABLE_DEGENERATE_)([0-9]+)'
+    )
+    for label in gene_list:
+        mtch = offset_pattern.search(label)
+        if mtch is not None:
+            this = int(mtch.group(2))
+            if this >= offset:
+                offset = this+1
+
     # make sure genes have unique names
     salt = 0
     unq, ct = np.unique(gene_list, return_counts=True)
