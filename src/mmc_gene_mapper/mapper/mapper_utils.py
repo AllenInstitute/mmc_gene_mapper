@@ -4,6 +4,7 @@ utility functions for gene mapper class
 
 import copy
 import numpy as np
+import re
 import sqlite3
 
 import mmc_gene_mapper.utils.str_utils as str_utils
@@ -239,10 +240,23 @@ def apply_mapping(
                 failure_log['many matches'] += 1
         new_gene_list.append(assn)
 
+    # find offset for degenerate cell labels
+    degen_offset = 0
+    offset_pattern = re.compile(
+        '(UNMAPPABLE_DEGENERATE_)([0-9]+)'
+    )
+    for label in new_gene_list:
+        mtch = offset_pattern.search(label)
+        if mtch is not None:
+            this = int(mtch.group(2))
+            if this >= degen_offset:
+                degen_offset = this+1
+
     (new_gene_list,
      n_degen) = mask_degenerate_genes(
                     new_gene_list,
-                    placeholder_prefix=placeholder_prefix)
+                    placeholder_prefix=placeholder_prefix,
+                    offset=degen_offset)
 
     failure_log['degenerate matches'] = n_degen
 
@@ -254,7 +268,8 @@ def apply_mapping(
 
 def mask_degenerate_genes(
         gene_list,
-        placeholder_prefix=None):
+        placeholder_prefix=None,
+        offset=0):
     """
     Take a list of gene identifiers and replace any genes
     that have identical identifiers with unique placeholder
@@ -267,6 +282,10 @@ def mask_degenerate_genes(
     placeholder_prefix:
         an optional string to be added to the placeholder
         names given to degenerate genes
+    offset:
+        an int; offset to be applied to multiplet
+        indices to prevent duplication of placeholder
+        names
 
     Returns
     -------
@@ -295,11 +314,11 @@ def mask_degenerate_genes(
                 pair = degen_gene_to_idx[gene]
                 salt = degen_gene_to_ct[gene]
                 if placeholder_prefix is None:
-                    assn = f'UNMAPPABLE_DEGENERATE_{pair}_{salt}'
+                    assn = f'UNMAPPABLE_DEGENERATE_{pair+offset}_{salt}'
                 else:
                     assn = (
                         f'{placeholder_prefix}:'
-                        f'UNMAPPABLE_DEGENERATE_{pair}_{salt}'
+                        f'UNMAPPABLE_DEGENERATE_{pair+offset}_{salt}'
                     )
                 new_gene_list.append(assn)
                 degen_gene_to_ct[gene] += 1

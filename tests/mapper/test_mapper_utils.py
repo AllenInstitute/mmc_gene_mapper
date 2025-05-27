@@ -172,3 +172,39 @@ def test_apply_mapping_override_degenerate_placeholder():
         'bb',
         'silly:UNMAPPABLE_DEGENERATE_0_1'
     ]
+
+
+def test_multiple_duplicate_levels():
+    """
+    Test that apply_mapping does not overwrite
+    existing 'UNMAPPABLE_*' labels
+    """
+    mapping = {
+        'a': ['aa'],
+        'b': ['bb'],
+        'c': ['cc']
+    }
+    gene_list = [
+        'a',
+        'UNMAPPABLE_DEGENERATE_1_0',
+        'b',
+        'c',
+        'UNMAPPABLE_DEGENERATE_1_1',
+        'c'
+    ]
+    result = mapper_utils.apply_mapping(
+             gene_list=gene_list,
+             mapping=mapping,
+             assign_placeholders=False,
+             placeholder_prefix=None
+     )
+
+    expected = [
+        'aa',
+        'UNMAPPABLE_DEGENERATE_1_0',
+        'bb',
+        'UNMAPPABLE_DEGENERATE_2_0',
+        'UNMAPPABLE_DEGENERATE_1_1',
+        'UNMAPPABLE_DEGENERATE_2_1'
+    ]
+    assert result['gene_list'] == expected
