@@ -221,7 +221,8 @@ def test_get_orthologs_mapping_from_ncbi(
 
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name='human',
         dst_species_name='jabberwock',
@@ -239,7 +240,8 @@ def test_get_orthologs_mapping_from_ncbi(
     }
     assert actual['mapping'] == expected
 
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name=9606,
         dst_species_name='jabberwock',
@@ -248,7 +250,8 @@ def test_get_orthologs_mapping_from_ncbi(
     )
     assert actual['mapping'] == expected
 
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name=9606,
         dst_species_name=999,
@@ -259,7 +262,8 @@ def test_get_orthologs_mapping_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='jabberwock',
@@ -279,7 +283,8 @@ def test_get_orthologs_mapping_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='human',
@@ -326,7 +331,8 @@ def test_get_orthologs_from_ncbi(
 
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapping_functions.ortholog_genes(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name=src_species,
         dst_species_name=dst_species,
@@ -359,7 +365,8 @@ def test_get_orthologs_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapping_functions.ortholog_genes(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='jabberwock',
@@ -392,7 +399,8 @@ def test_get_orthologs_from_ncbi(
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapping_functions.ortholog_genes(
+        db_path=mapper_fixture.db_path,
         authority='NCBI',
         src_species_name='mouse',
         dst_species_name='human',
@@ -584,7 +592,8 @@ def test_alternative_orthologs_mapping(
         gene_list,
         expected_mapping):
 
-    actual = mapper_fixture.ortholog_genes_mapping(
+    actual = mapping_functions.ortholog_genes_mapping(
+        db_path=mapper_fixture.db_path,
         authority="NCBI",
         src_species_name=src_species,
         dst_species_name=dst_species,
@@ -643,7 +652,8 @@ def test_alternative_orthologs(
         gene_list,
         expected_gene_list):
 
-    actual = mapper_fixture.ortholog_genes(
+    actual = mapping_functions.ortholog_genes(
+        db_path=mapper_fixture.db_path,
         authority="NCBI",
         src_species_name=src_species,
         dst_species_name=dst_species,
