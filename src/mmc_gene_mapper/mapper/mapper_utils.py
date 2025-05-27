@@ -6,6 +6,7 @@ import copy
 import numpy as np
 import sqlite3
 
+import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
@@ -313,6 +314,113 @@ def detect_species_and_authority(
         db_path,
         gene_list):
     """
+    Find the species and authority for a list of gene
+    identifiers. Genes can be from an inhomogeneous list of
+    authorities.
+
+    Parameters
+    ----------
+    db_path:
+        path to database being quried.
+    gene_list:
+        list of gene identifiers we are trying to map.
+
+    Returns
+    --------
+    A dict
+        {
+          "authority": np.array of strings indicating authority for genes
+          "species": human readable name of species
+          "species_taxon": integer indentifying species
+        }
+
+    Notes
+    -----
+    This function assumes that all genes in gene_list are from the same
+    species. As such, it will accept the first match it finds as the
+    truth. If it happens to find more than one species in the first chunk
+    of data it analyzes, it will raise an exception. If you pass it a list
+    of gene symbols, "species" and "species_taxon" will be None
+    """
+
+    gene_list = np.array(gene_list)
+
+    # Do string matching to determine which genes
+    # symbols, which are ENSEMBL IDs and which are
+    # NCBI IDs
+
+    authority = str_utils.characterize_gene_identifiers(
+        gene_list
+    )
+    authority = np.array(authority)
+
+    symbol_idx = np.where(authority=='symbol')[0]
+    ensembl_idx = np.where(authority=='ENSEMBL')[0]
+    ncbi_idx = np.where(authority=='NCBI')[0]
+
+    n_found = (
+        len(symbol_idx)
+        + len(ensembl_idx)
+        + len(ncbi_idx)
+    )
+
+    if n_found != len(gene_list):
+        raise RuntimeError(
+            "Not all genes accounted for in authorities "
+            "('symbol', 'ENSEMBL', 'NCBI'); "
+            f"input n: {len(gene_list)}\n"
+            f"n authorities: {n_found}"
+        )
+
+    if len(ensembl_idx) > 0:
+        ensembl_authority = _detect_species_and_authority(
+            db_path=db_path,
+            gene_list=gene_list[ensembl_idx]
+        )
+    else:
+        ensembl_authority = None
+
+    if len(ncbi_idx) > 0:
+        ncbi_authority = _detect_species_and_authority(
+            db_path=db_path,
+            gene_list=gene_list[ncbi_idx]
+        )
+    else:
+        ncbi_authority = None
+
+    if ensembl_authority is None and ncbi_authority is None:
+        species = None
+        species_taxon = None
+    elif ncbi_authority is None:
+        species = ensembl_authority['species']
+        species_taxon = ensembl_authority['species_taxon']
+    elif ensembl_authority is None:
+        species = ncbi_authority['species']
+        species_taxon = ncbi_authority['species_taxon']
+    else:
+        ens = ensembl_authority['species_taxon']
+        ncbi = ncbi_authority['species_taxon']
+        if ens != ncbi:
+            msg = (
+                f"\nENSEMBL genes gave species '{ensembl_authority['species']}'"
+                f"\nNCBI genes gave species '{ncbi_authority['species']}'"
+            )
+            raise InconsistentSpeciesError(msg)
+        species = ensembl_authority['species']
+        species_taxon = ncbi_authority['species_taxon']
+
+    return {
+        "authority": authority,
+        "species": species,
+        "species_taxon": species_taxon
+    }
+
+
+def _detect_species_and_authority(
+        db_path,
+        gene_list,
+        chunk_size=100):
+    """
     Take a list of gene identifiers. Determine
     the authority and species associated
     with the genes.
@@ -324,6 +432,13 @@ def detect_species_and_authority(
     gene_list:
         list of strings; the gene identifiers whose
         authority and species are being determined
+    chunk_size:
+        The number of gene identifiers to query at a time
+        in a search for a match. Once a match is found,
+        the corresponding (species, authority) pair will
+        be assumed to be correct for all of the genes in
+        gene_list. If an inconsistent answer is found in
+        a single chunk, an exception will be raised.
 
     Returns
     -------
@@ -340,11 +455,12 @@ def detect_species_and_authority(
 
     Notes
     -----
-    This function will loop over the genes 25 at a time
-    to try to minimize expensive queries on the string
-    gene identifiers. Once a self-consistent answer is found,
-    that will be returned. If an inconsistent answer is found,
-    an exception will be raised.
+    This function can be very slow as it has to query the
+    database on an unindexed string (the gene identifier)
+    to find a species. If no species is found, this could
+    involve many costly queries to the database. Try not
+    to run it on lists of gene symbols (which will not
+    be found in the database).
 
     If the genes do not exist in the gene table, a "None"
     will be returned for all fields in the output.
@@ -356,11 +472,9 @@ def detect_species_and_authority(
         "species_taxon": None
     }
 
-    chunk_size = 500
     n_genes = len(gene_list)
     with sqlite3.connect(db_path) as conn:
         for i0 in range(0, n_genes, chunk_size):
-            print(i0)
             sub_list = gene_list[i0:i0+chunk_size]
             query = """
                 SELECT
