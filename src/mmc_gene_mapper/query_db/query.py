@@ -226,7 +226,7 @@ def get_authority_and_citation(
     -------
     A dict
         {'authority': full_authority,
-         'citaiton': full_citation}
+         'citation': full_citation}
 
     Each value is a dict characterizing all the data
     carried around for that entity.

@@ -11,8 +11,10 @@ import time
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.str_utils as str_utils
+import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
+import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
 
@@ -555,7 +557,85 @@ class MMCGeneMapper(object):
             the citation to use for any ortholog mappings
             (if they are needed)
         """
+
+        dst_species_taxon = query_utils.get_species_taxon(
+            db_path=self.db_path,
+            species_name=dst_species,
+            strict=True
+        )
+
+        src_authority_and_species = species_utils.detect_species_and_authority(
+            db_path=self.db_path,
+            gene_list=gene_list
+        )
+
+        # this would be a good place to record what species was
+        # detected in the input data
+
+        with sqlite3.connect(self.db_path) as conn:
+            dst_authority = metadata_utils.get_authority(
+                conn=conn,
+                name=dst_authority,
+                strict=True
+            )
+
+        if dst_species_taxon == src_authority_and_species['species_taxon']:
+            need_orthologs = False
+        else:
+            need_orthologs = True
+
+        """
+        Need
+            convert_to_ncbi
+            convert_to_ensembl
+        functions that take the output of detect_species_and_authority
+        """
+
+
         pass
+        """
+        detect authority ans species for src
+        get species taxon for dst
+        if species taxons are identical, no need for ortholog
+
+        if ortholog and src_authority is not NCBI, map to NCBI
+        do ortholog
+        map to dst_authority
+
+        What about symbols?
+            how long is it going to take species detector to
+            figure out that a 10x dataset has gene symbols?
+
+            Test that experimentally
+
+        add first pass to species detection using str_utils to see
+        if we are dealing with gene symbols up front.
+
+        if symbols, do not assign placeholders (in case some ENSEMBL IDs
+        or whatever snuck through, as sometimes happens)
+
+        raise some kind of warning if a large fraction of genes ultimately
+        fail mapping
+
+        just need to write good tests
+        add section in notebook where we will test against released
+        data gene symbols to make sure results are somewhat as expected
+
+        I guess we could use str_utils to detect authority and then
+        filter: use identifier genes to detect species
+        then try to map symbols to the correct authority
+        
+        *then* do any ortholog mapping
+
+        This would allow us to reconcile datasets with NCBI and ENSEMBL
+        gene identifiers in them (as long as they contain the same species)
+
+        Maybe need map_arbitrary_genes_to_authority function to handle that
+        case first.
+
+        These need to be functions; hanging these off of the class is getting
+        painful.
+        """
 
     def _initialize(
             self,
