@@ -10,8 +10,11 @@ import pandas as pd
 import pathlib
 import tarfile
 import tempfile
+import unittest.mock
+
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.mapper.mapper as mapper
 
 
 @pytest.fixture(scope='session')
@@ -387,3 +390,46 @@ def dummy_download_mgr_fixture(
                 )
 
     return DummyDownloadManager
+
+
+@pytest.fixture(scope='session')
+def mapper_fixture(
+        ncbi_file_package_fixture,
+        dummy_download_mgr_fixture,
+        bkbit_data_fixture0,
+        alt_ortholog_file_fixture,
+        tmp_dir_fixture):
+    """
+    Return an instantiation of the MMCGeneMapper class
+    based on our simulated NCBI file package
+    """
+    tmp_dir = tempfile.mkdtemp(dir=tmp_dir_fixture)
+    db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir,
+        prefix='ncbi_gene_mapper_',
+        suffix='.db',
+        delete=True
+    )
+
+    data_file_spec = [
+        {"type": "bkbit",
+         "path": bkbit_data_fixture0
+         },
+        {"type": "hmba_orthologs",
+         "path": alt_ortholog_file_fixture,
+         "name": "alternative_orthologs"
+         }
+    ]
+
+    to_replace = "mmc_gene_mapper.download.download_manager.DownloadManager"
+    with unittest.mock.patch(to_replace, dummy_download_mgr_fixture):
+        gene_mapper = mapper.MMCGeneMapper(
+            db_path=db_path,
+            local_dir=tmp_dir_fixture,
+            data_file_spec=data_file_spec,
+            clobber=False,
+            force_download=False,
+            suppress_download_stdout=True
+        )
+
+    return gene_mapper
