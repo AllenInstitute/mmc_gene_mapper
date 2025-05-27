@@ -2,14 +2,14 @@ import pytest
 
 import numpy as np
 
-import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
+import mmc_gene_mapper.mapper.species_detection as species_utils
 
 
 def test_determine_species_and_authority_from_data(
         mapper_fixture):
 
     garbage_genes = ["a", "b", "c", "d"]
-    actual = mapper_utils.detect_species_and_authority(
+    actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=garbage_genes
     )
@@ -22,7 +22,7 @@ def test_determine_species_and_authority_from_data(
     )
 
     jabberwock_genes = ["ENSX22", "ENSX26"]
-    actual = mapper_utils.detect_species_and_authority(
+    actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -34,7 +34,7 @@ def test_determine_species_and_authority_from_data(
     )
 
     jabberwock_genes = ["a0", "ENSX22", "a1", "ENSX26"]
-    actual = mapper_utils.detect_species_and_authority(
+    actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -46,7 +46,7 @@ def test_determine_species_and_authority_from_data(
     )
 
     jabberwock_genes = ["NCBIGene:11", "NCBIGene:13"]
-    actual = mapper_utils.detect_species_and_authority(
+    actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -59,7 +59,7 @@ def test_determine_species_and_authority_from_data(
 
     jabberwock_genes = ["a0", "a1", "NCBIGene:11", "a2",
                         "ENSX22", "NCBIGene:13", "ENSX26"]
-    actual = mapper_utils.detect_species_and_authority(
+    actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -84,8 +84,8 @@ def test_determine_species_and_authority_from_data(
     msg = (
         "NCBI genes gave species 'jabberwock'"
     )
-    with pytest.raises(mapper_utils.InconsistentSpeciesError, match=msg):
-        mapper_utils.detect_species_and_authority(
+    with pytest.raises(species_utils.InconsistentSpeciesError, match=msg):
+        species_utils.detect_species_and_authority(
             db_path=mapper_fixture.db_path,
             gene_list=mixed_genes
         )
@@ -95,7 +95,7 @@ def test_backend_determine_species_and_authority_from_data(
         mapper_fixture):
 
     garbage_genes = ["a", "b", "c", "d"]
-    actual = mapper_utils._detect_species_and_authority(
+    actual = species_utils._detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=garbage_genes
     )
@@ -106,7 +106,7 @@ def test_backend_determine_species_and_authority_from_data(
     assert actual == expected
 
     jabberwock_genes = ["ENSX22", "ENSX26"]
-    actual = mapper_utils._detect_species_and_authority(
+    actual = species_utils._detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -118,7 +118,7 @@ def test_backend_determine_species_and_authority_from_data(
 
     jabberwock_genes = [f'a{ii}' for ii in range(45)] + ["ENSX22", "ENSX26"]
     assert len(jabberwock_genes) > 25
-    actual = mapper_utils._detect_species_and_authority(
+    actual = species_utils._detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -129,7 +129,7 @@ def test_backend_determine_species_and_authority_from_data(
     assert actual == expected
 
     jabberwock_genes = ["NCBIGene:11", "NCBIGene:13"]
-    actual = mapper_utils._detect_species_and_authority(
+    actual = species_utils._detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
@@ -142,16 +142,16 @@ def test_backend_determine_species_and_authority_from_data(
 
     msg = "Multiple authorities inferred"
     mixed_genes = ["NCBIGene:11", "ENSX22"]
-    with pytest.raises(mapper_utils.InconsistentSpeciesError, match=msg):
-        mapper_utils._detect_species_and_authority(
+    with pytest.raises(species_utils.InconsistentSpeciesError, match=msg):
+        species_utils._detect_species_and_authority(
             db_path=mapper_fixture.db_path,
             gene_list=mixed_genes
         )
 
     msg = "Multiple species inferred"
     mixed_genes = ["NCBIGene:11", "ENSX22", "NCBIGene:3"]
-    with pytest.raises(mapper_utils.InconsistentSpeciesError, match=msg):
-        mapper_utils._detect_species_and_authority(
+    with pytest.raises(species_utils.InconsistentSpeciesError, match=msg):
+        species_utils._detect_species_and_authority(
             db_path=mapper_fixture.db_path,
             gene_list=mixed_genes
         )
