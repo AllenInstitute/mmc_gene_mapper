@@ -26,12 +26,23 @@ def test_determine_species_and_authority_from_data(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
-    print(actual)
     assert actual['species'] == 'jabberwock'
     assert actual['species_taxon'] == 999
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['ENSEMBL', 'ENSEMBL'])
+    )
+
+    jabberwock_genes = ["a0", "ENSX22", "a1", "ENSX26"]
+    actual = mapper_utils.detect_species_and_authority(
+        db_path=mapper_fixture.db_path,
+        gene_list=jabberwock_genes
+    )
+    assert actual['species'] == 'jabberwock'
+    assert actual['species_taxon'] == 999
+    np.testing.assert_array_equal(
+        actual['authority'],
+        np.array(['symbol', 'ENSEMBL', 'symbol', 'ENSEMBL'])
     )
 
     jabberwock_genes = ["NCBIGene:11", "NCBIGene:13"]
