@@ -132,7 +132,7 @@ def test_apply_mapping_override_degenerate_placeholder():
     Test that two genes which come in with degenerate placeholder
     identifiers get mapped to unique identifiers
     """
-    gene_list = ['a', 'UNMAPPABLE', 'b']
+    gene_list = ['a', 'abcUNMAPPABLE', 'b']
     mapping = {
         'a': ['aa'],
         'b': ['bb']
@@ -143,9 +143,9 @@ def test_apply_mapping_override_degenerate_placeholder():
         assign_placeholders=False,
         placeholder_prefix=None
     )
-    assert actual['gene_list'] == ['aa', 'UNMAPPABLE', 'bb']
+    assert actual['gene_list'] == ['aa', 'abcUNMAPPABLE', 'bb']
 
-    gene_list = ['a', 'UNMAPPABLE', 'b', 'UNMAPPABLE']
+    gene_list = ['a', 'abcUNMAPPABLE', 'b', 'abcUNMAPPABLE']
     actual = mapper_utils.apply_mapping(
         gene_list=gene_list,
         mapping=mapping,
@@ -159,7 +159,7 @@ def test_apply_mapping_override_degenerate_placeholder():
         'UNMAPPABLE_DEGENERATE_0_1'
     ]
 
-    gene_list = ['a', 'UNMAPPABLE', 'b', 'UNMAPPABLE']
+    gene_list = ['a', 'abcUNMAPPABLE', 'b', 'abcUNMAPPABLE']
     actual = mapper_utils.apply_mapping(
         gene_list=gene_list,
         mapping=mapping,
