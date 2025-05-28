@@ -16,7 +16,7 @@ import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
-import mmc_gene_mapper.mapper.mapping_functions as mapping_functions
+import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
 
 
 class MMCGeneMapper(object):
@@ -156,295 +156,35 @@ class MMCGeneMapper(object):
             row[0] for row in raw
         ]
 
-    def identifiers_from_symbols(
-            self,
-            gene_symbol_list,
-            species_name,
-            authority_name,
-            assign_placeholders=True,
-            placeholder_prefix=None):
-        """
-        Find the mapping that converts gene symbols into
-        gene identifiers. Apply that mapping and return
-        the list of relevant gene identifiers.
-
-        Parameters
-        ----------
-        gene_symbol_list:
-            list of gene symbols
-        species_name:
-            name of the species we are working with
-        authority_name:
-            name of the authority in whose identifiers
-            we want the genes listed
-        assign_placeholders:
-            a boolean. If True, assign placeholder names
-            to any genes that cannot be mapped
-        placeholder_prefix:
-            optional prefix to apply to the placeholer names
-            given to unmappable genes.
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "failure_log": {
-                 summary of how many genes failed to be mapped
-                 for what reasons
-              }
-              "gene_list": [
-                  list of mapped gene identifiers
-              ]
-            }
-        """
-        return mapping_functions.identifiers_from_symbols(
-            db_path=self.db_path,
-            gene_symbol_list=gene_symbol_list,
-            species_name=species_name,
-            authority_name=authority_name,
-            assign_placeholders=assign_placeholders,
-            placeholder_prefix=placeholder_prefix
-        )
-
-
-    def equivalent_genes(
-            self,
-            input_authority,
-            output_authority,
-            gene_list,
-            species_name,
-            citation_name,
-            assign_placeholders=True,
-            placeholder_prefix=None):
-        """
-        Return a mapping between gene identifiers from
-        different authorities (NCBI vs ENSEMBL)
-
-        Parameters
-        ----------
-        input_authority:
-            a str; the name of the authority in which the input
-            genes are identified
-        output_authority:
-            a str; the name of the authority you want to convert
-            the identifiers to
-        gene_list:
-            list of gene identifiers (in input_authority) to be
-            mapped
-        species_name:
-            name of species we are working with
-        citation_name:
-            name of citation to use to assess gene eqivalence
-        assign_placeholders:
-            a boolean. If True, assign placeholder names
-            to any genes that cannot be mapped
-        placeholder_prefix:
-            optional prefix to apply to the placeholer names
-            given to unmappable genes.
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "failure_log": {
-                 summary of how many genes failed to be mapped
-                 for what reasons
-              }
-              "gene_list": [
-                  list of mapped gene identifiers
-              ]
-            }
-        """
-
-        return mapping_functions.equivalent_genes(
-            db_path=self.db_path,
-            input_authority=input_authority,
-            output_authority=output_authority,
-            gene_list=gene_list,
-            species_name=species_name,
-            citation_name=citation_name,
-            assign_placeholders=assign_placeholders,
-            placeholder_prefix=placeholder_prefix
-        )
-
-
-    def ortholog_genes(
-            self,
-            authority,
-            src_species_name,
-            dst_species_name,
-            gene_list,
-            citation_name,
-            assign_placeholders=True,
-            placeholder_prefix=None):
-        """
-        Return a mapping between gene identifiers from
-        different species
-
-        Parameters
-        ----------
-        authority:
-            a str; the name of the authority (ENSEMBL, NCBI etc.)
-            we are working in
-        src_species_name:
-            a str; the name of the species we are starting from
-        dst_species_name:
-            as str; the name of the species we are mapping to
-        gene_list:
-            list of gene identifiers (in src_species) to be
-            mapped
-        citation_name:
-            name of citation to use to assess gene eqivalence
-        assign_placeholders:
-            a boolean. If True, assign placeholder names
-            to any genes that cannot be mapped
-        placeholder_prefix:
-            optional prefix to apply to the placeholer names
-            given to unmappable genes.
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "failure_log": {
-                 summary of how many genes failed to be mapped
-                 for what reasons
-              }
-              "gene_list": [
-                  list of mapped gene identifiers
-              ]
-            }
-        """
-        return mapping_functions.ortholog_genes(
-            db_path=self.db_path,
-            authority=authority,
-            src_species_name=src_species_name,
-            dst_species_name=dst_species_name,
-            gene_list=gene_list,
-            citation_name=citation_name,
-            assign_placeholders=assign_placeholders,
-            placeholder_prefix=placeholder_prefix
-        )
-
-    def map_arbitrary_genes(
+    def map_genes(
             self,
             gene_list,
             dst_species,
             dst_authority,
             ortholog_citation='NCBI'):
         """
-        Map genes into an arbitrary (species, authority)
-        space. Infer the species and authority of the input
-        genes from the data.
+        Perform an arbitrary mapping on a list of gene identifiers.
 
         Parameters
         ----------
+        db_path:
+            path to the database being queries
         gene_list:
-            list of str. The genes being mapped
+            list of gene identifiers being mapped
         dst_species:
-            the species into which we are mapping the
-            input genes
+            name of species being mapped to
         dst_authority:
-            the authority into which we are mapping the
-            input genes
+            name of authority being mapped to
         ortholog_citation:
-            the citation to use for any ortholog mappings
-            (if they are needed)
+            citation to use for ortholog mapping, if necessary
         """
-
-        dst_species_taxon = query_utils.get_species_taxon(
+        return arbitrary_conversion.arbitrary_mapping(
             db_path=self.db_path,
-            species_name=dst_species,
-            strict=True
+            gene_list=gene_list,
+            dst_species=dst_species,
+            dst_authority=dst_authority,
+            ortholog_citation=ortholog_citation
         )
-
-        src_authority_and_species = species_utils.detect_species_and_authority(
-            db_path=self.db_path,
-            gene_list=gene_list
-        )
-
-        # this would be a good place to record what species was
-        # detected in the input data
-
-        with sqlite3.connect(self.db_path) as conn:
-            dst_authority = metadata_utils.get_authority(
-                conn=conn,
-                name=dst_authority,
-                strict=True
-            )
-
-        if dst_species_taxon == src_authority_and_species['species_taxon']:
-            need_orthologs = False
-        else:
-            need_orthologs = True
-
-        """
-        Need
-            convert_to_ncbi
-            convert_to_ensembl
-        functions that take the output of detect_species_and_authority
-        """
-
-
-        pass
-        """
-        detect authority ans species for src
-        get species taxon for dst
-        if species taxons are identical, no need for ortholog
-
-        if ortholog and src_authority is not NCBI, map to NCBI
-        do ortholog
-        map to dst_authority
-
-        What about symbols?
-            how long is it going to take species detector to
-            figure out that a 10x dataset has gene symbols?
-
-            Test that experimentally
-
-        add first pass to species detection using str_utils to see
-        if we are dealing with gene symbols up front.
-
-        if symbols, do not assign placeholders (in case some ENSEMBL IDs
-        or whatever snuck through, as sometimes happens)
-
-        raise some kind of warning if a large fraction of genes ultimately
-        fail mapping
-
-        just need to write good tests
-        add section in notebook where we will test against released
-        data gene symbols to make sure results are somewhat as expected
-
-        I guess we could use str_utils to detect authority and then
-        filter: use identifier genes to detect species
-        then try to map symbols to the correct authority
-        
-        *then* do any ortholog mapping
-
-        This would allow us to reconcile datasets with NCBI and ENSEMBL
-        gene identifiers in them (as long as they contain the same species)
-
-        Maybe need map_arbitrary_genes_to_authority function to handle that
-        case first.
-
-        These need to be functions; hanging these off of the class is getting
-        painful.
-        """
 
     def _initialize(
             self,
