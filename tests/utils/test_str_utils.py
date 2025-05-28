@@ -30,7 +30,9 @@ def test_characterize_gene_identifiers():
        'NCBIGene:7781',
        'NCBIGene::7777123',
        'ENSMUSG',
-       'NCBI'
+       'NCBI',
+       'abcNCBIGene:777',
+       'abcENSX66'
     ]
     expected = [
         'symbol',
@@ -40,6 +42,8 @@ def test_characterize_gene_identifiers():
         'ENSEMBL',
         'symbol',
         'NCBI',
+        'symbol',
+        'symbol',
         'symbol',
         'symbol',
         'symbol'
