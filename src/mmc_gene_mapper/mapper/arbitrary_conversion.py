@@ -9,8 +9,99 @@ the mapper class into a function module
 
 import numpy as np
 
+import mmc_gene_mapper.query_db.query as query_utils
+import mmc_gene_mapper.mapper.species_detection as species_detection
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.mapper.mapping_functions as mapping_functions
+
+
+def arbitrary_mapping(
+        db_path,
+        gene_list,
+        dst_species,
+        dst_authority,
+        ortholog_citation='NCBI'):
+    """
+    Parameters
+    ----------
+    db_path:
+        path to the database being queries
+    gene_list:
+        list of gene identifiers being mapped
+    dst_species:
+        name of species being mapped to
+    dst_authority:
+        name of authority being mapped to
+    ortholog_citation:
+        citation to use for ortholog mapping, if necessary
+    """
+    if dst_authority not in ('NCBI', 'ENSEMBL'):
+        raise ValueError(
+            f"Unclear how to map to authority '{dst_authority}'; "
+            "Must be either 'NCBI' or 'ENSEMBL'"
+        )
+
+    n_genes = len(gene_list)
+
+    src_authority = species_detection.detect_species_and_authority(
+        db_path=db_path,
+        gene_list=gene_list
+    )
+
+    src_species_taxon = src_authority['species_taxon']
+
+    dst_species_taxon = query_utils.get_species_taxon(
+        db_path=db_path,
+        species_name=dst_species,
+        strict=True
+    )
+
+    if src_species_taxon is None or dst_species_taxon == src_species_taxon:
+        need_orthologs = False
+    else:
+        need_orthologs = True
+
+    if need_orthologs:
+        current = convert_authority_in_bulk(
+            db_path=db_path,
+            gene_list=gene_list,
+            src_authority=src_authority,
+            dst_authority='NCBI'
+        )
+
+        current = mapping_functions.ortholog_genes(
+            db_path=db_path,
+            authority='NCBI',
+            src_species_name=src_species_taxon,
+            dst_species_name=dst_species_taxon,
+            gene_list=current['gene_list'],
+            citation_name=ortholog_citation,
+            assign_placeholders=True,
+            placeholder_prefix='ortholog'
+        )
+
+        current_authority = {
+            'authority': np.array(['NCBI']*n_genes),
+            'species': dst_species,
+            'species_taxon': dst_species_taxon
+        }
+
+    else:
+        current_authority = src_authority
+        current = {
+            'gene_list': gene_list,
+        }
+
+    current = convert_authority_in_bulk(
+        db_path=db_path,
+        gene_list=current['gene_list'],
+        src_authority=current_authority,
+        dst_authority=dst_authority
+    )
+
+    return {
+        'gene_list': current['gene_list']
+    }
 
 
 def convert_authority_in_bulk(
@@ -115,7 +206,10 @@ def convert_authority_in_bulk(
         placeholder_prefix=f'{dst_authority}'
     )
 
-    failure_log['degenerate matches'] += n_degen
+    if failure_log is not None:
+        failure_log['degenerate matches'] += n_degen
+    else:
+        failure_log = {'degenerate matches': n_degen}
 
     return {
         'metadata': metadata,
