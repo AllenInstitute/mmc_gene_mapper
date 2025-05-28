@@ -136,7 +136,8 @@ def test_arbitrary_mapping_function_no_ortholog(
         "NCBIGene:16",
         "ENSX22",
         "symbol:15",
-        "ENSX88888"],
+        "ENSX88888",
+        "symbol:987654"],
         "ENSEMBL",
        ["NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
         "NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
@@ -144,7 +145,8 @@ def test_arbitrary_mapping_function_no_ortholog(
         "ortholog:UNMAPPABLE_NO_MATCH_0",
         "ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0"]),
+        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"]),
     ]
 )
 def test_arbitrary_mapping_function_yes_ortholog(
