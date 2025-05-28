@@ -344,8 +344,6 @@ def translate_gene_identifiers(
         for key in results:
             results[key] = sorted(results[key])
 
-        print(f'authority_idx {authority_idx} citation {citation_idx}')
-        print(f'require_symbols {require_symbols}')
         return {
             'metadata': {
                 'authority': full_authority,
@@ -745,31 +743,35 @@ def mapping_dict_to_identifiers(
         species_taxon=key_species_taxon
     )
     error_msg += key_error
+    if len(error_msg) > 0:
+        raise MappingError(error_msg)
 
     value_list = set()
     for key in mapping_dict:
         value_list = value_list.union(set(mapping_dict[key]))
     value_list = sorted(value_list)
 
-    value_mapping, value_error = _strict_mapping_from_id(
+    value_mapping, _ = _strict_mapping_from_id(
         db_path=db_path,
         value_list=list(value_list),
         authority_name=value_authority_name,
         species_taxon=value_species_taxon
     )
-    error_msg += value_error
-    print(f'value_mapping ',value_mapping)
-    if len(error_msg) > 0:
-        raise MappingError(error_msg)
 
     new_dict = dict()
     for key in mapping_dict:
         new_key = key_mapping[key][0]
         new_dict[new_key] = []
         for val in mapping_dict[key]:
-            new_dict[new_key].append(
-                value_mapping[val][0]
-            )
+            if val in value_mapping:
+                if len(value_mapping[val]) == 1:
+                    new_dict[new_key].append(
+                        value_mapping[val][0]
+                    )
+                elif len(value_mapping[val]) > 1:
+                    raise RuntimeError(
+                        f"More than one mapping value for {new_key}"
+                    )
 
     return new_dict
 

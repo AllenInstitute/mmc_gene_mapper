@@ -30,8 +30,12 @@ def test_get_all_species(mapper_fixture):
 
 def test_get_all_citations(mapper_fixture):
     actual = mapper_fixture.get_all_citations()
-    assert len(actual) == 3
-    expected_names = ["NCBI", "J001-2025", "alternative_orthologs"]
+    assert len(actual) == 4
+    expected_names = [
+        "NCBI",
+        "J001-2025",
+        "M001-2025",
+        "alternative_orthologs"]
     actual_names = [citation["name"] for citation in actual]
     assert set(expected_names) == set(actual_names)
 

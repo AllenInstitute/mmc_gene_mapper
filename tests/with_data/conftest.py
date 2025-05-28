@@ -129,9 +129,12 @@ def ncbi_data_package_fixture(
             ortholog_lookup[p1].append(p0)
 
     result = []
-    for gene_id in range(30):
-        species_id = species_list[gene_id//10]
+    for gene_id in range(38):
+        # there will be mouse genes that are not listed in the bkbit data
+        species_id = species_list[min(gene_id//10, 2)]
+
         symbol = f'symbol:{gene_id}'
+
         if gene_id == 5:
             symbol = "symbol:7"
 
@@ -349,6 +352,79 @@ def bkbit_data_fixture0(
 
 
 @pytest.fixture(scope='session')
+def bkbit_data_fixture1(
+        ncbi_data_package_fixture,
+        tmp_dir_fixture):
+    """
+    Write out a simulated bkbit file for mouse. Return the path to
+    that file.
+    """
+    json_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        prefix='test_bkbit_',
+        suffix='.jsonld'
+    )
+
+    graph = []
+
+    taxon = {
+        "id": "NCBITaxon:10090",
+        "category": ["biolink:OrganismTaxon"],
+        "name": "mouse",
+        "full_name": "Mus musculus"
+    }
+
+    assembly = {
+        "id": "mouseAssembly",
+        "category": ["bican:GenomeAssembly"],
+        "name": "M001"
+    }
+
+    genome_annotation = {
+        "id": "M001-2025",
+        "category": ["bican:GenomeAnnotation"],
+        "version": "0",
+        "authority": "ENSEMBL"
+    }
+
+    ct = 0
+    graph = [taxon, assembly, genome_annotation]
+    for gene in ncbi_data_package_fixture:
+        if gene['species'] != 10090:
+            continue
+        if gene['ensembl_identifier'] is None:
+            continue
+        idx = gene['gene_id']
+        if idx >= 30:
+            continue
+
+        # give genes different symbols in ENSEMBL
+        # than NCBI
+        symbol = gene['ensembl_symbol']
+        if ct % 2 == 1:
+            name = f"name:{symbol.split(':')[-1]}"
+        else:
+            name = symbol
+        ct += 1
+
+        print(gene['ensembl_identifier'], symbol)
+
+        gene = {
+            "category": ["bican:GeneAnnotation"],
+            "source_id": gene['ensembl_identifier'],
+            "symbol": symbol,
+            "name": name,
+            "in_taxon_label": "Mus musculus"
+        }
+        graph.append(gene)
+
+    data = {'@graph': graph}
+    with open(json_path, 'w') as dst:
+        dst.write(json.dumps(data))
+    return json_path
+
+
+@pytest.fixture(scope='session')
 def dummy_download_mgr_fixture(
         species_file_fixture,
         ncbi_file_package_fixture):
@@ -398,6 +474,7 @@ def mapper_fixture(
         ncbi_file_package_fixture,
         dummy_download_mgr_fixture,
         bkbit_data_fixture0,
+        bkbit_data_fixture1,
         alt_ortholog_file_fixture,
         tmp_dir_fixture):
     """
@@ -416,6 +493,8 @@ def mapper_fixture(
         {"type": "bkbit",
          "path": bkbit_data_fixture0
          },
+        {"type": "bkbit",
+         "path": bkbit_data_fixture1},
         {"type": "hmba_orthologs",
          "path": alt_ortholog_file_fixture,
          "name": "alternative_orthologs"
