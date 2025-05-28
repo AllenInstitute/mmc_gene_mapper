@@ -42,6 +42,7 @@ def arbitrary_mapping(
         )
 
     n_genes = len(gene_list)
+    metadata = []
 
     src_authority = species_detection.detect_species_and_authority(
         db_path=db_path,
@@ -69,6 +70,8 @@ def arbitrary_mapping(
             dst_authority='NCBI'
         )
 
+        metadata.append(current['metadata'])
+
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
             authority='NCBI',
@@ -86,20 +89,25 @@ def arbitrary_mapping(
             'species_taxon': dst_species_taxon
         }
 
+        metadata.append(current['metadata'])
+
     else:
         current_authority = src_authority
         current = {
             'gene_list': gene_list,
         }
 
-    current = convert_authority_in_bulk(
-        db_path=db_path,
-        gene_list=current['gene_list'],
-        src_authority=current_authority,
-        dst_authority=dst_authority
-    )
+    if set(current_authority['authority']) != set([dst_authority]):
+        current = convert_authority_in_bulk(
+            db_path=db_path,
+            gene_list=current['gene_list'],
+            src_authority=current_authority,
+            dst_authority=dst_authority
+        )
+        metadata.append(current['metadata'])
 
     return {
+        'metadata': metadata,
         'gene_list': current['gene_list']
     }
 
