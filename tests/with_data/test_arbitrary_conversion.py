@@ -108,6 +108,19 @@ def test_convert_authority_in_bulk(
         "NCBI:UNMAPPABLE_DEGENERATE_0_1",
         "NCBIGene:11"],
        True),
+      (["symbol:12", "symbol:14", "symbol:13"],
+        "NCBI",
+       ["NCBIGene:12", "NCBIGene:14", "NCBIGene:13"],
+       True
+       ),
+      (["symbol:22", "symbol:26", "symbol:24", "symbol:28"],
+        "ENSEMBL",
+       ["symbol:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
+        "symbol:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
+        "ENSX26",
+        "ENSX30"],
+       True
+       ),
     ]
 )
 def test_arbitrary_mapping_function_no_ortholog(
