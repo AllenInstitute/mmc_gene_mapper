@@ -344,6 +344,8 @@ def translate_gene_identifiers(
         for key in results:
             results[key] = sorted(results[key])
 
+        print(f'authority_idx {authority_idx} citation {citation_idx}')
+        print(f'require_symbols {require_symbols}')
         return {
             'metadata': {
                 'authority': full_authority,
@@ -756,6 +758,7 @@ def mapping_dict_to_identifiers(
         species_taxon=value_species_taxon
     )
     error_msg += value_error
+    print(f'value_mapping ',value_mapping)
     if len(error_msg) > 0:
         raise MappingError(error_msg)
 
