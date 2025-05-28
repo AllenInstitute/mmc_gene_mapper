@@ -280,10 +280,12 @@ def mask_degenerate_genes(
     Number of degenerate genes found.
     """
 
+    tag = 'UNMAPPABLE_DEGENERATE'
+
     # find offset for degenerate cell labels
     offset = 0
     offset_pattern = re.compile(
-        '(UNMAPPABLE_DEGENERATE_)([0-9]+)'
+        f'({tag}_)([0-9]+)'
     )
     for label in gene_list:
         mtch = offset_pattern.search(label)
@@ -313,11 +315,11 @@ def mask_degenerate_genes(
                 pair = degen_gene_to_idx[gene]
                 salt = degen_gene_to_ct[gene]
                 if placeholder_prefix is None:
-                    assn = f'UNMAPPABLE_DEGENERATE_{pair+offset}_{salt}'
+                    assn = f'{tag}_{pair+offset}_{salt}'
                 else:
                     assn = (
                         f'{placeholder_prefix}:'
-                        f'UNMAPPABLE_DEGENERATE_{pair+offset}_{salt}'
+                        f'{tag}_{pair+offset}_{salt}'
                     )
                 new_gene_list.append(assn)
                 degen_gene_to_ct[gene] += 1

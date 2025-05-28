@@ -110,10 +110,12 @@ def convert_authority_in_bulk(
                     failure_log[key] += raw['failure_log'][key]
 
     (result,
-     _) = mapper_utils.mask_degenerate_genes(
+     n_degen) = mapper_utils.mask_degenerate_genes(
         gene_list=result,
         placeholder_prefix=f'{dst_authority}'
     )
+
+    failure_log['degenerate matches'] += n_degen
 
     return {
         'metadata': metadata,
