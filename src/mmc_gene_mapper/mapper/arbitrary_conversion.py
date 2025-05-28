@@ -49,13 +49,17 @@ def arbitrary_mapping(
         gene_list=gene_list
     )
 
-    src_species_taxon = src_authority['species_taxon']
-
     dst_species_taxon = query_utils.get_species_taxon(
         db_path=db_path,
         species_name=dst_species,
         strict=True
     )
+
+    if src_authority['species'] is None:
+        src_authority['species'] = dst_species
+        src_authority['species_taxon'] = dst_species_taxon
+
+    src_species_taxon = src_authority['species_taxon']
 
     if src_species_taxon is None or dst_species_taxon == src_species_taxon:
         need_orthologs = False
