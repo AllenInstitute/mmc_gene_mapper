@@ -8,12 +8,12 @@ def main():
 
     human = {
         "url": "https://ftp.ensembl.org/pub/release-101/gff3/homo_sapiens/Homo_sapiens.GRCh38.101.gff3.gz",
-        "assembly_id": "NCBIAssembly:GCF_000001405.39"
+        "assembly_id": "GCF_000001405.39"
     }
 
     mouse = {
         "url": "https://ftp.ensembl.org/pub/release-98/gff3/mus_musculus/Mus_musculus.GRCm38.98.gff3.gz",
-        "assembly_id": "NCBIAssembly:GCF_000001635.26"
+        "assembly_id": "GCF_000001635.26"
     }
 
     valid_files = scraper.scrape_ensembl(
