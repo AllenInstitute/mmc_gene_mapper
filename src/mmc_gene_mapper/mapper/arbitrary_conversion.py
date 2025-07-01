@@ -9,6 +9,7 @@ the mapper class into a function module
 
 import numpy as np
 
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.species_detection as species_detection
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils

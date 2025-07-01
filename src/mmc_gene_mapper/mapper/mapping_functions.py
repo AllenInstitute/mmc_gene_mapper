@@ -11,6 +11,7 @@ import time
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.str_utils as str_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
@@ -79,12 +80,6 @@ def identifiers_from_symbols(
         assign_placeholders=assign_placeholders,
         placeholder_prefix=placeholder_prefix
     )
-
-    mapping["metadata"]["mapping"] = {
-        "axis": "authority",
-        "from": "symbol",
-        "to": authority_name
-    }
 
     result = {
         "metadata": mapping["metadata"],
