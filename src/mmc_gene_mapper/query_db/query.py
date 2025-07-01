@@ -2,6 +2,7 @@ import json
 import pathlib
 import sqlite3
 
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
@@ -292,6 +293,16 @@ def translate_gene_identifiers(
         for val in src_list
     }
 
+    if src_column == 'symbol':
+        mapping_src = metadata_classes.Authority('symbol')
+    else:
+        mapping_src = metadata_classes.Authority(authority_name)
+
+    if dst_column == 'symbol':
+        mapping_dst = metadata_classes.Authority('symbol')
+    else:
+        mapping_dst = metadata_classes.Authority(authority_name)
+
     with sqlite3.connect(db_path) as conn:
 
         meta_source = get_authority_and_citation(
@@ -345,10 +356,11 @@ def translate_gene_identifiers(
             results[key] = sorted(results[key])
 
         return {
-            'metadata': {
-                'authority': full_authority,
-                'citation': full_citation
-            },
+            'metadata': metadata_classes.MappingMetadata(
+                src=mapping_src,
+                dst=mapping_dst,
+                citation=full_citation
+            ).serialize(),
             'mapping': results
         }
 
@@ -481,17 +493,12 @@ def _get_equivalent_genes(
             for row in chunk:
                 results[row[0]].append(row[1])
 
-    full_citation.pop('idx')
-
     return {
-        'metadata': {
-            'citation': full_citation,
-            'mapping': {
-                'from': input_authority_name,
-                'to': output_authority_name,
-                'axis': 'authority'
-            }
-        },
+        'metadata': metadata_classes.MappingMetadata(
+            src=metadata_classes.Authority(input_authority_name),
+            dst=metadata_classes.Authority(output_authority_name),
+            citation=full_citation
+        ).serialize(),
         'mapping': results
     }
 
