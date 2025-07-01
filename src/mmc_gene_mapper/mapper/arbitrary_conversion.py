@@ -74,7 +74,8 @@ def arbitrary_mapping(
             dst_authority='NCBI'
         )
 
-        metadata.append(current['metadata'])
+        for auth_metadata in current['metadata']:
+            metadata.append(auth_metadata)
 
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
@@ -93,6 +94,18 @@ def arbitrary_mapping(
             'species_taxon': dst_species_taxon
         }
 
+        current['metadata']['mapping'] = {
+            'axis': 'species',
+            'from': {
+                'name': src_authority['species'],
+                'taxon': src_authority['species_taxon']
+            },
+            'to': {
+                'name': dst_species,
+                'taxon': dst_species_taxon
+            }
+        }
+
         metadata.append(current['metadata'])
 
     else:
@@ -108,7 +121,9 @@ def arbitrary_mapping(
             src_authority=current_authority,
             dst_authority=dst_authority
         )
-        metadata.append(current['metadata'])
+
+        for auth_metadata in current['metadata']:
+            metadata.append(auth_metadata)
 
     return {
         'metadata': metadata,
@@ -168,21 +183,20 @@ def convert_authority_in_bulk(
     result = np.array([None]*n_genes)
     species_taxon = src_authority['species_taxon']
 
-    metadata = dict()
+    metadata = []
     failure_log = None
 
     if len(symbol_idx) > 0:
-        prefix=f'symbol:{dst_authority}'
         raw = mapping_functions.identifiers_from_symbols(
             db_path=db_path,
             gene_symbol_list=gene_list[symbol_idx],
             species_name=species_taxon,
             authority_name=dst_authority,
             assign_placeholders=True,
-            placeholder_prefix=prefix
+            placeholder_prefix=f"symbol:{dst_authority}"
         )
         result[symbol_idx] = np.array(raw['gene_list'])
-        metadata[prefix] = raw['metadata']
+        metadata.append(raw['metadata'])
         failure_log = raw['failure_log']
 
     for input_authority, idx_arr in [('ENSEMBL', ensembl_idx),
@@ -193,7 +207,6 @@ def convert_authority_in_bulk(
         if input_authority == dst_authority:
             result[idx_arr] = gene_list[idx_arr]
         else:
-            prefix = f'{input_authority}:{dst_authority}'
             raw = mapping_functions.equivalent_genes(
                 db_path=db_path,
                 input_authority=input_authority,
@@ -202,10 +215,10 @@ def convert_authority_in_bulk(
                 species_name=species_taxon,
                 citation_name='NCBI',
                 assign_placeholders=True,
-                placeholder_prefix=prefix
+                placeholder_prefix=f"{input_authority}:{dst_authority}"
             )
             result[idx_arr] = np.array(raw['gene_list'])
-            metadata[prefix] = raw['metadata']
+            metadata.append(raw['metadata'])
             if failure_log is None:
                 failure_log = raw['failure_log']
             else:
@@ -228,6 +241,3 @@ def convert_authority_in_bulk(
         'failure_log': failure_log,
         'gene_list': list(result)
     }
-    
-
-            

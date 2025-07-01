@@ -80,6 +80,12 @@ def identifiers_from_symbols(
         placeholder_prefix=placeholder_prefix
     )
 
+    mapping["metadata"]["mapping"] = {
+        "axis": "authority",
+        "from": "symbol",
+        "to": authority_name
+    }
+
     result = {
         "metadata": mapping["metadata"],
         "failure_log": mapped_result["failure_log"],

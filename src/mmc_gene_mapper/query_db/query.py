@@ -401,9 +401,6 @@ def get_equivalent_genes_from_identifiers(
         value_species_taxon=species_taxon
     )
 
-    equivalence['metadata']['key_authority'] = input_authority_name
-    equivalence['metadata']['value_authority'] = output_authority_name
-
     unmapped_genes = set(input_gene_list)-set(mapping_dict.keys())
     for gene in unmapped_genes:
         mapping_dict[gene] = []
@@ -484,11 +481,16 @@ def _get_equivalent_genes(
             for row in chunk:
                 results[row[0]].append(row[1])
 
+    full_citation.pop('idx')
+
     return {
         'metadata': {
-            'key_authority': input_auth,
-            'value_authority': output_auth,
-            'citation': full_citation
+            'citation': full_citation,
+            'mapping': {
+                'from': input_authority_name,
+                'to': output_authority_name,
+                'axis': 'authority'
+            }
         },
         'mapping': results
     }
@@ -692,10 +694,7 @@ def _get_ortholog_genes(
 
     return {
         'metadata': {
-            'authority': authority_name,
-            'citation': citation['metadata'],
-            'src_species_taxon': src_species_taxon,
-            'dst_species_taxon': dst_species_taxon
+            'citation': citation['metadata']
         },
         'mapping': results
     }
