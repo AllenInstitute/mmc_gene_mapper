@@ -290,3 +290,24 @@ def test_arbitrary_mapping_function_yes_ortholog(
         np.array(result['gene_list']),
         np.array(expected)
     )
+
+
+def test_arbitrary_conversion_typing():
+
+    msg = "dst_species must be of type"
+    with pytest.raises(ValueError, match=msg):
+        arbitrary_conversion.arbitrary_mapping(
+            db_path=None,
+            gene_list=[],
+            dst_species='human',
+            dst_authority=metadata_classes.Authority('NCBI')
+        )
+
+    msg = "dst_authority must be of type"
+    with pytest.raises(ValueError, match=msg):
+        arbitrary_conversion.arbitrary_mapping(
+            db_path=None,
+            gene_list=[],
+            dst_species=metadata_classes.Species(name='blerg', taxon=1),
+            dst_authority='NCBI'
+        )
