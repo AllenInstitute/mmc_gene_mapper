@@ -78,10 +78,10 @@ def arbitrary_mapping(
         need_orthologs = True
 
     if need_orthologs:
-        current = convert_authority_in_bulk(
+        current = _convert_authority_in_bulk(
             db_path=db_path,
             gene_list=gene_list,
-            src_authority=src_gene_data,
+            src_gene_data=src_gene_data,
             dst_authority='NCBI'
         )
 
@@ -120,10 +120,10 @@ def arbitrary_mapping(
         }
 
     if set(current_gene_data['authority']) != set([dst_authority]):
-        current = convert_authority_in_bulk(
+        current = _convert_authority_in_bulk(
             db_path=db_path,
             gene_list=current['gene_list'],
-            src_authority=current_gene_data,
+            src_gene_data=current_gene_data,
             dst_authority=dst_authority.name
         )
 
@@ -136,20 +136,23 @@ def arbitrary_mapping(
     }
 
 
-def convert_authority_in_bulk(
+def _convert_authority_in_bulk(
         db_path,
         gene_list,
-        src_authority,
+        src_gene_data,
         dst_authority):
     """
     db_path:
         path to database being queried
     gene_list:
         genes being mapped
-    src_authority:
+    src_gene_data:
         dict containing species and authority
-        information for the genes (output of
-        detect_species_and_authority)
+        information for the genes. Specifically
+            {'authority': [list of strings],
+             'species': 'species_name',
+             'species_taxon': species_taxon (an int)
+            }
     dst_authority:
         authority to which genes are being mapped
     """
@@ -161,13 +164,13 @@ def convert_authority_in_bulk(
     gene_list = np.array(gene_list)
 
     symbol_idx = np.where(
-        src_authority['authority'] == 'symbol'
+        src_gene_data['authority'] == 'symbol'
     )[0]
     ensembl_idx = np.where(
-        src_authority['authority'] == 'ENSEMBL'
+        src_gene_data['authority'] == 'ENSEMBL'
     )[0]
     ncbi_idx = np.where(
-        src_authority['authority'] == 'NCBI'
+        src_gene_data['authority'] == 'NCBI'
     )[0]
     n_genes = len(gene_list)
 
@@ -186,7 +189,7 @@ def convert_authority_in_bulk(
         )
 
     result = np.array([None]*n_genes)
-    species_taxon = src_authority['species_taxon']
+    species_taxon = src_gene_data['species_taxon']
 
     metadata = []
     failure_log = None
