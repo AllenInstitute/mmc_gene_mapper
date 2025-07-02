@@ -4,6 +4,9 @@ NCBI data package and our simulated bkbit data package
 """
 import pytest
 
+import sqlite3
+
+import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.mapping_functions as mapping_functions
 
 
@@ -156,13 +159,20 @@ def test_identifiers_from_symbols(
         symbol_list,
         expected_gene_list):
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=species
+        )
+
     # now test the method that returns a list of genes
     # with placeholder names applied to unmappable genes
 
     actual = mapping_functions.identifiers_from_symbols(
         db_path=mapper_fixture.db_path,
         gene_symbol_list=symbol_list,
-        species_name=species,
+        species=species_obj,
         authority_name=authority,
         assign_placeholders=True,
         placeholder_prefix="test"
@@ -198,6 +208,13 @@ def test_identifiers_from_symbols_mapping_error(
 def test_identifiers_from_symbols_error(
         mapper_fixture):
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        species = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
+
     # case where there are no citations linking a species
     # to an authority
     msg = "There are 0 citations associated with authority"
@@ -205,18 +222,8 @@ def test_identifiers_from_symbols_error(
         mapping_functions.identifiers_from_symbols(
             db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
-            species_name="human",
+            species=species,
             authority_name="ENSEMBL"
-        )
-
-    # case where there is no such species
-    msg = "no species match for flotsam"
-    with pytest.raises(ValueError, match=msg):
-        mapping_functions.identifiers_from_symbols(
-            db_path=mapper_fixture.db_path,
-            gene_symbol_list=["a", "b", "c"],
-            species_name="flotsam",
-            authority_name="NCBI"
         )
 
 

@@ -149,6 +149,8 @@ def _convert_authority_in_bulk(
     dst_authority:
         authority to which genes are being mapped
     """
+    species = src_gene_data['species']
+
     if dst_authority not in ('NCBI', 'ENSEMBL'):
         raise ValueError(
             f"Unclear how to map to authority '{dst_authority}'; "
@@ -182,7 +184,6 @@ def _convert_authority_in_bulk(
         )
 
     result = np.array([None]*n_genes)
-    species_taxon = src_gene_data['species'].taxon
 
     metadata = []
     failure_log = None
@@ -191,7 +192,7 @@ def _convert_authority_in_bulk(
         raw = mapping_functions.identifiers_from_symbols(
             db_path=db_path,
             gene_symbol_list=gene_list[symbol_idx],
-            species_name=species_taxon,
+            species=species,
             authority_name=dst_authority,
             assign_placeholders=True,
             placeholder_prefix=f"symbol:{dst_authority}"
@@ -213,7 +214,7 @@ def _convert_authority_in_bulk(
                 input_authority=input_authority,
                 output_authority=dst_authority,
                 gene_list=gene_list[idx_arr],
-                species_name=species_taxon,
+                species_name=species.taxon,
                 citation_name='NCBI',
                 assign_placeholders=True,
                 placeholder_prefix=f"{input_authority}:{dst_authority}"

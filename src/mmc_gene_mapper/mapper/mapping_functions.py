@@ -11,6 +11,7 @@ import time
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.str_utils as str_utils
+import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.download.download_manager as download_manager
@@ -22,7 +23,7 @@ import mmc_gene_mapper.query_db.query as query_utils
 def identifiers_from_symbols(
         db_path,
         gene_symbol_list,
-        species_name,
+        species,
         authority_name,
         assign_placeholders=True,
         placeholder_prefix=None):
@@ -37,8 +38,8 @@ def identifiers_from_symbols(
         path to the database being queried
     gene_symbol_list:
         list of gene symbols
-    species_name:
-        name of the species we are working with
+    species:
+        Species representing the species we are working with
     authority_name:
         name of the authority in whose identifiers
         we want the genes listed
@@ -67,10 +68,16 @@ def identifiers_from_symbols(
           ]
         }
     """
+    typing_utils.check_type(
+        arg_name='identifiers_from_symbols.species',
+        arg=species,
+        expected_type=metadata_classes.Species
+    )
+
     mapping = identifiers_from_symbols_mapping(
         db_path=db_path,
         gene_symbol_list=gene_symbol_list,
-        species_name=species_name,
+        species_name=species.name,
         authority_name=authority_name
     )
 
