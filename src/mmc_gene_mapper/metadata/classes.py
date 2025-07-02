@@ -85,6 +85,10 @@ class Authority(MetadataEntity):
     def serialize(self):
         return f'{self._name}'
 
+    @property
+    def name(self):
+        return self._name
+
 
 class Species(MetadataEntity):
 

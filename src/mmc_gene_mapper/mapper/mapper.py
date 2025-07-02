@@ -11,6 +11,7 @@ import time
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.str_utils as str_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
@@ -178,11 +179,18 @@ class MMCGeneMapper(object):
         ortholog_citation:
             citation to use for ortholog mapping, if necessary
         """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species=dst_species
+            )
+
         return arbitrary_conversion.arbitrary_mapping(
             db_path=self.db_path,
             gene_list=gene_list,
             dst_species=dst_species,
-            dst_authority=dst_authority,
+            dst_authority=metadata_classes.Authority(dst_authority),
             ortholog_citation=ortholog_citation
         )
 

@@ -4,7 +4,10 @@ Test our "as generic as possible" gene mapping functions
 import pytest
 
 import numpy as np
+import sqlite3
 
+import mmc_gene_mapper.metadata.classes as metadata_classes
+import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.species_detection as species_detection
 import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
 import mmc_gene_mapper.mapper.mapper as mapper
@@ -138,12 +141,20 @@ def test_arbitrary_mapping_function_no_ortholog(
             ortholog_citation='NCBI'
         )
     else:
+        with sqlite3.connect(mapper_fixture.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species='jabberwock'
+            )
+
+        assert isinstance(dst_species, metadata_classes.Species)
 
         result = arbitrary_conversion.arbitrary_mapping(
             db_path=mapper_fixture.db_path,
             gene_list=gene_list,
-            dst_species='jabberwock',
-            dst_authority=dst_authority,
+            dst_species=dst_species,
+            dst_authority=metadata_classes.Authority(dst_authority),
             ortholog_citation='NCBI'
         )
 
@@ -261,11 +272,17 @@ def test_arbitrary_mapping_function_yes_ortholog(
             ortholog_citation='NCBI'
         )
     else:
+        with sqlite3.connect(mapper_fixture.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species='human'
+            )
         result = arbitrary_conversion.arbitrary_mapping(
             db_path=mapper_fixture.db_path,
             gene_list=gene_list,
-            dst_species='human',
-            dst_authority=dst_authority,
+            dst_species=dst_species,
+            dst_authority=metadata_classes.Authority(dst_authority),
             ortholog_citation='NCBI'
         )
 
