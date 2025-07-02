@@ -55,7 +55,7 @@ def arbitrary_mapping(
 
     query_utils.does_path_exist(db_path)
 
-    if dst_authority not in ('NCBI', 'ENSEMBL'):
+    if dst_authority.name not in ('NCBI', 'ENSEMBL'):
         raise ValueError(
             f"Unclear how to map to authority '{dst_authority}'; "
             "Must be either 'NCBI' or 'ENSEMBL'"
@@ -64,25 +64,22 @@ def arbitrary_mapping(
     n_genes = len(gene_list)
     metadata = []
 
-    src_authority = species_detection.detect_species_and_authority(
+    src_gene_data = species_detection.detect_species_and_authority(
         db_path=db_path,
         gene_list=gene_list
     )
 
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        dst_species_taxon = query_utils._get_species_taxon(
-            cursor=cursor,
-            species_name=dst_species
+    if src_gene_data['species'] is None:
+        src_species = dst_species
+        src_gene_data['species'] = dst_species.name
+        src_gene_data['species_taxon'] = dst_species.taxon
+    else:
+        src_species = metadata_classes.Species(
+            name=src_gene_data['species'],
+            taxon=src_gene_data['species_taxon']
         )
 
-    if src_authority['species'] is None:
-        src_authority['species'] = dst_species
-        src_authority['species_taxon'] = dst_species_taxon
-
-    src_species_taxon = src_authority['species_taxon']
-
-    if src_species_taxon is None or dst_species_taxon == src_species_taxon:
+    if dst_species.taxon == src_species.taxon:
         need_orthologs = False
     else:
         need_orthologs = True
@@ -91,7 +88,7 @@ def arbitrary_mapping(
         current = convert_authority_in_bulk(
             db_path=db_path,
             gene_list=gene_list,
-            src_authority=src_authority,
+            src_authority=src_gene_data,
             dst_authority='NCBI'
         )
 
@@ -101,46 +98,40 @@ def arbitrary_mapping(
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
             authority='NCBI',
-            src_species_name=src_species_taxon,
-            dst_species_name=dst_species_taxon,
+            src_species_name=src_species.taxon,
+            dst_species_name=dst_species.taxon,
             gene_list=current['gene_list'],
             citation_name=ortholog_citation,
             assign_placeholders=True,
             placeholder_prefix='ortholog'
         )
 
-        current_authority = {
+        current_gene_data = {
             'authority': np.array(['NCBI']*n_genes),
-            'species': dst_species,
-            'species_taxon': dst_species_taxon
+            'species': dst_species.name,
+            'species_taxon': dst_species.taxon
         }
 
-        current['metadata']['mapping'] = {
-            'axis': 'species',
-            'from': {
-                'name': src_authority['species'],
-                'taxon': src_authority['species_taxon']
-            },
-            'to': {
-                'name': dst_species,
-                'taxon': dst_species_taxon
-            }
-        }
+        current['metadata'] = metadata_classes.MappingMetadata(
+            src=src_species,
+            dst=dst_species,
+            citation=current['metadata']['citation']
+        ).serialize()
 
         metadata.append(current['metadata'])
 
     else:
-        current_authority = src_authority
+        current_gene_data = src_gene_data
         current = {
             'gene_list': gene_list,
         }
 
-    if set(current_authority['authority']) != set([dst_authority]):
+    if set(current_gene_data['authority']) != set([dst_authority]):
         current = convert_authority_in_bulk(
             db_path=db_path,
             gene_list=current['gene_list'],
-            src_authority=current_authority,
-            dst_authority=dst_authority
+            src_authority=current_gene_data,
+            dst_authority=dst_authority.name
         )
 
         for auth_metadata in current['metadata']:
