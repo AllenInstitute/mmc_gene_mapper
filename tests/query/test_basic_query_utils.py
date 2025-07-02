@@ -3,6 +3,7 @@ import pytest
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
 
 
@@ -99,4 +100,44 @@ def test_get_species_name(
             query_utils._get_species_name(
                 cursor=cursor,
                 species_taxon=123545
+            )
+
+@pytest.mark.parametrize('species', [9606, 'human'])
+def test_get_species(
+       species_db_fixture,
+       species):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+        human = query_utils.get_species(
+            cursor=cursor,
+            species=species)
+        assert isinstance(human, metadata_classes.Species)
+        assert human.taxon == 9606
+        assert human.name == 'human'
+
+
+def test_get_species_errors(
+       species_db_fixture):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+        msg = "no species match for"
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species='garbage'
+            )
+
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species=12345
+            )
+
+        msg = "Cannot infer species from"
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species=1.7
             )
