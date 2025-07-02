@@ -8,6 +8,7 @@ the mapper class into a function module
 """
 
 import numpy as np
+import sqlite3
 
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
@@ -36,6 +37,8 @@ def arbitrary_mapping(
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
     """
+    query_utils.does_path_exist(db_path)
+
     if dst_authority not in ('NCBI', 'ENSEMBL'):
         raise ValueError(
             f"Unclear how to map to authority '{dst_authority}'; "
@@ -50,10 +53,12 @@ def arbitrary_mapping(
         gene_list=gene_list
     )
 
-    dst_species_taxon = query_utils.get_species_taxon(
-        db_path=db_path,
-        species_name=dst_species
-    )
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        dst_species_taxon = query_utils._get_species_taxon(
+            cursor=cursor,
+            species_name=dst_species
+        )
 
     if src_authority['species'] is None:
         src_authority['species'] = dst_species
