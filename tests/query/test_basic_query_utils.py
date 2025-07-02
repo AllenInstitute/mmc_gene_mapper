@@ -73,3 +73,30 @@ def test_get_species_taxon(
                 cursor=cursor,
                 species_name='dragon'
             )
+
+        with pytest.raises(ValueError, match='no species match for'):
+            query_utils._get_species_taxon(
+                cursor=cursor,
+                species_name='nothingburger'
+            )
+
+
+def test_get_species_name(
+        species_db_fixture):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+
+        assert query_utils._get_species_name(
+            cursor=cursor,
+            species_taxon=10090) in ('house mouse', 'Mus Musculus')
+
+        assert query_utils._get_species_name(
+            cursor=cursor,
+            species_taxon=9606) == 'human'
+
+        with pytest.raises(ValueError, match='species match for'):
+            query_utils._get_species_name(
+                cursor=cursor,
+                species_taxon=123545
+            )

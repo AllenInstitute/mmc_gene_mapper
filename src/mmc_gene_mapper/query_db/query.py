@@ -53,6 +53,42 @@ def _get_species_taxon(
     return results[0][0]
 
 
+def _get_species_name(
+        cursor,
+        species_taxon):
+    """
+    Return the name of a species
+
+    Parameters
+    ----------
+    cursor:
+        a sqlite3.cursor
+    species_taxon:
+        an int; the species taxon
+
+    Returns
+    -------
+    a string; the name of the species
+    """
+    results = cursor.execute(
+       """
+       SELECT
+           name
+       FROM
+           NCBI_species
+       WHERE
+           id=?
+       """,
+       (species_taxon,)
+    ).fetchall()
+
+    if len(results) == 0:
+        raise ValueError(
+            f"no species match for {species_taxon}"
+        )
+    return results[0][0]
+
+
 def get_citation_from_bibliography(
         cursor,
         authority_idx,
