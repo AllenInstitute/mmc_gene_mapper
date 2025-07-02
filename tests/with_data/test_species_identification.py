@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.mapper.species_detection as species_utils
 
 
@@ -15,7 +16,6 @@ def test_determine_species_and_authority_from_data(
     )
 
     assert actual['species'] is None
-    assert actual['species_taxon'] is None
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['symbol']*len(garbage_genes))
@@ -26,8 +26,9 @@ def test_determine_species_and_authority_from_data(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
-    assert actual['species'] == 'jabberwock'
-    assert actual['species_taxon'] == 999
+    assert isinstance(actual['species'], metadata_classes.Species)
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['ENSEMBL', 'ENSEMBL'])
@@ -38,8 +39,8 @@ def test_determine_species_and_authority_from_data(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
-    assert actual['species'] == 'jabberwock'
-    assert actual['species_taxon'] == 999
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['symbol', 'ENSEMBL', 'symbol', 'ENSEMBL'])
@@ -50,8 +51,8 @@ def test_determine_species_and_authority_from_data(
         db_path=mapper_fixture.db_path,
         gene_list=jabberwock_genes
     )
-    assert actual['species'] == 'jabberwock'
-    assert actual['species_taxon'] == 999
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['NCBI', 'NCBI'])
@@ -64,8 +65,8 @@ def test_determine_species_and_authority_from_data(
         gene_list=jabberwock_genes
     )
 
-    assert actual['species'] == 'jabberwock'
-    assert actual['species_taxon'] == 999
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(

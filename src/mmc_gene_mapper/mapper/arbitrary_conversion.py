@@ -63,14 +63,9 @@ def arbitrary_mapping(
     )
 
     if src_gene_data['species'] is None:
-        src_species = dst_species
-        src_gene_data['species'] = dst_species.name
-        src_gene_data['species_taxon'] = dst_species.taxon
-    else:
-        src_species = metadata_classes.Species(
-            name=src_gene_data['species'],
-            taxon=src_gene_data['species_taxon']
-        )
+        src_gene_data['species'] = dst_species
+
+    src_species = src_gene_data['species']
 
     if dst_species.taxon == src_species.taxon:
         need_orthologs = False
@@ -101,8 +96,7 @@ def arbitrary_mapping(
 
         current_gene_data = {
             'authority': np.array(['NCBI']*n_genes),
-            'species': dst_species.name,
-            'species_taxon': dst_species.taxon
+            'species': dst_species
         }
 
         current['metadata'] = metadata_classes.MappingMetadata(
@@ -150,8 +144,7 @@ def _convert_authority_in_bulk(
         dict containing species and authority
         information for the genes. Specifically
             {'authority': [list of strings],
-             'species': 'species_name',
-             'species_taxon': species_taxon (an int)
+             'species': an instance of Species
             }
     dst_authority:
         authority to which genes are being mapped
@@ -189,7 +182,7 @@ def _convert_authority_in_bulk(
         )
 
     result = np.array([None]*n_genes)
-    species_taxon = src_gene_data['species_taxon']
+    species_taxon = src_gene_data['species'].taxon
 
     metadata = []
     failure_log = None
