@@ -44,15 +44,15 @@ def test_convert_authority_in_bulk(
         expected,
         mapper_fixture):
 
-    src_authority = species_detection.detect_species_and_authority(
+    src_gene_data = species_detection.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
         gene_list=gene_list
     )
 
-    result = arbitrary_conversion.convert_authority_in_bulk(
+    result = arbitrary_conversion._convert_authority_in_bulk(
         db_path=mapper_fixture.db_path,
         gene_list=gene_list,
-        src_authority=src_authority,
+        src_gene_data=src_gene_data,
         dst_authority=dst_authority
     )
 
