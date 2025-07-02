@@ -3,6 +3,7 @@ import numpy as np
 import sqlite3
 
 import mmc_gene_mapper.utils.str_utils as str_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 
 
 def detect_species_and_authority(
@@ -25,8 +26,7 @@ def detect_species_and_authority(
     A dict
         {
           "authority": np.array of strings indicating authority for genes
-          "species": human readable name of species
-          "species_taxon": integer indentifying species
+          "species": an instance of Species describing the species
         }
 
     Notes
@@ -85,29 +85,33 @@ def detect_species_and_authority(
 
     if ensembl_authority is None and ncbi_authority is None:
         species = None
-        species_taxon = None
-    elif ncbi_authority is None:
-        species = ensembl_authority['species']
-        species_taxon = ensembl_authority['species_taxon']
-    elif ensembl_authority is None:
-        species = ncbi_authority['species']
-        species_taxon = ncbi_authority['species_taxon']
     else:
-        ens = ensembl_authority['species_taxon']
-        ncbi = ncbi_authority['species_taxon']
-        if ens != ncbi:
-            msg = (
-                f"\nENSEMBL genes gave species '{ensembl_authority['species']}'"
-                f"\nNCBI genes gave species '{ncbi_authority['species']}'"
-            )
-            raise InconsistentSpeciesError(msg)
-        species = ensembl_authority['species']
-        species_taxon = ncbi_authority['species_taxon']
+        if ncbi_authority is None:
+            species_name = ensembl_authority['species']
+            species_taxon = ensembl_authority['species_taxon']
+        elif ensembl_authority is None:
+            species_name = ncbi_authority['species']
+            species_taxon = ncbi_authority['species_taxon']
+        else:
+            ens = ensembl_authority['species_taxon']
+            ncbi = ncbi_authority['species_taxon']
+            if ens != ncbi:
+                msg = (
+                    f"\nENSEMBL genes gave species '{ensembl_authority['species']}'"
+                    f"\nNCBI genes gave species '{ncbi_authority['species']}'"
+                )
+                raise InconsistentSpeciesError(msg)
+            species_name = ensembl_authority['species']
+            species_taxon = ncbi_authority['species_taxon']
+
+        species = metadata_classes.Species(
+            name=species_name,
+            taxon=species_taxon
+        )
 
     return {
         "authority": authority,
-        "species": species,
-        "species_taxon": species_taxon
+        "species": species
     }
 
 
