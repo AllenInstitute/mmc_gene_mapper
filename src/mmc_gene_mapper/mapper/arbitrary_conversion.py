@@ -86,8 +86,8 @@ def arbitrary_mapping(
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
             authority='NCBI',
-            src_species_name=src_species.taxon,
-            dst_species_name=dst_species.taxon,
+            src_species=src_species,
+            dst_species=dst_species,
             gene_list=current['gene_list'],
             citation_name=ortholog_citation,
             assign_placeholders=True,
