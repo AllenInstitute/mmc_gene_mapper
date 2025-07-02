@@ -52,8 +52,7 @@ def arbitrary_mapping(
 
     dst_species_taxon = query_utils.get_species_taxon(
         db_path=db_path,
-        species_name=dst_species,
-        strict=True
+        species_name=dst_species
     )
 
     if src_authority['species'] is None:

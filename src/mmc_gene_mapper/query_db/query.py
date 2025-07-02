@@ -8,8 +8,7 @@ import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 def get_species_taxon(
         db_path,
-        species_name,
-        strict=False):
+        species_name):
     """
     Return the integer identifier for a species
 
@@ -19,10 +18,6 @@ def get_species_taxon(
         path to the database
     species_name:
         human-readable name of the species
-    strict:
-        if True and no such species exists, raise
-        an exception; if False and no such species
-        exists, return None
 
     Returns
     -------
@@ -39,15 +34,13 @@ def get_species_taxon(
         cursor = conn.cursor()
         result = _get_species_taxon(
             cursor=cursor,
-            species_name=species_name,
-            strict=strict)
+            species_name=species_name)
     return result
 
 
 def _get_species_taxon(
         cursor,
-        species_name,
-        strict=False):
+        species_name):
 
     """
     Return the integer identifier for a species
@@ -58,10 +51,6 @@ def _get_species_taxon(
         a sqlite3.cursor
     species_name:
         human-readable name of the species
-    strict:
-        if True and no such species exists, raise
-        an exception; if False and no such species
-        exists, return None
 
     Returns
     -------
@@ -85,11 +74,9 @@ def _get_species_taxon(
             f"{results}"
         )
     elif len(results) == 0:
-        if strict:
-            raise ValueError(
-                f"no species match for {species_name}"
-            )
-        return None
+        raise ValueError(
+            f"no species match for {species_name}"
+        )
     return results[0][0]
 
 
@@ -376,8 +363,7 @@ def get_equivalent_genes_from_identifiers(
 
     species_taxon = get_species_taxon(
         db_path=db_path,
-        species_name=species_name,
-        strict=True
+        species_name=species_name
     )
 
     id_translation = translate_gene_identifiers(
@@ -514,14 +500,12 @@ def get_ortholog_genes_from_identifiers(
 
     src_species_taxon = get_species_taxon(
         db_path=db_path,
-        species_name=src_species_name,
-        strict=True
+        species_name=src_species_name
     )
 
     dst_species_taxon = get_species_taxon(
         db_path=db_path,
-        species_name=dst_species_name,
-        strict=True
+        species_name=dst_species_name
     )
 
     id_translation = translate_gene_identifiers(
