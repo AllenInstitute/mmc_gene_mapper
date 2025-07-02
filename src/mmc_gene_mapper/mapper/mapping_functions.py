@@ -128,9 +128,13 @@ def identifiers_from_symbols_mapping(
           }
         }
     """
-    species_taxon = query_utils.get_species_taxon(
-        db_path=db_path,
-        species_name=species_name)
+    query_utils.does_path_exist(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        species_taxon = query_utils._get_species_taxon(
+            cursor=cursor,
+            species_name=species_name)
 
     result = query_utils.translate_gene_identifiers(
         db_path=db_path,

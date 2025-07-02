@@ -53,28 +53,6 @@ def species_db_fixture(tmp_dir_fixture):
 def test_get_species_taxon(
         species_db_fixture):
 
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='house mouse') == 10090
-
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='Mus musculus') == 10090
-
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='human') == 9606
-
-    with pytest.raises(ValueError, match='species match name'):
-        query_utils.get_species_taxon(
-            db_path=species_db_fixture,
-            species_name='dragon'
-        )
-
-
-def test_get_species_taxon_from_cursor(
-        species_db_fixture):
-
     with sqlite3.connect(species_db_fixture) as conn:
         cursor = conn.cursor()
 

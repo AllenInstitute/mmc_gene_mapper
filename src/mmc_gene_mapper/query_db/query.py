@@ -6,42 +6,9 @@ import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
-def get_species_taxon(
-        db_path,
-        species_name):
-    """
-    Return the integer identifier for a species
-
-    Parameters
-    ----------
-    db_path:
-        path to the database
-    species_name:
-        human-readable name of the species
-
-    Returns
-    -------
-    an integer; the taxon ID of the species
-    """
-    try:
-        species_taxon = int(species_name)
-        return species_taxon
-    except ValueError:
-        pass
-
-    does_path_exist(db_path)
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        result = _get_species_taxon(
-            cursor=cursor,
-            species_name=species_name)
-    return result
-
-
 def _get_species_taxon(
         cursor,
         species_name):
-
     """
     Return the integer identifier for a species
 
@@ -56,6 +23,12 @@ def _get_species_taxon(
     -------
     an integer; the taxon ID of the species
     """
+    try:
+        species_taxon = int(species_name)
+        return species_taxon
+    except ValueError:
+        pass
+
     results = cursor.execute(
        """
        SELECT
@@ -361,10 +334,13 @@ def get_equivalent_genes_from_identifiers(
         citation_name,
         chunk_size=100):
 
-    species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=species_name
-    )
+    does_path_exist(db_path)
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        species_taxon = _get_species_taxon(
+            cursor=cursor,
+            species_name=species_name
+        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
@@ -498,15 +474,19 @@ def get_ortholog_genes_from_identifiers(
         citation_name,
         chunk_size=100):
 
-    src_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=src_species_name
-    )
+    does_path_exist(db_path)
 
-    dst_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=dst_species_name
-    )
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        src_species_taxon = _get_species_taxon(
+            cursor=cursor,
+            species_name=src_species_name
+        )
+
+        dst_species_taxon = _get_species_taxon(
+            cursor=cursor,
+            species_name=dst_species_name
+        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
