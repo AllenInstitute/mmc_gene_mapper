@@ -546,25 +546,13 @@ def _get_equivalent_genes(
 def get_ortholog_genes_from_identifiers(
         db_path,
         authority_name,
-        src_species_name,
-        dst_species_name,
+        src_species_taxon,
+        dst_species_taxon,
         src_gene_list,
         citation_name,
         chunk_size=100):
 
     does_path_exist(db_path)
-
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        src_species_taxon = _get_species_taxon(
-            cursor=cursor,
-            species_name=src_species_name
-        )
-
-        dst_species_taxon = _get_species_taxon(
-            cursor=cursor,
-            species_name=dst_species_name
-        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,

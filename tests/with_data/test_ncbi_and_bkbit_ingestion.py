@@ -230,13 +230,24 @@ def test_identifiers_from_symbols_error(
 def test_get_orthologs_mapping_from_ncbi(
         mapper_fixture):
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='jabberwock'
+        )
+
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name='human',
-        dst_species_name='jabberwock',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI'
     )
@@ -251,33 +262,66 @@ def test_get_orthologs_mapping_from_ncbi(
     }
     assert actual['mapping'] == expected
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=9606
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='jabberwock'
+        )
+
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name=9606,
-        dst_species_name='jabberwock',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI'
     )
     assert actual['mapping'] == expected
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=9606
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=999
+        )
+
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name=9606,
-        dst_species_name=999,
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI'
     )
     assert actual['mapping'] == expected
+
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='mouse'
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='jabberwock'
+        )
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name='mouse',
-        dst_species_name='jabberwock',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI'
     )
@@ -292,13 +336,24 @@ def test_get_orthologs_mapping_from_ncbi(
     }
     assert actual['mapping'] == expected
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='mouse'
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
+
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name='mouse',
-        dst_species_name='human',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI'
     )
@@ -315,38 +370,40 @@ def test_get_orthologs_mapping_from_ncbi(
 
 
 @pytest.mark.parametrize(
-    "assign_placeholders, placeholder_prefix, species_as_int",
-    [(True, None, True),
-     (True, None, False),
-     (True, "silly", False),
-     (False, None, False)
+    "assign_placeholders, placeholder_prefix",
+    [(True, None),
+     (True, "silly"),
+     (False, None)
      ]
 )
 def test_get_orthologs_from_ncbi(
         mapper_fixture,
         assign_placeholders,
-        placeholder_prefix,
-        species_as_int):
+        placeholder_prefix):
 
     if placeholder_prefix is None:
         prefix = "UNMAPPABLE"
     else:
         prefix = f"{placeholder_prefix}:UNMAPPABLE"
 
-    if species_as_int:
-        src_species = 9606
-        dst_species = 999
-    else:
-        src_species = "human"
-        dst_species = "jabberwock"
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='jabberwock'
+        )
 
     gene_idx_list = [0, 1, 2, 4, 7, 6]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name=src_species,
-        dst_species_name=dst_species,
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
@@ -374,13 +431,24 @@ def test_get_orthologs_from_ncbi(
 
     assert actual['gene_list'] == expected
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='mouse'
+        )
+        dst_speices__obj = query_utils.get_species(
+            cursor=cursor,
+            species='jabberwock'
+        )
+
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name='mouse',
-        dst_species_name='jabberwock',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
@@ -408,13 +476,24 @@ def test_get_orthologs_from_ncbi(
 
     assert actual['gene_list'] == expected
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='mouse'
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
+
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]
     actual = mapping_functions.ortholog_genes(
         db_path=mapper_fixture.db_path,
         authority='NCBI',
-        src_species_name='mouse',
-        dst_species_name='human',
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         gene_list=gene_list,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
@@ -603,11 +682,22 @@ def test_alternative_orthologs_mapping(
         gene_list,
         expected_mapping):
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=src_species
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=dst_species
+        )
+
     actual = mapping_functions.ortholog_genes_mapping(
         db_path=mapper_fixture.db_path,
         authority="NCBI",
-        src_species_name=src_species,
-        dst_species_name=dst_species,
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         citation_name=citation,
         gene_list=gene_list
     )
@@ -663,11 +753,22 @@ def test_alternative_orthologs(
         gene_list,
         expected_gene_list):
 
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        src_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=src_species
+        )
+        dst_species_obj = query_utils.get_species(
+            cursor=cursor,
+            species=dst_species
+        )
+
     actual = mapping_functions.ortholog_genes(
         db_path=mapper_fixture.db_path,
         authority="NCBI",
-        src_species_name=src_species,
-        dst_species_name=dst_species,
+        src_species=src_species_obj,
+        dst_species=dst_species_obj,
         citation_name=citation,
         gene_list=gene_list,
         assign_placeholders=True,

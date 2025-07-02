@@ -239,8 +239,8 @@ def equivalent_genes(
 def ortholog_genes_mapping(
         db_path,
         authority,
-        src_species_name,
-        dst_species_name,
+        src_species,
+        dst_species,
         gene_list,
         citation_name):
     """
@@ -254,10 +254,10 @@ def ortholog_genes_mapping(
     authority:
         a str; the name of the authority (ENSEMBL, NCBI etc.)
         we are working in
-    src_species_name:
-        a str; the name of the species we are starting from
-    dst_species_name:
-        as str; the name of the species we are mapping to
+    src_species:
+        a Species; the species we are starting from
+    dst_species:
+        as Species; the species we are mapping to
     gene_list:
         list of gene identifiers (in src_species) to be
         mapped
@@ -282,11 +282,18 @@ def ortholog_genes_mapping(
           }
         }
     """
+    typing_utils.check_many_types(
+        name_arr=['ortholog_genes_mapping.src_species',
+                  'ortholog_genes_mapping.dst_species'],
+        arg_arr=[src_species, dst_species],
+        type_arr=[metadata_classes.Species, metadata_classes.Species]
+    )
+
     return query_utils.get_ortholog_genes_from_identifiers(
         db_path=db_path,
         authority_name=authority,
-        src_species_name=src_species_name,
-        dst_species_name=dst_species_name,
+        src_species_taxon=src_species.taxon,
+        dst_species_taxon=dst_species.taxon,
         src_gene_list=gene_list,
         citation_name=citation_name,
         chunk_size=500
@@ -296,8 +303,8 @@ def ortholog_genes_mapping(
 def ortholog_genes(
         db_path,
         authority,
-        src_species_name,
-        dst_species_name,
+        src_species,
+        dst_species,
         gene_list,
         citation_name,
         assign_placeholders=True,
@@ -313,10 +320,10 @@ def ortholog_genes(
     authority:
         a str; the name of the authority (ENSEMBL, NCBI etc.)
         we are working in
-    src_species_name:
-        a str; the name of the species we are starting from
-    dst_species_name:
-        as str; the name of the species we are mapping to
+    src_species:
+        a Species; the name of the species we are starting from
+    dst_species:
+        as Species; the name of the species we are mapping to
     gene_list:
         list of gene identifiers (in src_species) to be
         mapped
@@ -350,8 +357,8 @@ def ortholog_genes(
     mapping = ortholog_genes_mapping(
         db_path=db_path,
         authority=authority,
-        src_species_name=src_species_name,
-        dst_species_name=dst_species_name,
+        src_species=src_species,
+        dst_species=dst_species,
         gene_list=gene_list,
         citation_name=citation_name
     )
