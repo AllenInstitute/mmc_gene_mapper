@@ -31,12 +31,28 @@ def arbitrary_mapping(
     gene_list:
         list of gene identifiers being mapped
     dst_species:
-        name of species being mapped to
+        metadata_classes.Species representing
+        the species to which we are mapping
     dst_authority:
-        name of authority being mapped to
+        metadata_classes.Authority representing
+        the desired output authority
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
     """
+    typing_msg = ""
+    if not isinstance(dst_species, metadata_classes.Species):
+        typing_msg += (
+            "dst_species must be an instance of Species; "
+            f"your input is an instance of {type(dst_species)}\n"
+        )
+    if not isinstance(dst_authority, metadata_classes.Authority):
+        typing_msg += (
+            "dst_authority must be an instance of Authority; "
+            f"your input is an instance of {type(dst_authority)}"
+        )
+    if len(typing_msg) > 0:
+        raise ValueError(typing_msg)
+
     query_utils.does_path_exist(db_path)
 
     if dst_authority not in ('NCBI', 'ENSEMBL'):
