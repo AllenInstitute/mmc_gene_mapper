@@ -50,88 +50,48 @@ def species_db_fixture(tmp_dir_fixture):
     return db_path
 
 
-@pytest.mark.parametrize("strict", [True, False])
 def test_get_species_taxon(
-        species_db_fixture,
-        strict):
+        species_db_fixture):
 
     assert query_utils.get_species_taxon(
         db_path=species_db_fixture,
-        species_name='house mouse',
-        strict=strict) == 10090
+        species_name='house mouse') == 10090
 
     assert query_utils.get_species_taxon(
         db_path=species_db_fixture,
-        species_name='Mus musculus',
-        strict=strict) == 10090
+        species_name='Mus musculus') == 10090
 
     assert query_utils.get_species_taxon(
         db_path=species_db_fixture,
-        species_name='human',
-        strict=strict) == 9606
+        species_name='human') == 9606
 
     with pytest.raises(ValueError, match='species match name'):
         query_utils.get_species_taxon(
             db_path=species_db_fixture,
-            species_name='dragon',
-            strict=strict
+            species_name='dragon'
         )
 
-    if strict:
-        with pytest.raises(ValueError, match='no species match'):
-            query_utils.get_species_taxon(
-                db_path=species_db_fixture,
-                species_name='goblin',
-                strict=strict
-            )
-    else:
-        assert query_utils.get_species_taxon(
-            db_path=species_db_fixture,
-            species_name='goblin',
-            strict=strict
-        ) is None
 
-
-@pytest.mark.parametrize("strict", [True, False])
 def test_get_species_taxon_from_cursor(
-        species_db_fixture,
-        strict):
+        species_db_fixture):
 
     with sqlite3.connect(species_db_fixture) as conn:
         cursor = conn.cursor()
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='house mouse',
-            strict=strict) == 10090
+            species_name='house mouse') == 10090
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='Mus musculus',
-            strict=strict) == 10090
+            species_name='Mus musculus') == 10090
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='human',
-            strict=strict) == 9606
+            species_name='human') == 9606
 
         with pytest.raises(ValueError, match='species match name'):
             query_utils._get_species_taxon(
                 cursor=cursor,
-                species_name='dragon',
-                strict=strict
+                species_name='dragon'
             )
-
-        if strict:
-            with pytest.raises(ValueError, match='no species match'):
-                query_utils._get_species_taxon(
-                    cursor=cursor,
-                    species_name='goblin',
-                    strict=strict
-                )
-        else:
-            assert query_utils._get_species_taxon(
-                cursor=cursor,
-                species_name='goblin',
-                strict=strict
-            ) is None

@@ -135,8 +135,7 @@ def read_bkbit_data(bkbit_path, db_path):
                     species_lookup[record['in_taxon_label']] = (
                         query_utils._get_species_taxon(
                             cursor=cursor,
-                            species_name=record['in_taxon_label'],
-                            strict=True
+                            species_name=record['in_taxon_label']
                         )
                     )
                 species_idx = species_lookup[record['in_taxon_label']]

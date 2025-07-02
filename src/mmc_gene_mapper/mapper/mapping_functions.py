@@ -130,8 +130,7 @@ def identifiers_from_symbols_mapping(
     """
     species_taxon = query_utils.get_species_taxon(
         db_path=db_path,
-        species_name=species_name,
-        strict=True)
+        species_name=species_name)
 
     result = query_utils.translate_gene_identifiers(
         db_path=db_path,
