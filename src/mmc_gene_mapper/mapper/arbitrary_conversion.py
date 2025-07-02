@@ -10,6 +10,7 @@ the mapper class into a function module
 import numpy as np
 import sqlite3
 
+import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.species_detection as species_detection
@@ -39,20 +40,12 @@ def arbitrary_mapping(
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
     """
-    typing_msg = ""
-    if not isinstance(dst_species, metadata_classes.Species):
-        typing_msg += (
-            "dst_species must be an instance of Species; "
-            f"your input is an instance of {type(dst_species)}\n"
-        )
-    if not isinstance(dst_authority, metadata_classes.Authority):
-        typing_msg += (
-            "dst_authority must be an instance of Authority; "
-            f"your input is an instance of {type(dst_authority)}"
-        )
-    if len(typing_msg) > 0:
-        raise ValueError(typing_msg)
-
+    typing_utils.check_many_types(
+        name_arr=["dst_species", "dst_authority"],
+        arg_arr=[dst_species, dst_authority],
+        type_arr=[metadata_classes.Species,
+                  metadata_classes.Authority]
+    )
     query_utils.does_path_exist(db_path)
 
     if dst_authority.name not in ('NCBI', 'ENSEMBL'):
