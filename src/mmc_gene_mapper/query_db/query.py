@@ -6,6 +6,48 @@ import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
+def get_species(
+        cursor,
+        species):
+    """
+    Return a metadata_classes.Species
+
+    Parameters
+    ----------
+    cursor:
+        a sqlite3 cursor
+    species:
+        either a string or an int specifying the species
+
+    Returns
+    -------
+    a metadata_classes.Species containing the taxon and
+    name of the specified species
+    """
+    if isinstance(species, int):
+        species_taxon = species
+        species_name = _get_species_name(
+            cursor=cursor,
+            species_taxon=species_taxon
+        )
+    elif isinstance(species, str):
+        species_name = species
+        species_taxon = _get_species_taxon(
+            cursor=cursor,
+            species_name=species_name
+        )
+    else:
+        raise ValueError(
+            f"Cannot infer species from '{species}'"
+            f"of type {type(species)}"
+        )
+
+    return metadata_classes.Species(
+        taxon=species_taxon,
+        name=species_name
+    )
+
+
 def _get_species_taxon(
         cursor,
         species_name):

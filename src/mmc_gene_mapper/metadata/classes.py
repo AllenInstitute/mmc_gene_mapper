@@ -113,3 +113,11 @@ class Species(MetadataEntity):
             'name': self._name,
             'taxon': self._taxon
         }
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def taxon(self):
+        return self._taxon
