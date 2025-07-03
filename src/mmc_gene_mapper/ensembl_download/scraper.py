@@ -16,7 +16,8 @@ def scrape_ensembl(
         default_ensembl_version,
         dst_dir,
         failure_log_path,
-        specific_files=None):
+        specific_files=None,
+        n_limit=None):
     """
     Parameters
     ----------
@@ -31,6 +32,9 @@ def scrape_ensembl(
         genome annotations to download. Each entry is a dict like
         {'url': http://url/to/file.gff3.gz,
          'assembly_id': 'id fo genome assembly'}
+    n_limit:
+        optional it to limit the number of files actually parsed
+        (for prototyping)
 
     Returns
     -------
@@ -55,6 +59,8 @@ def scrape_ensembl(
         entry_list = []
 
     for ii, ftp_dir in enumerate(directory_list):
+        if n_limit is not None and len(entry_list) > n_limit:
+            break
         if ii > 0 and ii % 25 == 0:
             print(f"considered {ii} dir; {len(entry_list)} entries")
         file_path_list = list(host.nlst(ftp_dir))
@@ -70,6 +76,9 @@ def scrape_ensembl(
             }
             entry_list.append(this)
 
+    if n_limit is not None:
+        print(f"limiting entries to first {n_limit}")
+        entry_list = entry_list[:n_limit]
     print(f'processing {len(entry_list)} entries')
 
     failed_file_lookup = dict()
