@@ -308,7 +308,7 @@ def translate_gene_identifiers(
         dst_column,
         src_list,
         authority_name,
-        species_taxon,
+        species,
         chunk_size=100):
 
     if src_column not in ('symbol', 'id', 'identifier'):
@@ -346,7 +346,7 @@ def translate_gene_identifiers(
         meta_source = get_authority_and_citation(
             conn=conn,
             authority_name=authority_name,
-            species_taxon=species_taxon,
+            species_taxon=species.taxon,
             require_symbols=require_symbols
         )
 
@@ -382,7 +382,7 @@ def translate_gene_identifiers(
                 query,
                 (citation_idx,
                  authority_idx,
-                 species_taxon,
+                 species.taxon,
                  *values)
             ).fetchall()
             for row in raw:
@@ -420,7 +420,7 @@ def get_equivalent_genes_from_identifiers(
         dst_column='id',
         src_list=input_gene_list,
         authority_name=input_authority_name,
-        species_taxon=species.taxon,
+        species=species,
         chunk_size=chunk_size
     )
 
@@ -554,7 +554,7 @@ def get_ortholog_genes_from_identifiers(
         dst_column='id',
         src_list=src_gene_list,
         authority_name=authority_name,
-        species_taxon=src_species.taxon,
+        species=src_species,
         chunk_size=chunk_size
     )
 
@@ -770,7 +770,7 @@ def mapping_dict_to_identifiers(
         db_path=db_path,
         value_list=list(mapping_dict.keys()),
         authority_name=key_authority_name,
-        species_taxon=key_species.taxon
+        species=key_species
     )
     error_msg += key_error
     if len(error_msg) > 0:
@@ -785,7 +785,7 @@ def mapping_dict_to_identifiers(
         db_path=db_path,
         value_list=list(value_list),
         authority_name=value_authority_name,
-        species_taxon=value_species.taxon
+        species=value_species
     )
 
     new_dict = dict()
@@ -810,7 +810,7 @@ def _strict_mapping_from_id(
         db_path,
         value_list,
         authority_name,
-        species_taxon):
+        species):
 
     return _strict_mapping(
         db_path=db_path,
@@ -818,7 +818,7 @@ def _strict_mapping_from_id(
         dst_column='identifier',
         src_list=value_list,
         authority_name=authority_name,
-        species_taxon=species_taxon,
+        species=species,
         allow_none=False
     )
 
@@ -829,7 +829,7 @@ def _strict_mapping(
         dst_column,
         src_list,
         authority_name,
-        species_taxon,
+        species,
         allow_none=True):
     """
     demand 1:1 mapping
@@ -841,7 +841,7 @@ def _strict_mapping(
         dst_column='identifier',
         src_list=src_list,
         authority_name=authority_name,
-        species_taxon=species_taxon
+        species=species
     )['mapping']
 
     error_msg = ""
@@ -852,7 +852,7 @@ def _strict_mapping(
             else:
                 error_msg += (
                    f"id: {val} authority: {authority_name} "
-                   f"species: {species_taxon} "
+                   f"species: {species.taxon} "
                    f"n: {len(mapping[val])}\n"
                 )
     return mapping, error_msg

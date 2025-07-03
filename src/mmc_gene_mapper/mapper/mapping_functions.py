@@ -148,7 +148,7 @@ def identifiers_from_symbols_mapping(
         dst_column="identifier",
         src_list=gene_symbol_list,
         authority_name=authority_name,
-        species_taxon=species.taxon,
+        species=species,
         chunk_size=500
     )
     return result
