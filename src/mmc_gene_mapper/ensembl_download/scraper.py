@@ -84,8 +84,12 @@ def scrape_ensembl(
     failed_file_lookup = dict()
     serialized_species = set()
     valid_files = []
-    for entry in entry_list:
-        print(entry, time.time()-t0)
+    n_entries = len(entry_list)
+    update_every = max(1, n_entries//10)
+    for ii, entry in enumerate(entry_list):
+        if ii > 0 and ii % update_every:
+            dur = time.time()-t0
+            print(f'processed {ii} of {n_entries} in {dur:.2e} seconds')
         try:
             result_path = serialize_bkbit_gff3(
                 content_url=entry['url'],
@@ -121,7 +125,8 @@ def serialize_bkbit_gff3(
         assembly_accession=assembly_id,
         assembly_strain=None,
         log_level="WARNING",
-        log_to_file=False
+        log_to_file=False,
+        use_tqdm=False
     )
     gff3.parse()
 
