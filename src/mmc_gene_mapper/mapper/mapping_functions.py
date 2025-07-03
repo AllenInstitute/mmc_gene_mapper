@@ -322,7 +322,7 @@ def ortholog_genes(
     src_species:
         a Species; the name of the species we are starting from
     dst_species:
-        as Species; the name of the species we are mapping to
+        a Species; the name of the species we are mapping to
     gene_list:
         list of gene identifiers (in src_species) to be
         mapped
