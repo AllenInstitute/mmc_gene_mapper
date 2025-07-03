@@ -540,8 +540,8 @@ def _get_equivalent_genes(
 def get_ortholog_genes_from_identifiers(
         db_path,
         authority_name,
-        src_species_taxon,
-        dst_species_taxon,
+        src_species,
+        dst_species,
         src_gene_list,
         citation_name,
         chunk_size=100):
@@ -554,7 +554,7 @@ def get_ortholog_genes_from_identifiers(
         dst_column='id',
         src_list=src_gene_list,
         authority_name=authority_name,
-        species_taxon=src_species_taxon,
+        species_taxon=src_species.taxon,
         chunk_size=chunk_size
     )
 
@@ -565,9 +565,9 @@ def get_ortholog_genes_from_identifiers(
     orthologs = _get_ortholog_genes(
         db_path=db_path,
         authority_name=authority_name,
-        src_species_taxon=src_species_taxon,
+        src_species_taxon=src_species.taxon,
         src_genes=sorted(id_values),
-        dst_species_taxon=dst_species_taxon,
+        dst_species_taxon=dst_species.taxon,
         citation_name=citation_name,
         chunk_size=chunk_size
     )
@@ -576,9 +576,9 @@ def get_ortholog_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=orthologs['mapping'],
         key_authority_name=authority_name,
-        key_species_taxon=src_species_taxon,
+        key_species_taxon=src_species.taxon,
         value_authority_name=authority_name,
-        value_species_taxon=dst_species_taxon
+        value_species_taxon=dst_species.taxon
     )
 
     unmapped_genes = set(src_gene_list)-set(mapping_dict.keys())
