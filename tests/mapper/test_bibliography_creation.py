@@ -238,21 +238,21 @@ def test_get_citation_from_bibliography(gene_table_fixture):
             "metadata": {"meta": "M2"}
         }
 
-        with pytest.raises(ValueError, match="2 citations associated with"):
+        with pytest.raises(query_utils.UnclearCitationError, match="2 citations associated with"):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=0,
                 species=metadata_classes.Species(name='gar', taxon=99)
             )
 
-        with pytest.raises(ValueError, match="0 citations associated with"):
+        with pytest.raises(query_utils.UnclearCitationError, match="0 citations associated with"):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=1,
                 species=metadata_classes.Species(name='gar', taxon=99)
             )
 
-        with pytest.raises(ValueError, match="0 citations associated with"):
+        with pytest.raises(query_utils.UnclearCitationError, match="0 citations associated with"):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=15,
@@ -317,14 +317,14 @@ def test_get_authority_and_citation(gene_table_fixture):
             }
         }
 
-        with pytest.raises(ValueError, match="2 citations associated with"):
+        with pytest.raises(query_utils.UnclearCitationError, match="2 citations associated with"):
             query_utils.get_authority_and_citation(
                 conn=conn,
                 authority_name="A0",
                 species=metadata_classes.Species(name='gar', taxon=99)
             )
 
-        with pytest.raises(ValueError, match="0 citations associated with"):
+        with pytest.raises(query_utils.UnclearCitationError, match="0 citations associated with"):
             query_utils.get_authority_and_citation(
                 conn=conn,
                 authority_name="A1",

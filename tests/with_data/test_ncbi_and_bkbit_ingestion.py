@@ -194,7 +194,7 @@ def test_identifiers_from_symbols_mapping_error(
     # case where there are no citations linking a species
     # to an authority
     msg = "There are 0 citations associated with authority"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(query_utils.UnclearCitationError, match=msg):
         mapping_functions.identifiers_from_symbols_mapping(
             db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
@@ -216,7 +216,7 @@ def test_identifiers_from_symbols_error(
     # case where there are no citations linking a species
     # to an authority
     msg = "There are 0 citations associated with authority"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(query_utils.UnclearCitationError, match=msg):
         mapping_functions.identifiers_from_symbols(
             db_path=mapper_fixture.db_path,
             gene_symbol_list=["a", "b", "c"],
