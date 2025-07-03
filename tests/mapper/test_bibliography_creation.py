@@ -8,6 +8,7 @@ import json
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.query_db.query as query_utils
@@ -207,7 +208,7 @@ def test_get_citation_from_bibliography(gene_table_fixture):
         actual = query_utils.get_citation_from_bibliography(
             cursor=cursor,
             authority_idx=0,
-            species_taxon=88
+            species=metadata_classes.Species(name='gar', taxon=88)
         )
         assert actual == {
             "name": "C1",
@@ -218,7 +219,7 @@ def test_get_citation_from_bibliography(gene_table_fixture):
         actual = query_utils.get_citation_from_bibliography(
             cursor=cursor,
             authority_idx=1,
-            species_taxon=77
+            species=metadata_classes.Species(name='gar', taxon=77)
         )
         assert actual == {
             "name": "C1",
@@ -229,7 +230,7 @@ def test_get_citation_from_bibliography(gene_table_fixture):
         actual = query_utils.get_citation_from_bibliography(
             cursor=cursor,
             authority_idx=1,
-            species_taxon=88
+            species=metadata_classes.Species(name='gar', taxon=88)
         )
         assert actual == {
             "name": "C2",
@@ -241,21 +242,21 @@ def test_get_citation_from_bibliography(gene_table_fixture):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=0,
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
 
         with pytest.raises(ValueError, match="0 citations associated with"):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=1,
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
 
         with pytest.raises(ValueError, match="0 citations associated with"):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=15,
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
 
 
@@ -268,7 +269,7 @@ def test_get_authority_and_citation(gene_table_fixture):
         actual = query_utils.get_authority_and_citation(
             conn=conn,
             authority_name="A0",
-            species_taxon=88
+            species=metadata_classes.Species(name='gar', taxon=88)
         )
         assert actual == {
             "authority": {
@@ -285,7 +286,7 @@ def test_get_authority_and_citation(gene_table_fixture):
         actual = query_utils.get_authority_and_citation(
             conn=conn,
             authority_name="A1",
-            species_taxon=77
+            species=metadata_classes.Species(name='gar', taxon=77)
         )
         assert actual == {
             "authority": {
@@ -302,7 +303,7 @@ def test_get_authority_and_citation(gene_table_fixture):
         actual = query_utils.get_authority_and_citation(
             conn=conn,
             authority_name="A1",
-            species_taxon=88
+            species=metadata_classes.Species(name='gar', taxon=88)
         )
         assert actual == {
             "authority": {
@@ -320,14 +321,14 @@ def test_get_authority_and_citation(gene_table_fixture):
             query_utils.get_authority_and_citation(
                 conn=conn,
                 authority_name="A0",
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
 
         with pytest.raises(ValueError, match="0 citations associated with"):
             query_utils.get_authority_and_citation(
                 conn=conn,
                 authority_name="A1",
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
 
         msg = "does not exist in this database"
@@ -335,5 +336,5 @@ def test_get_authority_and_citation(gene_table_fixture):
             query_utils.get_authority_and_citation(
                 conn=conn,
                 authority_name="A15",
-                species_taxon=99
+                species=metadata_classes.Species(name='gar', taxon=99)
             )
