@@ -134,7 +134,7 @@ def _get_species_name(
 def get_citation_from_bibliography(
         cursor,
         authority_idx,
-        species_taxon,
+        species,
         require_symbols=False):
     """
     Return the full entry for a citation based on
@@ -147,8 +147,8 @@ def get_citation_from_bibliography(
         sqlite3 cursor object
     authority_idx:
         the integer index of the relevant authority
-    species_taxon:
-        the integer index of the species
+    species:
+        an instance of Species
     require_symbols:
         if True, only consider citation, authority pairs
         with symbols associated with them
@@ -187,7 +187,7 @@ def get_citation_from_bibliography(
 
     raw = cursor.execute(
         query,
-        (species_taxon, authority_idx)
+        (species.taxon, authority_idx)
     ).fetchall()
 
     results = set([r[0] for r in raw])
@@ -197,7 +197,7 @@ def get_citation_from_bibliography(
             return get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=authority_idx,
-                species_taxon=species_taxon,
+                species=species,
                 require_symbols=True)
         else:
             full_authority = cursor.execute(
@@ -216,7 +216,7 @@ def get_citation_from_bibliography(
             raise ValueError(
                 f"There are {len(results)} citations associated "
                 f"with authority={full_authority}, "
-                f"species_taxon={species_taxon}; "
+                f"species_taxon={species.taxon}; "
                 "unclear how to proceed"
             )
     citation_idx = results.pop()
@@ -241,7 +241,7 @@ def get_citation_from_bibliography(
 
 def get_authority_and_citation(
         conn,
-        species_taxon,
+        species,
         authority_name,
         require_symbols=False):
     """
@@ -253,8 +253,8 @@ def get_authority_and_citation(
     ----------
     conn:
         sqlite3 connection
-    species_taxon:
-        an int identifying the species
+    species:
+        an instance of Species
     authority_name:
         a str; the name of the authority entry
     require_symbols:
@@ -292,7 +292,7 @@ def get_authority_and_citation(
     full_citation = get_citation_from_bibliography(
         cursor=conn.cursor(),
         authority_idx=full_authority['idx'],
-        species_taxon=species_taxon,
+        species=species,
         require_symbols=require_symbols
     )
 
@@ -346,7 +346,7 @@ def translate_gene_identifiers(
         meta_source = get_authority_and_citation(
             conn=conn,
             authority_name=authority_name,
-            species_taxon=species.taxon,
+            species=species,
             require_symbols=require_symbols
         )
 
