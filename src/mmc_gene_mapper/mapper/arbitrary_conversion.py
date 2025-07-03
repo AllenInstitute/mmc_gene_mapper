@@ -99,12 +99,6 @@ def arbitrary_mapping(
             'species': dst_species
         }
 
-        current['metadata'] = metadata_classes.MappingMetadata(
-            src=src_species,
-            dst=dst_species,
-            citation=current['metadata']['citation']
-        ).serialize()
-
         metadata.append(current['metadata'])
 
     else:

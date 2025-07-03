@@ -565,9 +565,9 @@ def get_ortholog_genes_from_identifiers(
     orthologs = _get_ortholog_genes(
         db_path=db_path,
         authority_name=authority_name,
-        src_species_taxon=src_species.taxon,
+        src_species=src_species,
         src_genes=sorted(id_values),
-        dst_species_taxon=dst_species.taxon,
+        dst_species=dst_species,
         citation_name=citation_name,
         chunk_size=chunk_size
     )
@@ -594,9 +594,9 @@ def get_ortholog_genes_from_identifiers(
 def _get_ortholog_genes(
         db_path,
         authority_name,
-        src_species_taxon,
+        src_species,
         src_genes,
-        dst_species_taxon,
+        dst_species,
         citation_name,
         chunk_size=50):
     """
@@ -607,15 +607,13 @@ def _get_ortholog_genes(
     authority_name:
         string indicating according to what authority
         (NCBI or ENSEMBL) we want orthologs
-    src_species_taxon:
-        int indicating the species of the
-        specified genes
+    src_species:
+        the Species of the specified genes
     src_genes:
         list of ints indicating the NCBI IDs of the
         specified genes
-    dst_species_taxon:
-        int indicating the species in which you
-        want to find ortholog genes
+    dst_species:
+        the Species in which you want to find ortholog genes
     citation_name:
         string indicating the source of the ortholog
         assignments you want to use
@@ -662,7 +660,7 @@ def _get_ortholog_genes(
                 query,
                 (authority_idx,
                  citation['idx'],
-                 src_species_taxon,
+                 src_species.taxon,
                  *gene_chunk)
             ).fetchall()
             n_raw = len(gene_to_ortholog)
@@ -701,7 +699,7 @@ def _get_ortholog_genes(
                 query,
                 (authority_idx,
                  citation['idx'],
-                 dst_species_taxon,
+                 dst_species.taxon,
                  *ortholog_chunk)
             ).fetchall()
             n_raw = len(ortholog_to_other_gene)
@@ -724,9 +722,11 @@ def _get_ortholog_genes(
                 results[gene].append(ortholog_to_other_gene[orth])
 
     return {
-        'metadata': {
-            'citation': citation['metadata']
-        },
+        'metadata': metadata_classes.MappingMetadata(
+                src=src_species,
+                dst=dst_species,
+                citation=citation['metadata']
+        ).serialize(),
         'mapping': results
     }
 

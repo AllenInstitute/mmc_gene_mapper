@@ -8,12 +8,14 @@ import itertools
 import json
 import pandas as pd
 import pathlib
+import sqlite3
 import tarfile
 import tempfile
 import unittest.mock
 
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.mapper as mapper
 
 
