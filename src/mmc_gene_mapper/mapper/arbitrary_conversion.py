@@ -214,7 +214,7 @@ def _convert_authority_in_bulk(
                 input_authority=input_authority,
                 output_authority=dst_authority,
                 gene_list=gene_list[idx_arr],
-                species_name=species.taxon,
+                species=species,
                 citation_name='NCBI',
                 assign_placeholders=True,
                 placeholder_prefix=f"{input_authority}:{dst_authority}"
