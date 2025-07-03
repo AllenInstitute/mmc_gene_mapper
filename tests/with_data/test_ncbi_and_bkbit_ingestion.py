@@ -556,22 +556,22 @@ def test_get_equivalent_genes_mapping_from_ncbi(
 
 
 @pytest.mark.parametrize(
-    "assign_placeholders, placeholder_prefix, species_as_int",
-    [(True, "test", False),
-     (True, "test", True),
-     (True, "silly", False),
-     (False, None, False)]
+    "assign_placeholders, placeholder_prefix",
+    [(True, "test"),
+     (True, "silly"),
+     (False, None)]
 )
 def test_get_equivalent_genes_from_ncbi(
         mapper_fixture,
         assign_placeholders,
-        placeholder_prefix,
-        species_as_int):
+        placeholder_prefix):
 
-    if species_as_int:
-        species = 9606
-    else:
-        species = "human"
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        species = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
@@ -580,7 +580,7 @@ def test_get_equivalent_genes_from_ncbi(
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
-        species_name=species,
+        species=species,
         citation_name='NCBI',
         assign_placeholders=assign_placeholders,
         placeholder_prefix=placeholder_prefix
