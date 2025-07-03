@@ -215,7 +215,7 @@ def equivalent_genes(
         input_authority=input_authority,
         output_authority=output_authority,
         gene_list=gene_list,
-        species_name=species.name,
+        species=species,
         citation_name=citation_name
     )
 
@@ -382,7 +382,7 @@ def equivalent_genes_mapping(
         input_authority,
         output_authority,
         gene_list,
-        species_name,
+        species,
         citation_name):
     """
     Return a mapping between gene identifiers from
@@ -401,8 +401,8 @@ def equivalent_genes_mapping(
     gene_list:
         list of gene identifiers (in input_authority) to be
         mapped
-    species_name:
-        name of species we are working with
+    species:
+        an instance of Species
     citation_name:
         name of citation to use to assess gene eqivalence
 
@@ -429,7 +429,7 @@ def equivalent_genes_mapping(
         input_authority_name=input_authority,
         output_authority_name=output_authority,
         input_gene_list=gene_list,
-        species_name=species_name,
+        species_name=species.name,
         citation_name=citation_name,
         chunk_size=500
     )

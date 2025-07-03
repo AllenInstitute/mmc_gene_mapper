@@ -520,15 +520,15 @@ def test_get_orthologs_from_ncbi(
     assert actual['gene_list'] == expected
 
 
-@pytest.mark.parametrize("species_as_int", [True, False])
 def test_get_equivalent_genes_mapping_from_ncbi(
-        mapper_fixture,
-        species_as_int):
+        mapper_fixture):
 
-    if species_as_int:
-        species = "9606"
-    else:
-        species = "human"
+    with sqlite3.connect(mapper_fixture.db_path) as conn:
+        cursor = conn.cursor()
+        species = query_utils.get_species(
+            cursor=cursor,
+            species='human'
+        )
 
     gene_idx_list = [1, 2, 3, 6, 14, 10]
     gene_list = [f'ENSX{ii}' for ii in gene_idx_list]
@@ -537,7 +537,7 @@ def test_get_equivalent_genes_mapping_from_ncbi(
         input_authority='ENSEMBL',
         output_authority='NCBI',
         gene_list=gene_list,
-        species_name=species,
+        species=species,
         citation_name='NCBI'
     )
 
