@@ -429,7 +429,7 @@ def equivalent_genes_mapping(
         input_authority_name=input_authority,
         output_authority_name=output_authority,
         input_gene_list=gene_list,
-        species_name=species.name,
+        species=species,
         citation_name=citation_name,
         chunk_size=500
     )

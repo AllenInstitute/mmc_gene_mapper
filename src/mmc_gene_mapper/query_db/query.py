@@ -408,17 +408,11 @@ def get_equivalent_genes_from_identifiers(
         input_authority_name,
         output_authority_name,
         input_gene_list,
-        species_name,
+        species,
         citation_name,
         chunk_size=100):
 
     does_path_exist(db_path)
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        species_taxon = _get_species_taxon(
-            cursor=cursor,
-            species_name=species_name
-        )
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
@@ -426,7 +420,7 @@ def get_equivalent_genes_from_identifiers(
         dst_column='id',
         src_list=input_gene_list,
         authority_name=input_authority_name,
-        species_taxon=species_taxon,
+        species_taxon=species.taxon,
         chunk_size=chunk_size
     )
 
@@ -439,7 +433,7 @@ def get_equivalent_genes_from_identifiers(
         input_id_list=sorted(id_values),
         input_authority_name=input_authority_name,
         output_authority_name=output_authority_name,
-        species_taxon=species_taxon,
+        species_taxon=species.taxon,
         citation_name=citation_name,
         chunk_size=chunk_size
     )
@@ -448,9 +442,9 @@ def get_equivalent_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=equivalence['mapping'],
         key_authority_name=input_authority_name,
-        key_species_taxon=species_taxon,
+        key_species_taxon=species.taxon,
         value_authority_name=output_authority_name,
-        value_species_taxon=species_taxon
+        value_species_taxon=species.taxon
     )
 
     unmapped_genes = set(input_gene_list)-set(mapping_dict.keys())
