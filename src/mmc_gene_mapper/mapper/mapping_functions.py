@@ -291,8 +291,8 @@ def ortholog_genes_mapping(
     return query_utils.get_ortholog_genes_from_identifiers(
         db_path=db_path,
         authority_name=authority,
-        src_species_taxon=src_species.taxon,
-        dst_species_taxon=dst_species.taxon,
+        src_species=src_species,
+        dst_species=dst_species,
         src_gene_list=gene_list,
         citation_name=citation_name,
         chunk_size=500
