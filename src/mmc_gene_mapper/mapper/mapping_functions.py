@@ -77,7 +77,7 @@ def identifiers_from_symbols(
     mapping = identifiers_from_symbols_mapping(
         db_path=db_path,
         gene_symbol_list=gene_symbol_list,
-        species_name=species.name,
+        species=species,
         authority_name=authority_name
     )
 
@@ -100,7 +100,7 @@ def identifiers_from_symbols(
 def identifiers_from_symbols_mapping(
         db_path,
         gene_symbol_list,
-        species_name,
+        species,
         authority_name):
     """
     Find the mapping that converts gene symbols into
@@ -112,8 +112,8 @@ def identifiers_from_symbols_mapping(
         path to the database being queries
     gene_symbol_list:
         list of gene symbols
-    species_name:
-        name of the species we are working with
+    species:
+        a Species
     authority_name:
         name of the authority in whose identifiers
         we want the genes listed
@@ -136,12 +136,11 @@ def identifiers_from_symbols_mapping(
         }
     """
     query_utils.does_path_exist(db_path)
-
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        species_taxon = query_utils._get_species_taxon(
-            cursor=cursor,
-            species_name=species_name)
+    typing_utils.check_type(
+        arg_name='identifiers_from_symbols.species',
+        arg=species,
+        expected_type=metadata_classes.Species
+    )
 
     result = query_utils.translate_gene_identifiers(
         db_path=db_path,
@@ -149,7 +148,7 @@ def identifiers_from_symbols_mapping(
         dst_column="identifier",
         src_list=gene_symbol_list,
         authority_name=authority_name,
-        species_taxon=species_taxon,
+        species_taxon=species.taxon,
         chunk_size=500
     )
     return result
