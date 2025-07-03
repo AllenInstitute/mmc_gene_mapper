@@ -442,9 +442,9 @@ def get_equivalent_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=equivalence['mapping'],
         key_authority_name=input_authority_name,
-        key_species_taxon=species.taxon,
+        key_species=species,
         value_authority_name=output_authority_name,
-        value_species_taxon=species.taxon
+        value_species=species
     )
 
     unmapped_genes = set(input_gene_list)-set(mapping_dict.keys())
@@ -576,9 +576,9 @@ def get_ortholog_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=orthologs['mapping'],
         key_authority_name=authority_name,
-        key_species_taxon=src_species.taxon,
+        key_species=src_species,
         value_authority_name=authority_name,
-        value_species_taxon=dst_species.taxon
+        value_species=dst_species
     )
 
     unmapped_genes = set(src_gene_list)-set(mapping_dict.keys())
@@ -735,9 +735,9 @@ def mapping_dict_to_identifiers(
         db_path,
         mapping_dict,
         key_authority_name,
-        key_species_taxon,
+        key_species,
         value_authority_name,
-        value_species_taxon):
+        value_species):
     """
     Take a dict mapping gene ids (ints) to other
     gene ids. Convert it to a dict mapping
@@ -751,12 +751,12 @@ def mapping_dict_to_identifiers(
         keys should be ints; values should be lists of ints
     key_authority_name:
         name of the authority defining the keys
-    key_species_taxon:
-        int defining the species associated with the keys
+    key_species:
+        Species associated with the keys
     value_authority_name:
         name of the authority defining the values
-    value_species_taxon:
-        int defining the species associated with the values
+    value_species:
+        Species associated with the values
 
     Returns
     -------
@@ -770,7 +770,7 @@ def mapping_dict_to_identifiers(
         db_path=db_path,
         value_list=list(mapping_dict.keys()),
         authority_name=key_authority_name,
-        species_taxon=key_species_taxon
+        species_taxon=key_species.taxon
     )
     error_msg += key_error
     if len(error_msg) > 0:
@@ -785,7 +785,7 @@ def mapping_dict_to_identifiers(
         db_path=db_path,
         value_list=list(value_list),
         authority_name=value_authority_name,
-        species_taxon=value_species_taxon
+        species_taxon=value_species.taxon
     )
 
     new_dict = dict()
