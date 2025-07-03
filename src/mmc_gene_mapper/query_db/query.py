@@ -213,7 +213,7 @@ def get_citation_from_bibliography(
             if len(full_authority) == 0:
                 full_authority = authority_idx
 
-            raise ValueError(
+            raise UnclearCitationError(
                 f"There are {len(results)} citations associated "
                 f"with authority={full_authority}, "
                 f"species_taxon={species.taxon}; "
@@ -867,4 +867,8 @@ def does_path_exist(db_path):
 
 
 class MappingError(Exception):
+    pass
+
+
+class UnclearCitationError(Exception):
     pass

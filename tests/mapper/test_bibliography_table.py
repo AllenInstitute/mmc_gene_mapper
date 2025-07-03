@@ -147,7 +147,7 @@ def test_requires_symbols(gene_table_fixture):
 
         # there are no citations with symbosl for
         # species=1, authority=2
-        with pytest.raises(ValueError, match=error_msg):
+        with pytest.raises(query_utils.UnclearCitationError, match=error_msg):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
                 species=metadata_classes.Species(name='gar', taxon=1),
