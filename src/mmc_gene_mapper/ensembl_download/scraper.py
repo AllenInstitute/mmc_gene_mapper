@@ -9,7 +9,7 @@ import time
 import traceback
 import warnings
 
-import mmc_gene_mapper.ensembl_download.gff3_class as gff3_class
+import bkbit.data_translators.genome_annotation_translator as gene_translator
 
 
 def scrape_ensembl(
@@ -116,7 +116,7 @@ def serialize_bkbit_gff3(
         dst_dir,
         serialized_species):
 
-    gff3 = gff3_class.Gff3Patch(
+    gff3 = gene_translator.Gff3.from_url(
         content_url=content_url,
         assembly_accession=assembly_id,
         assembly_strain=None,
