@@ -87,7 +87,7 @@ def scrape_ensembl(
     n_entries = len(entry_list)
     update_every = max(1, n_entries//10)
     for ii, entry in enumerate(entry_list):
-        if ii > 0 and ii % update_every:
+        if ii > 0 and ii % update_every == 0:
             dur = time.time()-t0
             print(f'processed {ii} of {n_entries} in {dur:.2e} seconds')
         try:
@@ -102,10 +102,8 @@ def scrape_ensembl(
             )
         except Exception:
             msg = traceback.format_exc()
-            print(f'    {chosen} failed -- {msg}')
             failed_file_lookup[entry['url']] = msg
 
-    print(f'failed files\n{json.dumps(failed_file_lookup, indent=2)}')
     dur = (time.time()-t0)/60.0
     print(f'SUCCESS\nthat took {dur:.2e} minutes')
     with open(failure_log_path, "w") as dst:
