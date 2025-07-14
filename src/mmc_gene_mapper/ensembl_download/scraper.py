@@ -5,9 +5,12 @@ import copy
 import ftplib
 import json
 import pathlib
+import tempfile
 import time
 import traceback
 import warnings
+
+import mmc_gene_mapper.utils.file_utils as file_utils
 
 import bkbit.data_translators.genome_annotation_translator as gene_translator
 
@@ -17,7 +20,8 @@ def scrape_ensembl(
         dst_dir,
         failure_log_path,
         specific_files=None,
-        n_limit=None):
+        n_limit=None,
+        tmp_dir=None):
     """
     Parameters
     ----------
@@ -35,6 +39,9 @@ def scrape_ensembl(
     n_limit:
         optional it to limit the number of files actually parsed
         (for prototyping)
+    tmp_dir:
+        a directory where temporary files downloaded from ENSEMBL can be
+        saved while they are needed.
 
     Returns
     -------
@@ -87,6 +94,9 @@ def scrape_ensembl(
     n_entries = len(entry_list)
     update_every = max(1, n_entries//10)
     for ii, entry in enumerate(entry_list):
+        this_tmp_dir = pathlib.Path(
+            tempfile.mkdtemp(dir=tmp_dir)
+        )
         if ii > 0 and ii % update_every == 0:
             dur = time.time()-t0
             print(f'processed {ii} of {n_entries} in {dur:.2e} seconds')
@@ -95,7 +105,8 @@ def scrape_ensembl(
                 content_url=entry['url'],
                 assembly_id=entry['assembly_id'],
                 dst_dir=dst_dir,
-                serialized_species=serialized_species
+                serialized_species=serialized_species,
+                tmp_dir=this_tmp_dir
             )
             valid_files.append(
                 str(result_path.resolve().absolute())
@@ -103,6 +114,8 @@ def scrape_ensembl(
         except Exception:
             msg = traceback.format_exc()
             failed_file_lookup[entry['url']] = msg
+        finally:
+            file_utils.clean_up(this_tmp_dir)
 
     dur = (time.time()-t0)/60.0
     print(f'SUCCESS\nthat took {dur:.2e} minutes')
@@ -116,7 +129,8 @@ def serialize_bkbit_gff3(
         content_url,
         assembly_id,
         dst_dir,
-        serialized_species):
+        serialized_species,
+        tmp_dir=None):
 
     gff3 = gene_translator.Gff3.from_url(
         content_url=content_url,
@@ -124,7 +138,8 @@ def serialize_bkbit_gff3(
         assembly_strain=None,
         log_level="WARNING",
         log_to_file=False,
-        use_tqdm=False
+        use_tqdm=False,
+        tmp_dir=tmp_dir
     )
     gff3.parse()
 
