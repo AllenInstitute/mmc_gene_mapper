@@ -203,6 +203,14 @@ def ncbi_file_package_fixture(
         if g['ensembl_identifier'] is not None
     ]
 
+    # Add a gene whose ENSEMBL ID breaks the pattern
+    # this should be gracefully skipped
+    gene_2_ensembl_data.append(
+        {'#tax_id': 10090,
+         'GeneID': '1',
+         'Ensembl_gene_identifier': 'ENS6666abcde'}
+    )
+
     # simulate one ENSEMBL gene being equivalent
     # to more than one an NCBI gene
     gene_2_ensembl_data.append(
