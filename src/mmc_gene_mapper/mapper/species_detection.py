@@ -107,7 +107,7 @@ def detect_species_and_authority(
                     f"\nNCBI genes gave species '{ncbi_authority['species']}'"
                 )
                 raise InconsistentSpeciesError(msg)
-            species_name = ensembl_authority['species']
+            species_name = ncbi_authority['species']
             species_taxon = ncbi_authority['species_taxon']
 
         species = metadata_classes.Species(
