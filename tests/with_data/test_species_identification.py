@@ -156,3 +156,37 @@ def test_backend_determine_species_and_authority_from_data(
             db_path=mapper_fixture.db_path,
             gene_list=mixed_genes
         )
+
+
+def test_species_from_odd_symbols(mapper_fixture):
+    """
+    Test that symbols which fit the ENSEMBL and NCBI regex
+    return species==None
+    """
+    ens_list = [
+        'ENSBA0',
+        'ENSCA1'
+    ]
+    result = species_utils.detect_species_and_authority(
+        db_path=mapper_fixture.db_path,
+        gene_list=ens_list
+    )
+    assert result['species'] is None
+    np.testing.assert_array_equal(
+        result['authority'],
+        np.array(['symbol']*2)
+    )
+
+    ncbi_list = [
+        'NCBIBA0',
+        'NCBICA1'
+    ]
+    result = species_utils.detect_species_and_authority(
+        db_path=mapper_fixture.db_path,
+        gene_list=ncbi_list
+    )
+    assert result['species'] is None
+    np.testing.assert_array_equal(
+        result['authority'],
+        np.array(['symbol']*2)
+    )

@@ -40,6 +40,8 @@ def detect_species_and_authority(
     truth. If it happens to find more than one species in the first chunk
     of data it analyzes, it will raise an exception. If you pass it a list
     of gene symbols, "species" and "species_taxon" will be None
+
+    If no species is matched, authority will be set to a 'symbol' for all genes
     """
 
     gene_list = np.array(gene_list)
@@ -110,9 +112,20 @@ def detect_species_and_authority(
             species_name = ncbi_authority['species']
             species_taxon = ncbi_authority['species_taxon']
 
-        species = metadata_classes.Species(
-            name=species_name,
-            taxon=species_taxon
+        if species_name is None and species_taxon is None:
+            species = None
+        else:
+            species = metadata_classes.Species(
+                name=species_name,
+                taxon=species_taxon
+            )
+
+    # if no species was identified, artificially set
+    # authority == 'symbol'; this can result from gene symbols
+    # that match the NCBI or ENSEMBL regex in str_utils
+    if species is None:
+        authority = np.array(
+            ['symbol']*len(authority)
         )
 
     return {
