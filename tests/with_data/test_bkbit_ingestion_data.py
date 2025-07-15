@@ -176,3 +176,46 @@ def test_reingest_bkbit_data(
             db_path=pre_bkbit_database_fixture,
             bkbit_path=bkbit_data_fixture0
         )
+
+
+def test_read_bkbit_data_with_malformed_gene(
+        pre_bkbit_database_fixture,
+        bkbit_data_fixture0,
+        tmp_dir_fixture):
+    """
+    Add a gene whose source_id does not give a single
+    integer. Check that the gene is simply ignored.
+    """
+
+    baseline_data = bkbit_ingestion.read_bkbit_data(
+        bkbit_path=bkbit_data_fixture0,
+        db_path=pre_bkbit_database_fixture
+    )
+
+    new_src_path = file_utils.mkstemp_clean(
+        dir=tmp_dir_fixture,
+        suffix='.jsonld'
+    )
+
+    with open(bkbit_data_fixture0, 'rb') as src:
+        src_data = json.load(src)
+
+    malformed_gene = {
+        "category": ["bican:GeneAnnotation"],
+        "source_id": "ENSG99999abcdefg",
+        "symbol": "odd",
+        "name": "odd",
+        "in_taxon_label": "jabberwock"
+    }
+
+    src_data['@graph'].append(malformed_gene)
+
+    with open(new_src_path, 'w') as src:
+        src.write(json.dumps(src_data, indent=2))
+
+    test_data = bkbit_ingestion.read_bkbit_data(
+        bkbit_path=new_src_path,
+        db_path=pre_bkbit_database_fixture
+    )
+
+    assert test_data == baseline_data

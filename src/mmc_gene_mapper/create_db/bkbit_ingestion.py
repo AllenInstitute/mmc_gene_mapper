@@ -127,9 +127,12 @@ def read_bkbit_data(bkbit_path, db_path):
                 if 'name' not in record:
                     record['name'] = None
 
-                gene_idx = str_utils.int_from_identifier(
-                    record['source_id']
-                )
+                try:
+                    gene_idx = str_utils.int_from_identifier(
+                        record['source_id']
+                    )
+                except str_utils.MalformedGeneIdentifierError:
+                    continue
 
                 if record['in_taxon_label'] not in species_lookup:
                     species_lookup[record['in_taxon_label']] = (

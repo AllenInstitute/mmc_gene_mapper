@@ -9,7 +9,7 @@ def int_from_identifier(identifier):
     pattern = re.compile('[0-9]+$')
     result = pattern.findall(identifier)
     if len(result) != 1:
-        raise ValueError(
+        raise MalformedGeneIdentifierError(
             f'could not get one integer from {identifier}'
         )
     return int(result[0])
@@ -45,3 +45,7 @@ def characterize_gene_identifiers(
             assn = 'symbol'
         result.append(assn)
     return result
+
+
+class MalformedGeneIdentifierError(Exception):
+    pass
