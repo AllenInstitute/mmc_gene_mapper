@@ -62,8 +62,6 @@ def arbitrary_mapping(
         gene_list=gene_list
     )
 
-    print('====got src_gene_data====')
-
     if src_gene_data['species'] is None:
         src_gene_data['species'] = dst_species
 
@@ -74,8 +72,6 @@ def arbitrary_mapping(
     else:
         need_orthologs = True
 
-    print(f'====need_orthologs {need_orthologs}====')
-
     if need_orthologs:
         current = _convert_authority_in_bulk(
             db_path=db_path,
@@ -83,8 +79,6 @@ def arbitrary_mapping(
             src_gene_data=src_gene_data,
             dst_authority='NCBI'
         )
-
-        print('=====converted authority before orthologs=====')
 
         for auth_metadata in current['metadata']:
             metadata.append(auth_metadata)
@@ -106,7 +100,6 @@ def arbitrary_mapping(
         }
 
         metadata.append(current['metadata'])
-        print('======mapped orthologs======')
 
     else:
         current_gene_data = src_gene_data
@@ -115,14 +108,12 @@ def arbitrary_mapping(
         }
 
     if set(current_gene_data['authority']) != set([dst_authority]):
-        print('=======performing final authority conversion=======')
         current = _convert_authority_in_bulk(
             db_path=db_path,
             gene_list=current['gene_list'],
             src_gene_data=current_gene_data,
             dst_authority=dst_authority.name
         )
-        print('=======done with final authority conversion======')
 
         for auth_metadata in current['metadata']:
             metadata.append(auth_metadata)
