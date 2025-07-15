@@ -8,7 +8,8 @@ import mmc_gene_mapper.metadata.classes as metadata_classes
 
 def detect_species_and_authority(
         db_path,
-        gene_list):
+        gene_list,
+        chunk_size=1000):
     """
     Find the species and authority for a list of gene
     identifiers. Genes can be from an inhomogeneous list of
@@ -20,6 +21,9 @@ def detect_species_and_authority(
         path to database being quried.
     gene_list:
         list of gene identifiers we are trying to map.
+    chunk_size:
+        an int; the number of genes to match to a species/authority
+        at once
 
     Returns
     --------
@@ -70,7 +74,8 @@ def detect_species_and_authority(
     if len(ensembl_idx) > 0:
         ensembl_authority = _detect_species_and_authority(
             db_path=db_path,
-            gene_list=gene_list[ensembl_idx]
+            gene_list=gene_list[ensembl_idx],
+            chunk_size=chunk_size
         )
     else:
         ensembl_authority = None
@@ -78,7 +83,8 @@ def detect_species_and_authority(
     if len(ncbi_idx) > 0:
         ncbi_authority = _detect_species_and_authority(
             db_path=db_path,
-            gene_list=gene_list[ncbi_idx]
+            gene_list=gene_list[ncbi_idx],
+            chunk_size=chunk_size
         )
     else:
         ncbi_authority = None
