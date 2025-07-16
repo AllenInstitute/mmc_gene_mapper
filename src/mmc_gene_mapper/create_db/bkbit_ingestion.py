@@ -31,10 +31,6 @@ def ingest_bkbit_genes(
     None
     """
 
-    print(
-        f"=======INGESTING {bkbit_path}======="
-    )
-
     bkbit_path = pathlib.Path(bkbit_path)
     if not bkbit_path.is_file():
         raise RuntimeError(
@@ -61,7 +57,6 @@ def ingest_bkbit_genes(
         values = [
             (*r, citation_idx) for r in values
         ]
-        print(f"    INGESTING {len(values)} GENES")
         cursor = conn.cursor()
         cursor.execute("DROP INDEX IF EXISTS gene_idx")
         cursor.executemany(
