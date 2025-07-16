@@ -8,7 +8,6 @@ the mapper class into a function module
 """
 
 import numpy as np
-import sqlite3
 
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes

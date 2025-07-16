@@ -10,12 +10,9 @@ import time
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
-import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
-import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
 import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
 

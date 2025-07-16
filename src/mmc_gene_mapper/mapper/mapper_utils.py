@@ -7,7 +7,6 @@ import numpy as np
 import re
 import sqlite3
 
-import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.create_db.utils as db_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
@@ -328,4 +327,3 @@ def mask_degenerate_genes(
     else:
         new_gene_list = copy.deepcopy(gene_list)
     return new_gene_list, n_degen
-

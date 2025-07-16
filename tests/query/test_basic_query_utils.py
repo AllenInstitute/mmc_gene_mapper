@@ -102,6 +102,7 @@ def test_get_species_name(
                 species_taxon=123545
             )
 
+
 @pytest.mark.parametrize('species', [9606, 'human'])
 def test_get_species(
        species_db_fixture,

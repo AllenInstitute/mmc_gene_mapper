@@ -2,10 +2,6 @@
 Test that the metadata returned with a mapping records
 all of the necessary steps
 """
-import pytest
-
-import sqlite3
-
 
 
 def test_mapper_metadata_full_suite(
