@@ -1,22 +1,9 @@
 """
 Functions that actually do the mapping of genes
 """
-import json
-import pathlib
-import shutil
-import sqlite3
-import tempfile
-import time
-
-import mmc_gene_mapper.utils.timestamp as timestamp
-import mmc_gene_mapper.utils.file_utils as file_utils
-import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
-import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
-import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
-import mmc_gene_mapper.mapper.species_detection as species_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
 
@@ -94,7 +81,6 @@ def identifiers_from_symbols(
         "gene_list": mapped_result["gene_list"]
     }
     return result
-
 
 
 def identifiers_from_symbols_mapping(
@@ -374,7 +360,6 @@ def ortholog_genes(
         'failure_log': mapped_result['failure_log'],
         'gene_list': mapped_result['gene_list']
     }
-
 
 
 def equivalent_genes_mapping(

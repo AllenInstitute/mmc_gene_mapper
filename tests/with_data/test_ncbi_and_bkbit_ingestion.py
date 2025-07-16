@@ -435,10 +435,6 @@ def test_get_orthologs_from_ncbi(
             cursor=cursor,
             species='mouse'
         )
-        dst_speices__obj = query_utils.get_species(
-            cursor=cursor,
-            species='jabberwock'
-        )
 
     gene_idx_list = [20, 21, 22, 23, 24, 27]
     gene_list = [f'NCBIGene:{ii}' for ii in gene_idx_list]

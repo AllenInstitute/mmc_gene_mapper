@@ -3,7 +3,6 @@ import pytest
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 
 
-
 @pytest.mark.parametrize(
     "gene_list, prefix, expected_list, expected_n",
     [(['a', 'b', 'c', 'd'], None, ['a', 'b', 'c', 'd'], 0),
@@ -28,7 +27,7 @@ import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
        'g',
        'UNMAPPABLE_DEGENERATE_0_1'],
       4),
-    ]
+     ]
 )
 def test_mask_degenerate_ids(
         gene_list,

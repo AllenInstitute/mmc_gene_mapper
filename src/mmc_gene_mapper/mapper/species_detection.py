@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 import sqlite3
 
@@ -55,9 +54,9 @@ def detect_species_and_authority(
     )
     authority = np.array(authority)
 
-    symbol_idx = np.where(authority=='symbol')[0]
-    ensembl_idx = np.where(authority=='ENSEMBL')[0]
-    ncbi_idx = np.where(authority=='NCBI')[0]
+    symbol_idx = np.where(authority == 'symbol')[0]
+    ensembl_idx = np.where(authority == 'ENSEMBL')[0]
+    ncbi_idx = np.where(authority == 'NCBI')[0]
 
     n_found = (
         len(symbol_idx)
@@ -105,8 +104,10 @@ def detect_species_and_authority(
             ncbi = ncbi_authority['species_taxon']
             if ens != ncbi:
                 msg = (
-                    f"\nENSEMBL genes gave species '{ensembl_authority['species']}'"
-                    f"\nNCBI genes gave species '{ncbi_authority['species']}'"
+                    "\nENSEMBL genes gave species "
+                    f"'{ensembl_authority['species']}'"
+                    "\nNCBI genes gave species "
+                    f"'{ncbi_authority['species']}'"
                 )
                 raise InconsistentSpeciesError(msg)
             species_name = ncbi_authority['species']
