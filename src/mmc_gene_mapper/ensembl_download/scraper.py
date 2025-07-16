@@ -109,7 +109,9 @@ def scrape_ensembl(
                 tmp_dir=this_tmp_dir
             )
             valid_files.append(
-                str(result_path.resolve().absolute())
+                {"type": "bkbit",
+                 "path": str(result_path.resolve().absolute())
+                 }
             )
         except Exception:
             msg = traceback.format_exc()
