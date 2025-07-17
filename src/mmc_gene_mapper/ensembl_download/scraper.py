@@ -21,7 +21,8 @@ def scrape_ensembl(
         failure_log_path,
         specific_files=None,
         n_limit=None,
-        tmp_dir=None):
+        tmp_dir=None,
+        clobber=False):
     """
     Parameters
     ----------
@@ -42,18 +43,41 @@ def scrape_ensembl(
     tmp_dir:
         a directory where temporary files downloaded from ENSEMBL can be
         saved while they are needed.
+    clobber:
+        boolean. If true and dst_dir exists, delete it before proceeding
 
     Returns
     -------
     A list of dicts. The data_file_spec to be passed to MMCGeneMapper for the
     jsonld files produced
+
+    Notes
+    -----
+    if dst_dir exists and is not empty, this function will fail unless
+    you run with clobber=True, emptying and reconstituting dst_dir before doing
+    any processing.
     """
     t0 = time.time()
     dst_dir = pathlib.Path(dst_dir)
-    if not dst_dir.is_dir():
-        raise ValueError(
-            f"{dst_dir} is not a dir"
-        )
+    if dst_dir.exists():
+        if not dst_dir.is_dir():
+            raise ValueError(
+                f"{dst_dir} is not a dir"
+            )
+
+        contents = [n for n in dst_dir.iterdir()]
+        if len(contents) > 0:
+            if clobber:
+                file_utils.clean_up(dst_dir)
+            else:
+                raise ValueError(
+                    f"dst_dir={dst_dir} exists and is not empty; "
+                    "run with clobber=True to delete contents, "
+                    "or find a new dst_dir"
+                )
+
+    if not dst_dir.exists():
+        dst_dir.mkdir(parents=True)
 
     host = ftplib.FTP('ftp.ensembl.org')
     host.login()
