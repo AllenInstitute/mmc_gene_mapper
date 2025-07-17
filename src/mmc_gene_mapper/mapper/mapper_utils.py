@@ -30,7 +30,8 @@ def create_mapper_database(
     ncbi_ingestion.ingest_ncbi_data(
         db_path=db_path,
         download_manager=download_manager,
-        clobber=False
+        clobber=False,
+        force_download=force_download
     )
 
     species_ingestion.ingest_species_data(
