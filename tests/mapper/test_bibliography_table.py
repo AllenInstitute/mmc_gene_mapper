@@ -7,6 +7,7 @@ import pytest
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 import mmc_gene_mapper.create_db.data_tables as data_utils
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
@@ -133,7 +134,7 @@ def test_requires_symbols(gene_table_fixture):
 
         actual = query_utils.get_citation_from_bibliography(
             cursor=cursor,
-            species_taxon=1,
+            species=metadata_classes.Species(name='gar', taxon=1),
             authority_idx=2,
             require_symbols=False
         )
@@ -146,10 +147,10 @@ def test_requires_symbols(gene_table_fixture):
 
         # there are no citations with symbosl for
         # species=1, authority=2
-        with pytest.raises(ValueError, match=error_msg):
+        with pytest.raises(query_utils.UnclearCitationError, match=error_msg):
             query_utils.get_citation_from_bibliography(
                 cursor=cursor,
-                species_taxon=1,
+                species=metadata_classes.Species(name='gar', taxon=1),
                 authority_idx=2,
                 require_symbols=True
             )
@@ -159,7 +160,7 @@ def test_requires_symbols(gene_table_fixture):
         for require_symbols in (True, False):
             actual = query_utils.get_citation_from_bibliography(
                 cursor=cursor,
-                species_taxon=0,
+                species=metadata_classes.Species(name='gar', taxon=0),
                 authority_idx=0,
                 require_symbols=require_symbols
             )

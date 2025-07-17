@@ -2,46 +2,55 @@ import json
 import pathlib
 import sqlite3
 
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.create_db.metadata_tables as metadata_utils
 
 
-def get_species_taxon(
-        db_path,
-        species_name,
-        strict=False):
+def get_species(
+        cursor,
+        species):
     """
-    Return the integer identifier for a species
+    Return a metadata_classes.Species
 
     Parameters
     ----------
-    db_path:
-        path to the database
-    species_name:
-        human-readable name of the species
-    strict:
-        if True and no such species exists, raise
-        an exception; if False and no such species
-        exists, return None
+    cursor:
+        a sqlite3 cursor
+    species:
+        either a string or an int specifying the species
 
     Returns
     -------
-    an integer; the taxon ID of the species
+    a metadata_classes.Species containing the taxon and
+    name of the specified species
     """
-    does_path_exist(db_path)
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        result = _get_species_taxon(
+    if isinstance(species, int):
+        species_taxon = species
+        species_name = _get_species_name(
             cursor=cursor,
-            species_name=species_name,
-            strict=strict)
-    return result
+            species_taxon=species_taxon
+        )
+    elif isinstance(species, str):
+        species_name = species
+        species_taxon = _get_species_taxon(
+            cursor=cursor,
+            species_name=species_name
+        )
+    else:
+        raise ValueError(
+            f"Cannot infer species from '{species}'"
+            f"of type {type(species)}"
+        )
+
+    return metadata_classes.Species(
+        taxon=species_taxon,
+        name=species_name
+    )
 
 
 def _get_species_taxon(
         cursor,
-        species_name,
-        strict=False):
-
+        species_name):
     """
     Return the integer identifier for a species
 
@@ -51,15 +60,17 @@ def _get_species_taxon(
         a sqlite3.cursor
     species_name:
         human-readable name of the species
-    strict:
-        if True and no such species exists, raise
-        an exception; if False and no such species
-        exists, return None
 
     Returns
     -------
     an integer; the taxon ID of the species
     """
+    try:
+        species_taxon = int(species_name)
+        return species_taxon
+    except ValueError:
+        pass
+
     results = cursor.execute(
        """
        SELECT
@@ -78,18 +89,52 @@ def _get_species_taxon(
             f"{results}"
         )
     elif len(results) == 0:
-        if strict:
-            raise ValueError(
-                f"no species match for {species_name}"
-            )
-        return None
+        raise ValueError(
+            f"no species match for {species_name}"
+        )
+    return results[0][0]
+
+
+def _get_species_name(
+        cursor,
+        species_taxon):
+    """
+    Return the name of a species
+
+    Parameters
+    ----------
+    cursor:
+        a sqlite3.cursor
+    species_taxon:
+        an int; the species taxon
+
+    Returns
+    -------
+    a string; the name of the species
+    """
+    results = cursor.execute(
+       """
+       SELECT
+           name
+       FROM
+           NCBI_species
+       WHERE
+           id=?
+       """,
+       (species_taxon,)
+    ).fetchall()
+
+    if len(results) == 0:
+        raise ValueError(
+            f"no species match for {species_taxon}"
+        )
     return results[0][0]
 
 
 def get_citation_from_bibliography(
         cursor,
         authority_idx,
-        species_taxon,
+        species,
         require_symbols=False):
     """
     Return the full entry for a citation based on
@@ -102,8 +147,8 @@ def get_citation_from_bibliography(
         sqlite3 cursor object
     authority_idx:
         the integer index of the relevant authority
-    species_taxon:
-        the integer index of the species
+    species:
+        an instance of Species
     require_symbols:
         if True, only consider citation, authority pairs
         with symbols associated with them
@@ -142,7 +187,7 @@ def get_citation_from_bibliography(
 
     raw = cursor.execute(
         query,
-        (species_taxon, authority_idx)
+        (species.taxon, authority_idx)
     ).fetchall()
 
     results = set([r[0] for r in raw])
@@ -152,7 +197,7 @@ def get_citation_from_bibliography(
             return get_citation_from_bibliography(
                 cursor=cursor,
                 authority_idx=authority_idx,
-                species_taxon=species_taxon,
+                species=species,
                 require_symbols=True)
         else:
             full_authority = cursor.execute(
@@ -168,10 +213,10 @@ def get_citation_from_bibliography(
             if len(full_authority) == 0:
                 full_authority = authority_idx
 
-            raise ValueError(
+            raise UnclearCitationError(
                 f"There are {len(results)} citations associated "
                 f"with authority={full_authority}, "
-                f"species_taxon={species_taxon}; "
+                f"species_taxon={species.taxon}; "
                 "unclear how to proceed"
             )
     citation_idx = results.pop()
@@ -196,20 +241,20 @@ def get_citation_from_bibliography(
 
 def get_authority_and_citation(
         conn,
-        species_taxon,
+        species,
         authority_name,
         require_symbols=False):
     """
     Return the full dicts characterizing authority
-    and citaiton for a given (authority, species)
+    and citation for a given (authority, species)
     combination
 
     Parameters
     ----------
     conn:
         sqlite3 connection
-    species_taxon:
-        an int identifying the species
+    species:
+        an instance of Species
     authority_name:
         a str; the name of the authority entry
     require_symbols:
@@ -220,7 +265,7 @@ def get_authority_and_citation(
     -------
     A dict
         {'authority': full_authority,
-         'citaiton': full_citation}
+         'citation': full_citation}
 
     Each value is a dict characterizing all the data
     carried around for that entity.
@@ -247,7 +292,7 @@ def get_authority_and_citation(
     full_citation = get_citation_from_bibliography(
         cursor=conn.cursor(),
         authority_idx=full_authority['idx'],
-        species_taxon=species_taxon,
+        species=species,
         require_symbols=require_symbols
     )
 
@@ -263,7 +308,7 @@ def translate_gene_identifiers(
         dst_column,
         src_list,
         authority_name,
-        species_taxon,
+        species,
         chunk_size=100):
 
     if src_column not in ('symbol', 'id', 'identifier'):
@@ -286,12 +331,22 @@ def translate_gene_identifiers(
         for val in src_list
     }
 
+    if src_column == 'symbol':
+        mapping_src = metadata_classes.Authority('symbol')
+    else:
+        mapping_src = metadata_classes.Authority(authority_name)
+
+    if dst_column == 'symbol':
+        mapping_dst = metadata_classes.Authority('symbol')
+    else:
+        mapping_dst = metadata_classes.Authority(authority_name)
+
     with sqlite3.connect(db_path) as conn:
 
         meta_source = get_authority_and_citation(
             conn=conn,
             authority_name=authority_name,
-            species_taxon=species_taxon,
+            species=species,
             require_symbols=require_symbols
         )
 
@@ -327,7 +382,7 @@ def translate_gene_identifiers(
                 query,
                 (citation_idx,
                  authority_idx,
-                 species_taxon,
+                 species.taxon,
                  *values)
             ).fetchall()
             for row in raw:
@@ -339,10 +394,11 @@ def translate_gene_identifiers(
             results[key] = sorted(results[key])
 
         return {
-            'metadata': {
-                'authority': full_authority,
-                'citation': full_citation
-            },
+            'metadata': metadata_classes.MappingMetadata(
+                src=mapping_src,
+                dst=mapping_dst,
+                citation=full_citation
+            ).serialize(),
             'mapping': results
         }
 
@@ -352,15 +408,11 @@ def get_equivalent_genes_from_identifiers(
         input_authority_name,
         output_authority_name,
         input_gene_list,
-        species_name,
+        species,
         citation_name,
         chunk_size=100):
 
-    species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=species_name,
-        strict=True
-    )
+    does_path_exist(db_path)
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
@@ -368,7 +420,7 @@ def get_equivalent_genes_from_identifiers(
         dst_column='id',
         src_list=input_gene_list,
         authority_name=input_authority_name,
-        species_taxon=species_taxon,
+        species=species,
         chunk_size=chunk_size
     )
 
@@ -381,7 +433,7 @@ def get_equivalent_genes_from_identifiers(
         input_id_list=sorted(id_values),
         input_authority_name=input_authority_name,
         output_authority_name=output_authority_name,
-        species_taxon=species_taxon,
+        species_taxon=species.taxon,
         citation_name=citation_name,
         chunk_size=chunk_size
     )
@@ -390,13 +442,10 @@ def get_equivalent_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=equivalence['mapping'],
         key_authority_name=input_authority_name,
-        key_species_taxon=species_taxon,
+        key_species=species,
         value_authority_name=output_authority_name,
-        value_species_taxon=species_taxon
+        value_species=species
     )
-
-    equivalence['metadata']['key_authority'] = input_authority_name
-    equivalence['metadata']['value_authority'] = output_authority_name
 
     unmapped_genes = set(input_gene_list)-set(mapping_dict.keys())
     for gene in unmapped_genes:
@@ -479,11 +528,11 @@ def _get_equivalent_genes(
                 results[row[0]].append(row[1])
 
     return {
-        'metadata': {
-            'key_authority': input_auth,
-            'value_authority': output_auth,
-            'citation': full_citation
-        },
+        'metadata': metadata_classes.MappingMetadata(
+            src=metadata_classes.Authority(input_authority_name),
+            dst=metadata_classes.Authority(output_authority_name),
+            citation=full_citation
+        ).serialize(),
         'mapping': results
     }
 
@@ -491,23 +540,13 @@ def _get_equivalent_genes(
 def get_ortholog_genes_from_identifiers(
         db_path,
         authority_name,
-        src_species_name,
-        dst_species_name,
+        src_species,
+        dst_species,
         src_gene_list,
         citation_name,
         chunk_size=100):
 
-    src_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=src_species_name,
-        strict=True
-    )
-
-    dst_species_taxon = get_species_taxon(
-        db_path=db_path,
-        species_name=dst_species_name,
-        strict=True
-    )
+    does_path_exist(db_path)
 
     id_translation = translate_gene_identifiers(
         db_path=db_path,
@@ -515,7 +554,7 @@ def get_ortholog_genes_from_identifiers(
         dst_column='id',
         src_list=src_gene_list,
         authority_name=authority_name,
-        species_taxon=src_species_taxon,
+        species=src_species,
         chunk_size=chunk_size
     )
 
@@ -526,9 +565,9 @@ def get_ortholog_genes_from_identifiers(
     orthologs = _get_ortholog_genes(
         db_path=db_path,
         authority_name=authority_name,
-        src_species_taxon=src_species_taxon,
+        src_species=src_species,
         src_genes=sorted(id_values),
-        dst_species_taxon=dst_species_taxon,
+        dst_species=dst_species,
         citation_name=citation_name,
         chunk_size=chunk_size
     )
@@ -537,9 +576,9 @@ def get_ortholog_genes_from_identifiers(
         db_path=db_path,
         mapping_dict=orthologs['mapping'],
         key_authority_name=authority_name,
-        key_species_taxon=src_species_taxon,
+        key_species=src_species,
         value_authority_name=authority_name,
-        value_species_taxon=dst_species_taxon
+        value_species=dst_species
     )
 
     unmapped_genes = set(src_gene_list)-set(mapping_dict.keys())
@@ -555,9 +594,9 @@ def get_ortholog_genes_from_identifiers(
 def _get_ortholog_genes(
         db_path,
         authority_name,
-        src_species_taxon,
+        src_species,
         src_genes,
-        dst_species_taxon,
+        dst_species,
         citation_name,
         chunk_size=50):
     """
@@ -568,15 +607,13 @@ def _get_ortholog_genes(
     authority_name:
         string indicating according to what authority
         (NCBI or ENSEMBL) we want orthologs
-    src_species_taxon:
-        int indicating the species of the
-        specified genes
+    src_species:
+        the Species of the specified genes
     src_genes:
         list of ints indicating the NCBI IDs of the
         specified genes
-    dst_species_taxon:
-        int indicating the species in which you
-        want to find ortholog genes
+    dst_species:
+        the Species in which you want to find ortholog genes
     citation_name:
         string indicating the source of the ortholog
         assignments you want to use
@@ -623,7 +660,7 @@ def _get_ortholog_genes(
                 query,
                 (authority_idx,
                  citation['idx'],
-                 src_species_taxon,
+                 src_species.taxon,
                  *gene_chunk)
             ).fetchall()
             n_raw = len(gene_to_ortholog)
@@ -662,7 +699,7 @@ def _get_ortholog_genes(
                 query,
                 (authority_idx,
                  citation['idx'],
-                 dst_species_taxon,
+                 dst_species.taxon,
                  *ortholog_chunk)
             ).fetchall()
             n_raw = len(ortholog_to_other_gene)
@@ -685,12 +722,11 @@ def _get_ortholog_genes(
                 results[gene].append(ortholog_to_other_gene[orth])
 
     return {
-        'metadata': {
-            'authority': authority_name,
-            'citation': citation['metadata'],
-            'src_species_taxon': src_species_taxon,
-            'dst_species_taxon': dst_species_taxon
-        },
+        'metadata': metadata_classes.MappingMetadata(
+                src=src_species,
+                dst=dst_species,
+                citation=citation['metadata']
+        ).serialize(),
         'mapping': results
     }
 
@@ -699,9 +735,9 @@ def mapping_dict_to_identifiers(
         db_path,
         mapping_dict,
         key_authority_name,
-        key_species_taxon,
+        key_species,
         value_authority_name,
-        value_species_taxon):
+        value_species):
     """
     Take a dict mapping gene ids (ints) to other
     gene ids. Convert it to a dict mapping
@@ -715,12 +751,12 @@ def mapping_dict_to_identifiers(
         keys should be ints; values should be lists of ints
     key_authority_name:
         name of the authority defining the keys
-    key_species_taxon:
-        int defining the species associated with the keys
+    key_species:
+        Species associated with the keys
     value_authority_name:
         name of the authority defining the values
-    value_species_taxon:
-        int defining the species associated with the values
+    value_species:
+        Species associated with the values
 
     Returns
     -------
@@ -734,33 +770,38 @@ def mapping_dict_to_identifiers(
         db_path=db_path,
         value_list=list(mapping_dict.keys()),
         authority_name=key_authority_name,
-        species_taxon=key_species_taxon
+        species=key_species
     )
     error_msg += key_error
+    if len(error_msg) > 0:
+        raise MappingError(error_msg)
 
     value_list = set()
     for key in mapping_dict:
         value_list = value_list.union(set(mapping_dict[key]))
     value_list = sorted(value_list)
 
-    value_mapping, value_error = _strict_mapping_from_id(
+    value_mapping, _ = _strict_mapping_from_id(
         db_path=db_path,
         value_list=list(value_list),
         authority_name=value_authority_name,
-        species_taxon=value_species_taxon
+        species=value_species
     )
-    error_msg += value_error
-    if len(error_msg) > 0:
-        raise MappingError(error_msg)
 
     new_dict = dict()
     for key in mapping_dict:
         new_key = key_mapping[key][0]
         new_dict[new_key] = []
         for val in mapping_dict[key]:
-            new_dict[new_key].append(
-                value_mapping[val][0]
-            )
+            if val in value_mapping:
+                if len(value_mapping[val]) == 1:
+                    new_dict[new_key].append(
+                        value_mapping[val][0]
+                    )
+                elif len(value_mapping[val]) > 1:
+                    raise RuntimeError(
+                        f"More than one mapping value for {new_key}"
+                    )
 
     return new_dict
 
@@ -769,7 +810,7 @@ def _strict_mapping_from_id(
         db_path,
         value_list,
         authority_name,
-        species_taxon):
+        species):
 
     return _strict_mapping(
         db_path=db_path,
@@ -777,7 +818,7 @@ def _strict_mapping_from_id(
         dst_column='identifier',
         src_list=value_list,
         authority_name=authority_name,
-        species_taxon=species_taxon,
+        species=species,
         allow_none=False
     )
 
@@ -788,7 +829,7 @@ def _strict_mapping(
         dst_column,
         src_list,
         authority_name,
-        species_taxon,
+        species,
         allow_none=True):
     """
     demand 1:1 mapping
@@ -800,7 +841,7 @@ def _strict_mapping(
         dst_column='identifier',
         src_list=src_list,
         authority_name=authority_name,
-        species_taxon=species_taxon
+        species=species
     )['mapping']
 
     error_msg = ""
@@ -811,7 +852,7 @@ def _strict_mapping(
             else:
                 error_msg += (
                    f"id: {val} authority: {authority_name} "
-                   f"species: {species_taxon} "
+                   f"species: {species.taxon} "
                    f"n: {len(mapping[val])}\n"
                 )
     return mapping, error_msg
@@ -826,4 +867,8 @@ def does_path_exist(db_path):
 
 
 class MappingError(Exception):
+    pass
+
+
+class UnclearCitationError(Exception):
     pass

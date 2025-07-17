@@ -219,7 +219,7 @@ def ingest_gene_to_ensembl(conn, data_path, citation_idx):
                     ensembl_gene_id = str_utils.int_from_identifier(
                         raw_ens_id
                     )
-                except ValueError:
+                except str_utils.MalformedGeneIdentifierError:
                     continue
 
                 pair = (ncbi_gene_id, ensembl_gene_id)

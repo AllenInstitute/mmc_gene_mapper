@@ -1,0 +1,4 @@
+*.gz
+*.gtf
+*.gff3
+*.jsonld

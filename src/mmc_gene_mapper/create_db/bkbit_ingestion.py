@@ -31,10 +31,6 @@ def ingest_bkbit_genes(
     None
     """
 
-    print(
-        f"=======INGESTING {bkbit_path}======="
-    )
-
     bkbit_path = pathlib.Path(bkbit_path)
     if not bkbit_path.is_file():
         raise RuntimeError(
@@ -61,7 +57,6 @@ def ingest_bkbit_genes(
         values = [
             (*r, citation_idx) for r in values
         ]
-        print(f"    INGESTING {len(values)} GENES")
         cursor = conn.cursor()
         cursor.execute("DROP INDEX IF EXISTS gene_idx")
         cursor.executemany(
@@ -121,16 +116,24 @@ def read_bkbit_data(bkbit_path, db_path):
             if 'bican:Checksum' in record['category']:
                 continue
             elif 'bican:GeneAnnotation' in record['category']:
-                gene_idx = str_utils.int_from_identifier(
-                    record['source_id']
-                )
+
+                if 'symbol' not in record:
+                    record['symbol'] = None
+                if 'name' not in record:
+                    record['name'] = None
+
+                try:
+                    gene_idx = str_utils.int_from_identifier(
+                        record['source_id']
+                    )
+                except str_utils.MalformedGeneIdentifierError:
+                    continue
 
                 if record['in_taxon_label'] not in species_lookup:
                     species_lookup[record['in_taxon_label']] = (
                         query_utils._get_species_taxon(
                             cursor=cursor,
-                            species_name=record['in_taxon_label'],
-                            strict=True
+                            species_name=record['in_taxon_label']
                         )
                     )
                 species_idx = species_lookup[record['in_taxon_label']]

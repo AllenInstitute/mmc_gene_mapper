@@ -10,9 +10,11 @@ import time
 
 import mmc_gene_mapper.utils.timestamp as timestamp
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.download.download_manager as download_manager
 import mmc_gene_mapper.mapper.mapper_utils as mapper_utils
 import mmc_gene_mapper.query_db.query as query_utils
+import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
 
 
 class MMCGeneMapper(object):
@@ -152,165 +154,41 @@ class MMCGeneMapper(object):
             row[0] for row in raw
         ]
 
-    def identifiers_from_symbols(
+    def map_genes(
             self,
-            gene_symbol_list,
-            species_name,
-            authority_name):
-        """
-        Find the mapping that converts gene symbols into
-        gene identifiers
-
-        Parameters
-        ----------
-        gene_symbol_list:
-            list of gene symbols
-        species_name:
-            name of the species we are working with
-        authority_name:
-            name of the authority in whose identifiers
-            we want the genes listed
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "mapping": {
-                  a dict keyed on input symbols. Each symbol
-                  maps to the list of all gene identifiers
-                  that are associated with that symbol according
-                  to the source described in "metadata"
-              }
-            }
-        """
-        species_taxon = query_utils.get_species_taxon(
-            db_path=self.db_path,
-            species_name=species_name,
-            strict=True)
-
-        result = query_utils.translate_gene_identifiers(
-            db_path=self.db_path,
-            src_column="symbol",
-            dst_column="identifier",
-            src_list=gene_symbol_list,
-            authority_name=authority_name,
-            species_taxon=species_taxon,
-            chunk_size=500
-        )
-        return result
-
-    def equivalent_genes(
-            self,
-            input_authority,
-            output_authority,
             gene_list,
-            species_name,
-            citation_name):
+            dst_species,
+            dst_authority,
+            ortholog_citation='NCBI'):
         """
-        Return a mapping between gene identifiers from
-        different authorities (NCBI vs ENSEMBL)
+        Perform an arbitrary mapping on a list of gene identifiers.
 
         Parameters
         ----------
-        input_authority:
-            a str; the name of the authority in which the input
-            genes are identified
-        output_authority:
-            a str; the name of the authority you want to convert
-            the identifiers to
+        db_path:
+            path to the database being queries
         gene_list:
-            list of gene identifiers (in input_authority) to be
-            mapped
-        species_name:
-            name of species we are working with
-        citation_name:
-            name of citation to use to assess gene eqivalence
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "mapping": {
-                  a dict keyed on input genes. Each gene
-                  maps to the list of all genes
-                  that are considered equivalent to that
-                  gene according to the source described
-                  in "metadata"
-              }
-            }
+            list of gene identifiers being mapped
+        dst_species:
+            name of species being mapped to
+        dst_authority:
+            name of authority being mapped to
+        ortholog_citation:
+            citation to use for ortholog mapping, if necessary
         """
-        return query_utils.get_equivalent_genes_from_identifiers(
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species=dst_species
+            )
+
+        return arbitrary_conversion.arbitrary_mapping(
             db_path=self.db_path,
-            input_authority_name=input_authority,
-            output_authority_name=output_authority,
-            input_gene_list=gene_list,
-            species_name=species_name,
-            citation_name=citation_name,
-            chunk_size=500
-        )
-
-    def ortholog_genes(
-            self,
-            authority,
-            src_species_name,
-            dst_species_name,
-            gene_list,
-            citation_name):
-        """
-        Return a mapping between gene identifiers from
-        different species
-
-        Parameters
-        ----------
-        authority:
-            a str; the name of the authority (ENSEMBL, NCBI etc.)
-            we are working in
-        src_species_name:
-            a str; the name of the species we are starting from
-        dst_species_name:
-            as str; the name of the species we are mapping to
-        gene_list:
-            list of gene identifiers (in src_species) to be
-            mapped
-        citation_name:
-            name of citation to use to assess gene eqivalence
-
-        Returns
-        -------
-        A dict
-            {
-              "metadata": {
-                  a dict describing the citation according
-                  to which these symbols map to these
-                  identifiers
-              },
-              "mapping": {
-                  a dict keyed on input genes. Each gene
-                  maps to the list of all genes
-                  that are considered orthologs to that
-                  gene according to the source described
-                  in "metadata"
-              }
-            }
-        """
-        return query_utils.get_ortholog_genes_from_identifiers(
-            db_path=self.db_path,
-            authority_name=authority,
-            src_species_name=src_species_name,
-            dst_species_name=dst_species_name,
-            src_gene_list=gene_list,
-            citation_name=citation_name,
-            chunk_size=500
+            gene_list=gene_list,
+            dst_species=dst_species,
+            dst_authority=metadata_classes.Authority(dst_authority),
+            ortholog_citation=ortholog_citation
         )
 
     def _initialize(

@@ -3,6 +3,7 @@ import pytest
 import sqlite3
 
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
 
 
@@ -50,88 +51,94 @@ def species_db_fixture(tmp_dir_fixture):
     return db_path
 
 
-@pytest.mark.parametrize("strict", [True, False])
 def test_get_species_taxon(
-        species_db_fixture,
-        strict):
-
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='house mouse',
-        strict=strict) == 10090
-
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='Mus musculus',
-        strict=strict) == 10090
-
-    assert query_utils.get_species_taxon(
-        db_path=species_db_fixture,
-        species_name='human',
-        strict=strict) == 9606
-
-    with pytest.raises(ValueError, match='species match name'):
-        query_utils.get_species_taxon(
-            db_path=species_db_fixture,
-            species_name='dragon',
-            strict=strict
-        )
-
-    if strict:
-        with pytest.raises(ValueError, match='no species match'):
-            query_utils.get_species_taxon(
-                db_path=species_db_fixture,
-                species_name='goblin',
-                strict=strict
-            )
-    else:
-        assert query_utils.get_species_taxon(
-            db_path=species_db_fixture,
-            species_name='goblin',
-            strict=strict
-        ) is None
-
-
-@pytest.mark.parametrize("strict", [True, False])
-def test_get_species_taxon_from_cursor(
-        species_db_fixture,
-        strict):
+        species_db_fixture):
 
     with sqlite3.connect(species_db_fixture) as conn:
         cursor = conn.cursor()
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='house mouse',
-            strict=strict) == 10090
+            species_name='house mouse') == 10090
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='Mus musculus',
-            strict=strict) == 10090
+            species_name='Mus musculus') == 10090
 
         assert query_utils._get_species_taxon(
             cursor=cursor,
-            species_name='human',
-            strict=strict) == 9606
+            species_name='human') == 9606
 
         with pytest.raises(ValueError, match='species match name'):
             query_utils._get_species_taxon(
                 cursor=cursor,
-                species_name='dragon',
-                strict=strict
+                species_name='dragon'
             )
 
-        if strict:
-            with pytest.raises(ValueError, match='no species match'):
-                query_utils._get_species_taxon(
-                    cursor=cursor,
-                    species_name='goblin',
-                    strict=strict
-                )
-        else:
-            assert query_utils._get_species_taxon(
+        with pytest.raises(ValueError, match='no species match for'):
+            query_utils._get_species_taxon(
                 cursor=cursor,
-                species_name='goblin',
-                strict=strict
-            ) is None
+                species_name='nothingburger'
+            )
+
+
+def test_get_species_name(
+        species_db_fixture):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+
+        assert query_utils._get_species_name(
+            cursor=cursor,
+            species_taxon=10090) in ('house mouse', 'Mus Musculus')
+
+        assert query_utils._get_species_name(
+            cursor=cursor,
+            species_taxon=9606) == 'human'
+
+        with pytest.raises(ValueError, match='species match for'):
+            query_utils._get_species_name(
+                cursor=cursor,
+                species_taxon=123545
+            )
+
+
+@pytest.mark.parametrize('species', [9606, 'human'])
+def test_get_species(
+       species_db_fixture,
+       species):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+        human = query_utils.get_species(
+            cursor=cursor,
+            species=species)
+        assert isinstance(human, metadata_classes.Species)
+        assert human.taxon == 9606
+        assert human.name == 'human'
+
+
+def test_get_species_errors(
+       species_db_fixture):
+
+    with sqlite3.connect(species_db_fixture) as conn:
+        cursor = conn.cursor()
+        msg = "no species match for"
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species='garbage'
+            )
+
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species=12345
+            )
+
+        msg = "Cannot infer species from"
+        with pytest.raises(ValueError, match=msg):
+            query_utils.get_species(
+                cursor=cursor,
+                species=1.7
+            )
