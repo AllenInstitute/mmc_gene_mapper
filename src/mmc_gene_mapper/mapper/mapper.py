@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import sqlite3
 import tempfile
+import traceback
 import time
 
 import mmc_gene_mapper.utils.timestamp as timestamp
@@ -26,6 +27,24 @@ class MMCGeneMapper(object):
         if not self.db_path.is_file():
             raise ValueError(
                 f"db_path {self.db_path} is not a file"
+            )
+        try:
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                validity = cursor.execute(
+                    "SELECT validity FROM metadata"
+                ).fetchall()
+                if validity != [('TRUE',),]:
+                    raise ValueError(
+                        f"file at {db_path} "
+                        "not marked as valid mmc_gene_mapper "
+                        f"database; validity = {validity}"
+                    )
+        except Exception:
+            err_msg = f"\n{traceback.format_exc()}\n"
+            raise ValueError(
+                f"An error occurred while validating file at {db_path}"
+                f"{err_msg}"
             )
 
     @classmethod
@@ -251,6 +270,16 @@ def _initialize_mapper(
     mapper_utils.create_bibliography_table(
        tmp_db_path
     )
+
+    # mark this as a valid mmc_gene_mapper database
+    with sqlite3.connect(tmp_db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            'CREATE TABLE metadata (validity STR)'
+        )
+        cursor.execute(
+            'INSERT INTO metadata (validity) VALUES("TRUE")'
+        )
 
     print(f'=======COPYING TMP FILE TO {db_path}=======')
     shutil.move(
