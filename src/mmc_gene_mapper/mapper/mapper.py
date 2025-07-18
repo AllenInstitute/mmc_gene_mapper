@@ -32,7 +32,7 @@ class MMCGeneMapper(object):
             with sqlite3.connect(db_path) as conn:
                 cursor = conn.cursor()
                 validity = cursor.execute(
-                    "SELECT validity FROM metadata"
+                    "SELECT validity FROM mmc_gene_mapper_metadata"
                 ).fetchall()
                 if validity != [('TRUE',),]:
                     raise ValueError(
@@ -275,10 +275,10 @@ def _initialize_mapper(
     with sqlite3.connect(tmp_db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            'CREATE TABLE metadata (validity STR)'
+            'CREATE TABLE mmc_gene_mapper_metadata (validity STR)'
         )
         cursor.execute(
-            'INSERT INTO metadata (validity) VALUES("TRUE")'
+            'INSERT INTO mmc_gene_mapper_metadata (validity) VALUES("TRUE")'
         )
 
     print(f'=======COPYING TMP FILE TO {db_path}=======')
