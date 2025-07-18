@@ -25,7 +25,7 @@ class MMCGeneMapper(object):
             db_path):
         self.db_path = pathlib.Path(db_path)
         if not self.db_path.is_file():
-            raise ValueError(
+            raise MalformedMapperDBError(
                 f"db_path {self.db_path} is not a file"
             )
         try:
@@ -35,14 +35,14 @@ class MMCGeneMapper(object):
                     "SELECT validity FROM mmc_gene_mapper_metadata"
                 ).fetchall()
                 if validity != [('TRUE',),]:
-                    raise ValueError(
+                    raise MalformedMapperDBError(
                         f"file at {db_path} "
                         "not marked as valid mmc_gene_mapper "
                         f"database; validity = {validity}"
                     )
         except Exception:
             err_msg = f"\n{traceback.format_exc()}\n"
-            raise ValueError(
+            raise MalformedMapperDBError(
                 f"An error occurred while validating file at {db_path}"
                 f"{err_msg}"
             )
@@ -288,3 +288,7 @@ def _initialize_mapper(
     )
     dur = (time.time()-t0)/60.0
     print(f'=======DB CREATION TOOK {dur:.2e} MINUTES=======')
+
+
+class MalformedMapperDBError(Exception):
+    pass
