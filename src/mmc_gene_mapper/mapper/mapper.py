@@ -20,7 +20,17 @@ import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
 class MMCGeneMapper(object):
 
     def __init__(
-           self,
+            self,
+            db_path):
+        self.db_path = pathlib.Path(db_path)
+        if not self.db_path.is_file():
+            raise ValueError(
+                f"db_path {self.db_path} is not a file"
+            )
+
+    @classmethod
+    def create_mapper(
+           cls,
            db_path,
            local_dir,
            data_file_spec=None,
@@ -66,7 +76,7 @@ class MMCGeneMapper(object):
             )
         )
         try:
-            self._initialize(
+            _initialize_mapper(
                 dst_dir=dst_dir,
                 tmp_dir=tmp_dir,
                 db_path=db_path,
@@ -82,6 +92,8 @@ class MMCGeneMapper(object):
             contents = [n for n in dst_dir.iterdir()]
             if len(contents) == 0:
                 file_utils.clean_up(dst_dir)
+
+        return cls(db_path=db_path)
 
     def get_all_species(self):
         """
@@ -191,56 +203,59 @@ class MMCGeneMapper(object):
             ortholog_citation=ortholog_citation
         )
 
-    def _initialize(
-            self,
-            dst_dir,
-            tmp_dir,
-            db_path,
-            data_file_spec,
-            clobber,
-            force_download,
-            suppress_download_stdout):
 
-        self.download_mgr = download_manager.DownloadManager(
-            dst_dir=dst_dir,
-            suppress_stdout=suppress_download_stdout
-        )
+def _initialize_mapper(
+        dst_dir,
+        tmp_dir,
+        db_path,
+        data_file_spec,
+        clobber,
+        force_download,
+        suppress_download_stdout):
 
-        self.db_path = pathlib.Path(db_path)
-        if self.db_path.exists():
-            if not self.db_path.is_file():
-                raise RuntimeError(
-                    f"db_path {self.db_path} is not a file"
-                )
-            if clobber:
-                self.db_path.unlink()
+    download_mgr = download_manager.DownloadManager(
+        dst_dir=dst_dir,
+        suppress_stdout=suppress_download_stdout
+    )
 
-        if not self.db_path.is_file():
-
-            t0 = time.time()
-            print('=======CREATING DB FILE=======')
-            tmp_db_path = file_utils.mkstemp_clean(
-                dir=tmp_dir,
-                suffix='.db',
-                delete=True
+    db_path = pathlib.Path(db_path)
+    if db_path.exists():
+        if not db_path.is_file():
+            raise RuntimeError(
+                f"db_path {db_path} is not a file"
+            )
+        if clobber:
+            db_path.unlink()
+        else:
+            raise RuntimeError(
+                f"db_path {db_path} already exists; run with clobber=True "
+                "to delete and re-create"
             )
 
-            mapper_utils.create_mapper_database(
-                db_path=tmp_db_path,
-                download_manager=self.download_mgr,
-                data_file_spec=data_file_spec,
-                tmp_dir=tmp_dir,
-                force_download=force_download
-            )
+    t0 = time.time()
+    print('=======CREATING DB FILE=======')
+    tmp_db_path = file_utils.mkstemp_clean(
+        dir=tmp_dir,
+        suffix='.db',
+        delete=True
+    )
 
-            mapper_utils.create_bibliography_table(
-                tmp_db_path
-            )
+    mapper_utils.create_mapper_database(
+        db_path=tmp_db_path,
+        download_manager=download_mgr,
+        data_file_spec=data_file_spec,
+        tmp_dir=tmp_dir,
+        force_download=force_download
+    )
 
-            print(f'=======COPYING TMP FILE TO {self.db_path}=======')
-            shutil.move(
-                src=tmp_db_path,
-                dst=self.db_path
-            )
-            dur = (time.time()-t0)/60.0
-            print(f'=======DB CREATION TOOK {dur:.2e} MINUTES=======')
+    mapper_utils.create_bibliography_table(
+       tmp_db_path
+    )
+
+    print(f'=======COPYING TMP FILE TO {db_path}=======')
+    shutil.move(
+        src=tmp_db_path,
+        dst=db_path
+    )
+    dur = (time.time()-t0)/60.0
+    print(f'=======DB CREATION TOOK {dur:.2e} MINUTES=======')
