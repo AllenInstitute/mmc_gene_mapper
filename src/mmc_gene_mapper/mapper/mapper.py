@@ -208,7 +208,7 @@ class MMCGeneMapper(object):
         ortholog_citation:
             citation to use for ortholog mapping, if necessary
         log:
-            a logger class that implements an add_msg()
+            a logger class that implements an info()
             function (probably the CommandLog from cell_type_mapper)
         """
         with sqlite3.connect(self.db_path) as conn:

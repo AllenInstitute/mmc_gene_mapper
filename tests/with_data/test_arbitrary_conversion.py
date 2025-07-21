@@ -319,8 +319,7 @@ def test_arbitrary_mapping_function_with_log(
         dst_species_name = "jabberwock"
 
     class DummyLog(object):
-        def add_msg(self, msg):
-            print(msg)
+        def info(self, msg, to_stdout=False):
             pass
 
     if use_class:

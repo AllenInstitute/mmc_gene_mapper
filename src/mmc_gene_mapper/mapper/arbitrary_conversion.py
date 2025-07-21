@@ -40,12 +40,13 @@ def arbitrary_mapping(
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
     log:
-        a logger class that implements an add_msg()
+        a logger class that implements an ingo()
         function (probably the CommandLog from cell_type_mapper)
     """
     if log is not None:
-        log.add_msg(
-            f"Mapping input genes to {dst_species}:{dst_authority}"
+        log.info(
+            f"Mapping input genes to {dst_species}:{dst_authority}",
+            to_stdout=True
         )
 
     typing_utils.check_many_types(
@@ -72,18 +73,20 @@ def arbitrary_mapping(
 
     if src_gene_data['species'] is None:
         if log is not None:
-            log.add_msg(
+            log.info(
                 "Could not find a species for input genes. "
                 "This probably means you passed in gene symbols. "
                 "Assuming they are already consistent with "
-                f"{dst_species}"
+                f"{dst_species}",
+                to_stdout=True
             )
         src_gene_data['species'] = dst_species
     else:
         if log is not None:
-            log.add_msg(
+            log.info(
                 "Input genes are from species "
-                f"{src_gene_data['species']}"
+                f"{src_gene_data['species']}",
+                to_stdout=True
             )
 
     src_species = src_gene_data['species']
@@ -110,7 +113,7 @@ def arbitrary_mapping(
                 "Mapping genes from species "
                 f"{src_species} to {dst_species}"
             )
-            log.add_msg(msg)
+            log.info(msg, to_stdout=True)
 
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
@@ -174,7 +177,7 @@ def _convert_authority_in_bulk(
     dst_authority:
         authority to which genes are being mapped
     log:
-        a logger class that implements an add_msg()
+        a logger class that implements an info()
         function (probably the CommandLog from cell_type_mapper)
     """
     species = src_gene_data['species']
@@ -218,8 +221,9 @@ def _convert_authority_in_bulk(
 
     if len(symbol_idx) > 0:
         if log is not None:
-            log.add_msg(
-                f"Mapping input genes from 'symbols' to '{dst_authority}'"
+            log.info(
+                f"Mapping input genes from 'symbols' to '{dst_authority}'",
+                to_stdout=True
             )
         raw = mapping_functions.identifiers_from_symbols(
             db_path=db_path,
@@ -242,9 +246,10 @@ def _convert_authority_in_bulk(
             result[idx_arr] = gene_list[idx_arr]
         else:
             if log is not None:
-                log.add_msg(
+                log.info(
                     f"Mapping input genes from '{input_authority}' "
-                    f"to '{dst_authority}'"
+                    f"to '{dst_authority}'",
+                    to_stdout=True
                 )
             raw = mapping_functions.equivalent_genes(
                 db_path=db_path,
