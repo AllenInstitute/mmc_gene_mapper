@@ -22,7 +22,8 @@ def arbitrary_mapping(
         gene_list,
         dst_species,
         dst_authority,
-        ortholog_citation='NCBI'):
+        ortholog_citation='NCBI',
+        log=None):
     """
     Parameters
     ----------
@@ -38,7 +39,15 @@ def arbitrary_mapping(
         the desired output authority
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
+    log:
+        a logger class that implements an add_msg()
+        function (probably the CommandLog from cell_type_mapper)
     """
+    if log is not None:
+        log.add_msg(
+            f"Mapping input genes to {dst_species}:{dst_authority}"
+        )
+
     typing_utils.check_many_types(
         name_arr=["dst_species", "dst_authority"],
         arg_arr=[dst_species, dst_authority],
@@ -62,7 +71,20 @@ def arbitrary_mapping(
     )
 
     if src_gene_data['species'] is None:
+        if log is not None:
+            log.add_msg(
+                "Could not find a species for input genes. "
+                "This probably means you passed in gene symbols. "
+                "Assuming they are already consistent with "
+                f"{dst_species}"
+            )
         src_gene_data['species'] = dst_species
+    else:
+        if log is not None:
+            log.add_msg(
+                "Input genes are from species "
+                f"{src_gene_data['species']}"
+            )
 
     src_species = src_gene_data['species']
 
@@ -76,11 +98,19 @@ def arbitrary_mapping(
             db_path=db_path,
             gene_list=gene_list,
             src_gene_data=src_gene_data,
-            dst_authority='NCBI'
+            dst_authority='NCBI',
+            log=log
         )
 
         for auth_metadata in current['metadata']:
             metadata.append(auth_metadata)
+
+        if log is not None:
+            msg = (
+                "Mapping genes from species "
+                f"{src_species} to {dst_species}"
+            )
+            log.add_msg(msg)
 
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
@@ -111,7 +141,8 @@ def arbitrary_mapping(
             db_path=db_path,
             gene_list=current['gene_list'],
             src_gene_data=current_gene_data,
-            dst_authority=dst_authority.name
+            dst_authority=dst_authority.name,
+            log=log
         )
 
         for auth_metadata in current['metadata']:
@@ -127,7 +158,8 @@ def _convert_authority_in_bulk(
         db_path,
         gene_list,
         src_gene_data,
-        dst_authority):
+        dst_authority,
+        log=None):
     """
     db_path:
         path to database being queried
@@ -141,6 +173,9 @@ def _convert_authority_in_bulk(
             }
     dst_authority:
         authority to which genes are being mapped
+    log:
+        a logger class that implements an add_msg()
+        function (probably the CommandLog from cell_type_mapper)
     """
     species = src_gene_data['species']
 
@@ -182,6 +217,10 @@ def _convert_authority_in_bulk(
     failure_log = None
 
     if len(symbol_idx) > 0:
+        if log is not None:
+            log.add_msg(
+                f"Mapping input genes from 'symbols' to '{dst_authority}'"
+            )
         raw = mapping_functions.identifiers_from_symbols(
             db_path=db_path,
             gene_symbol_list=gene_list[symbol_idx],
@@ -202,6 +241,11 @@ def _convert_authority_in_bulk(
         if input_authority == dst_authority:
             result[idx_arr] = gene_list[idx_arr]
         else:
+            if log is not None:
+                log.add_msg(
+                    f"Mapping input genes from '{input_authority}' "
+                    f"to '{dst_authority}'"
+                )
             raw = mapping_functions.equivalent_genes(
                 db_path=db_path,
                 input_authority=input_authority,

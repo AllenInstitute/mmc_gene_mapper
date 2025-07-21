@@ -82,6 +82,9 @@ class Authority(MetadataEntity):
             )
         self._name = name
 
+    def __repr__(self):
+        return f"{self._name}"
+
     def serialize(self):
         return f'{self._name}'
 
@@ -111,6 +114,9 @@ class Species(MetadataEntity):
 
         self._name = name
         self._taxon = taxon
+
+    def __repr__(self):
+        return f"{self._name}:{self._taxon}"
 
     def serialize(self):
         return {

@@ -190,7 +190,8 @@ class MMCGeneMapper(object):
             gene_list,
             dst_species,
             dst_authority,
-            ortholog_citation='NCBI'):
+            ortholog_citation='NCBI',
+            log=None):
         """
         Perform an arbitrary mapping on a list of gene identifiers.
 
@@ -206,6 +207,9 @@ class MMCGeneMapper(object):
             name of authority being mapped to
         ortholog_citation:
             citation to use for ortholog mapping, if necessary
+        log:
+            a logger class that implements an add_msg()
+            function (probably the CommandLog from cell_type_mapper)
         """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -219,7 +223,8 @@ class MMCGeneMapper(object):
             gene_list=gene_list,
             dst_species=dst_species,
             dst_authority=metadata_classes.Authority(dst_authority),
-            ortholog_citation=ortholog_citation
+            ortholog_citation=ortholog_citation,
+            log=log
         )
 
 

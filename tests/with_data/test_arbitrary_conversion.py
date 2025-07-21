@@ -3,6 +3,7 @@ Test our "as generic as possible" gene mapping functions
 """
 import pytest
 
+import itertools
 import numpy as np
 import sqlite3
 
@@ -290,6 +291,61 @@ def test_arbitrary_mapping_function_yes_ortholog(
         np.array(result['gene_list']),
         np.array(expected)
     )
+
+
+@pytest.mark.parametrize(
+    "gene_list, dst_authority, use_class",
+    itertools.product(
+        (["symbol:12", "symbol:14", "ENSX26",
+          "NCBIGene:16", "ENSX22"],
+         ["symbol:12", "symbol:14", "symbol:13"]),
+        ("NCBI", "ENSEMBL"),
+        (True, False)
+    )
+)
+def test_arbitrary_mapping_function_with_log(
+        gene_list,
+        dst_authority,
+        mapper_fixture,
+        use_class):
+    """
+    Make sure that mapper can accept a logger class.
+    This is just a smoke test.
+    """
+
+    if "NCBIGene:16" in gene_list:
+        dst_species_name = "human"
+    else:
+        dst_species_name = "jabberwock"
+
+    class DummyLog(object):
+        def add_msg(self, msg):
+            print(msg)
+            pass
+
+    if use_class:
+        mapper_fixture.map_genes(
+            gene_list=gene_list,
+            dst_species=dst_species_name,
+            dst_authority=dst_authority,
+            ortholog_citation='NCBI',
+            log=DummyLog()
+        )
+    else:
+        with sqlite3.connect(mapper_fixture.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species=dst_species_name
+            )
+        arbitrary_conversion.arbitrary_mapping(
+            db_path=mapper_fixture.db_path,
+            gene_list=gene_list,
+            dst_species=dst_species,
+            dst_authority=metadata_classes.Authority(dst_authority),
+            ortholog_citation='NCBI',
+            log=DummyLog()
+        )
 
 
 def test_arbitrary_conversion_typing():
