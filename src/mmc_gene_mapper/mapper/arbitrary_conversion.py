@@ -8,6 +8,9 @@ the mapper class into a function module
 """
 
 import numpy as np
+import pathlib
+
+import mmc_gene_mapper
 
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
@@ -43,9 +46,16 @@ def arbitrary_mapping(
         a logger class that implements an ingo()
         function (probably the CommandLog from cell_type_mapper)
     """
+    db_path = pathlib.Path(db_path)
     if log is not None:
+        msg = (
+            f"Mapping input genes to {dst_species}:{dst_authority} using "
+            f"{mmc_gene_mapper.__repository__} version "
+            f"{mmc_gene_mapper.__version__} backed by database file "
+            f"{db_path.name}"
+        )
         log.info(
-            f"Mapping input genes to {dst_species}:{dst_authority}",
+            msg,
             to_stdout=True
         )
 

@@ -320,6 +320,8 @@ def test_arbitrary_mapping_function_with_log(
 
     class DummyLog(object):
         def info(self, msg, to_stdout=False):
+            if to_stdout:
+                print(msg)
             pass
 
     if use_class:
@@ -352,7 +354,7 @@ def test_arbitrary_conversion_typing():
     msg = "dst_species must be of type"
     with pytest.raises(ValueError, match=msg):
         arbitrary_conversion.arbitrary_mapping(
-            db_path=None,
+            db_path='not/a/file.db',
             gene_list=[],
             dst_species='human',
             dst_authority=metadata_classes.Authority('NCBI')
@@ -361,7 +363,7 @@ def test_arbitrary_conversion_typing():
     msg = "dst_authority must be of type"
     with pytest.raises(ValueError, match=msg):
         arbitrary_conversion.arbitrary_mapping(
-            db_path=None,
+            db_path='not/a/file.db',
             gene_list=[],
             dst_species=metadata_classes.Species(name='blerg', taxon=1),
             dst_authority='NCBI'
