@@ -368,3 +368,100 @@ def test_arbitrary_conversion_typing():
             dst_species=metadata_classes.Species(name='blerg', taxon=1),
             dst_authority='NCBI'
         )
+
+
+@pytest.mark.parametrize(
+    "expected, use_class, invalid_prefix",
+    [
+      (["NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
+        "NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
+        "ENSX2",
+        "ortholog:UNMAPPABLE_NO_MATCH_0",
+        "ortholog:UNMAPPABLE_NO_MATCH_1",
+        "ENSX14",
+        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+       True,
+       None),
+      (["wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
+        "wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
+        "ENSX2",
+        "wibble:ortholog:UNMAPPABLE_NO_MATCH_0",
+        "wibble:ortholog:UNMAPPABLE_NO_MATCH_1",
+        "ENSX14",
+        "wibble:ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+       True,
+       "wibble"),
+      (["NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
+        "NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
+        "ENSX2",
+        "ortholog:UNMAPPABLE_NO_MATCH_0",
+        "ortholog:UNMAPPABLE_NO_MATCH_1",
+        "ENSX14",
+        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+       False,
+       None),
+      (["wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
+        "wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_1",
+        "ENSX2",
+        "wibble:ortholog:UNMAPPABLE_NO_MATCH_0",
+        "wibble:ortholog:UNMAPPABLE_NO_MATCH_1",
+        "ENSX14",
+        "wibble:ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+       False,
+       "wibble"),
+    ]
+)
+def test_arbitrary_mapping_with_invalid_prefix(
+        expected,
+        mapper_fixture,
+        use_class,
+        invalid_prefix):
+    """
+    Test that, if an invalid_prefix is specified, all invalid
+    mappings are prepended with that value.
+    """
+    gene_list = [
+        "symbol:12",
+        "symbol:14",
+        "ENSX26",
+        "NCBIGene:16",
+        "ENSX22",
+        "symbol:15",
+        "ENSX88888",
+        "symbol:987654"
+    ]
+
+    dst_authority = "ENSEMBL"
+
+    if use_class:
+        result = mapper_fixture.map_genes(
+            gene_list=gene_list,
+            dst_species='human',
+            dst_authority=dst_authority,
+            ortholog_citation='NCBI',
+            invalid_mapping_prefix=invalid_prefix
+        )
+    else:
+        with sqlite3.connect(mapper_fixture.db_path) as conn:
+            cursor = conn.cursor()
+            dst_species = query_utils.get_species(
+                cursor=cursor,
+                species='human'
+            )
+        result = arbitrary_conversion.arbitrary_mapping(
+            db_path=mapper_fixture.db_path,
+            gene_list=gene_list,
+            dst_species=dst_species,
+            dst_authority=metadata_classes.Authority(dst_authority),
+            ortholog_citation='NCBI',
+            invalid_mapping_prefix=invalid_prefix
+        )
+
+    np.testing.assert_array_equal(
+        np.array(result['gene_list']),
+        np.array(expected)
+    )

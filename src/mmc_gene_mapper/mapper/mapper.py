@@ -191,7 +191,8 @@ class MMCGeneMapper(object):
             dst_species,
             dst_authority,
             ortholog_citation='NCBI',
-            log=None):
+            log=None,
+            invalid_mapping_prefix=None):
         """
         Perform an arbitrary mapping on a list of gene identifiers.
 
@@ -210,6 +211,9 @@ class MMCGeneMapper(object):
         log:
             a logger class that implements an info()
             function (probably the CommandLog from cell_type_mapper)
+        invalid_mapping_prefix:
+            an optional string. If not None, this will be prepended
+            to the placeholder names of all unmappable genes
         """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -224,7 +228,8 @@ class MMCGeneMapper(object):
             dst_species=dst_species,
             dst_authority=metadata_classes.Authority(dst_authority),
             ortholog_citation=ortholog_citation,
-            log=log
+            log=log,
+            invalid_mapping_prefix=invalid_mapping_prefix
         )
 
 

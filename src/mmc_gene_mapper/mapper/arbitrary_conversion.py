@@ -26,7 +26,8 @@ def arbitrary_mapping(
         dst_species,
         dst_authority,
         ortholog_citation='NCBI',
-        log=None):
+        log=None,
+        invalid_mapping_prefix=None):
     """
     Parameters
     ----------
@@ -45,6 +46,9 @@ def arbitrary_mapping(
     log:
         a logger class that implements an ingo()
         function (probably the CommandLog from cell_type_mapper)
+    invalid_mapping_prefix:
+        an optional string. If not None, this will be prepended
+        to the placeholder names of all unmappable genes
     """
     db_path = pathlib.Path(db_path)
     if log is not None:
@@ -112,7 +116,8 @@ def arbitrary_mapping(
             gene_list=gene_list,
             src_gene_data=src_gene_data,
             dst_authority='NCBI',
-            log=log
+            log=log,
+            invalid_mapping_prefix=invalid_mapping_prefix
         )
 
         for auth_metadata in current['metadata']:
@@ -125,6 +130,13 @@ def arbitrary_mapping(
             )
             log.info(msg, to_stdout=True)
 
+        if invalid_mapping_prefix is not None:
+            placeholder_prefix = (
+                f'{invalid_mapping_prefix}:ortholog'
+            )
+        else:
+            placeholder_prefix = 'ortholog'
+
         current = mapping_functions.ortholog_genes(
             db_path=db_path,
             authority='NCBI',
@@ -133,7 +145,7 @@ def arbitrary_mapping(
             gene_list=current['gene_list'],
             citation_name=ortholog_citation,
             assign_placeholders=True,
-            placeholder_prefix='ortholog'
+            placeholder_prefix=placeholder_prefix
         )
 
         current_gene_data = {
@@ -155,7 +167,8 @@ def arbitrary_mapping(
             gene_list=current['gene_list'],
             src_gene_data=current_gene_data,
             dst_authority=dst_authority.name,
-            log=log
+            log=log,
+            invalid_mapping_prefix=invalid_mapping_prefix
         )
 
         for auth_metadata in current['metadata']:
@@ -172,7 +185,8 @@ def _convert_authority_in_bulk(
         gene_list,
         src_gene_data,
         dst_authority,
-        log=None):
+        log=None,
+        invalid_mapping_prefix=None):
     """
     db_path:
         path to database being queried
@@ -189,6 +203,9 @@ def _convert_authority_in_bulk(
     log:
         a logger class that implements an info()
         function (probably the CommandLog from cell_type_mapper)
+    invalid_mapping_prefix:
+        an optional string. If not None, this will be prepended
+        to the placeholder names of all unmappable genes
     """
     species = src_gene_data['species']
 
@@ -235,13 +252,20 @@ def _convert_authority_in_bulk(
                 f"Mapping input genes from 'symbols' to '{dst_authority}'",
                 to_stdout=True
             )
+
+        placeholder_prefix = f'symbol:{dst_authority}'
+        if invalid_mapping_prefix is not None:
+            placeholder_prefix = (
+                f'{invalid_mapping_prefix}:{placeholder_prefix}'
+            )
+
         raw = mapping_functions.identifiers_from_symbols(
             db_path=db_path,
             gene_symbol_list=gene_list[symbol_idx],
             species=species,
             authority_name=dst_authority,
             assign_placeholders=True,
-            placeholder_prefix=f"symbol:{dst_authority}"
+            placeholder_prefix=placeholder_prefix
         )
         result[symbol_idx] = np.array(raw['gene_list'])
         metadata.append(raw['metadata'])
@@ -261,6 +285,15 @@ def _convert_authority_in_bulk(
                     f"to '{dst_authority}'",
                     to_stdout=True
                 )
+
+            placeholder_prefix = (
+                f'{input_authority}:{dst_authority}'
+            )
+            if invalid_mapping_prefix is not None:
+                placeholder_prefix = (
+                    f'{invalid_mapping_prefix}:{placeholder_prefix}'
+                )
+
             raw = mapping_functions.equivalent_genes(
                 db_path=db_path,
                 input_authority=input_authority,
@@ -269,7 +302,7 @@ def _convert_authority_in_bulk(
                 species=species,
                 citation_name='NCBI',
                 assign_placeholders=True,
-                placeholder_prefix=f"{input_authority}:{dst_authority}"
+                placeholder_prefix=placeholder_prefix
             )
             result[idx_arr] = np.array(raw['gene_list'])
             metadata.append(raw['metadata'])
