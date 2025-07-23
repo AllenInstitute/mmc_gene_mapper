@@ -75,6 +75,13 @@ class Authority(MetadataEntity):
             self,
             name):
 
+        valid = ('ENSEMBL', 'NCBI', 'symbol')
+        if name not in valid:
+            raise ValueError(
+                f"authority = '{name}' is not a valid authority; "
+                f"must be one of {valid}"
+            )
+
         if not isinstance(name, str):
             raise ValueError(
                 'Authority.name must be a str; you gave '
