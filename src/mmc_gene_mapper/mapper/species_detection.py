@@ -263,10 +263,18 @@ def detect_if_genes(
     of the genes is a valid gene identifier or symbol. Return
     False otherwise.
     """
+    if db_path is None:
+        raise ValueError(
+            "you passed db_path = None to "
+            "mmc_gene_mapper.mapper.species_dection.detect_if_genes; "
+            "must specify a db_path"
+        )
     db_path = pathlib.Path(db_path)
     if not db_path.is_file():
         raise ValueError(
-            f"{db_path} is not a file"
+            f"{db_path} is not a file "
+            "(error in "
+            "mmc_gene_mapper.mapper.species_detection.detect_if_genes)"
         )
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
