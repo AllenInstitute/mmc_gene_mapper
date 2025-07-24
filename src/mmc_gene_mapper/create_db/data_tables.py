@@ -78,6 +78,18 @@ def create_gene_index(cursor):
 
     db_utils.create_index(
         cursor=cursor,
+        idx_name="gene_identifier_idx",
+        table_name="gene",
+        column_tuple=(
+            "citation",
+            "authority",
+            "species_taxon",
+            "identifier"
+        )
+    )
+
+    db_utils.create_index(
+        cursor=cursor,
         idx_name="gene_id_idx",
         table_name="gene",
         column_tuple=(
@@ -93,6 +105,10 @@ def delete_gene_index(cursor):
     db_utils.delete_index(
         cursor=cursor,
         idx_name="gene_symbol_idx"
+    )
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_identifier_idx"
     )
     db_utils.delete_index(
         cursor=cursor,
