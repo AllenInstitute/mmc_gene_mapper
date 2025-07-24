@@ -202,6 +202,8 @@ def test_species_from_odd_symbols(mapper_fixture):
       True),
      (('alice', 'bob', 'jake', 'fred', 'pirate', 'ENSX22'),
       True),
+     (('NCBI', 'ENSMSUG', 'symbol7', 'NCBIGene:', 'william'),
+      False)
      ]
 )
 def test_detect_if_genes(

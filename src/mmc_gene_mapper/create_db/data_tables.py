@@ -137,6 +137,7 @@ def delete_gene_index(cursor):
         idx_name="gene_validity_idx1"
     )
 
+
 def create_gene_equivalence_index(cursor):
     db_utils.create_index(
         cursor=cursor,

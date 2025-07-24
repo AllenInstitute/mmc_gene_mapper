@@ -271,7 +271,6 @@ def detect_if_genes(
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         for i0 in range(0, len(gene_list), chunk_size):
-            print(f'    chunk {i0}')
             chunk = gene_list[i0:i0+chunk_size]
             id_query = """
             SELECT
