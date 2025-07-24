@@ -271,10 +271,11 @@ def detect_if_genes(
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         for i0 in range(0, len(gene_list), chunk_size):
+            print(f'    chunk {i0}')
             chunk = gene_list[i0:i0+chunk_size]
             id_query = """
             SELECT
-                species_taxon
+                COUNT(identifier)
             FROM
                 gene
             WHERE
@@ -283,11 +284,11 @@ def detect_if_genes(
             id_query += ",".join([f'"{g}"' for g in chunk])
             id_query += ")"
             result = cursor.execute(id_query).fetchall()
-            if len(result) > 0:
+            if result[0][0] > 0:
                 return True
             symbol_query = """
             SELECT
-                species_taxon
+                COUNT(symbol)
             FROM
                 gene
             WHERE
@@ -296,7 +297,7 @@ def detect_if_genes(
             symbol_query += ",".join([f'"{g}"' for g in chunk])
             symbol_query += ")"
             result = cursor.execute(symbol_query).fetchall()
-            if len(result) > 0:
+            if result[0][0] > 0:
                 return True
     return False
 
