@@ -273,20 +273,30 @@ def detect_if_genes(
         for i0 in range(0, len(gene_list), chunk_size):
             print(f'    chunk {i0}')
             chunk = gene_list[i0:i0+chunk_size]
-            val_list = '('
-            val_list += ','.join([f'"{g}"' for g in chunk])
-            val_list += ')'
-            query = f"""
+            id_query = """
             SELECT
                 COUNT(identifier)
             FROM
                 gene
             WHERE
-                identifier IN {val_list}
-            OR
-                symbol IN {val_list}
+                identifier IN (
             """
-            result = cursor.execute(query).fetchall()
+            id_query += ",".join([f'"{g}"' for g in chunk])
+            id_query += ")"
+            result = cursor.execute(id_query).fetchall()
+            if result[0][0] > 0:
+                return True
+            symbol_query = """
+            SELECT
+                COUNT(symbol)
+            FROM
+                gene
+            WHERE
+                symbol IN (
+            """
+            symbol_query += ",".join([f'"{g}"' for g in chunk])
+            symbol_query += ")"
+            result = cursor.execute(symbol_query).fetchall()
             if result[0][0] > 0:
                 return True
     return False
