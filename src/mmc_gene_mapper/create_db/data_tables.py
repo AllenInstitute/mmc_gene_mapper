@@ -100,6 +100,20 @@ def create_gene_index(cursor):
         )
     )
 
+    db_utils.create_index(
+        cursor=cursor,
+        idx_name="gene_validity_idx0",
+        table_name="gene",
+        column_tuple=("symbol",)
+    )
+
+    db_utils.create_index(
+        cursor=cursor,
+        idx_name="gene_validity_idx1",
+        table_name="gene",
+        column_tuple=("identifier",)
+    )
+
 
 def delete_gene_index(cursor):
     db_utils.delete_index(
@@ -114,7 +128,14 @@ def delete_gene_index(cursor):
         cursor=cursor,
         idx_name="gene_id_idx"
     )
-
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_validity_idx0"
+    )
+    db_utils.delete_index(
+        cursor=cursor,
+        idx_name="gene_validity_idx1"
+    )
 
 def create_gene_equivalence_index(cursor):
     db_utils.create_index(

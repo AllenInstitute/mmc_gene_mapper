@@ -27,13 +27,22 @@ def create_index(
 
     print(f'=======CREATING INDEX {idx_name}=======')
 
-    cursor.execute(
-        f"""
-        CREATE INDEX {idx_name}
-        ON {table_name}
-        {tuple(column_tuple)}
-        """
-    )
+    if len(column_tuple) > 1:
+        cursor.execute(
+            f"""
+            CREATE INDEX {idx_name}
+            ON {table_name}
+            {tuple(column_tuple)}
+            """
+        )
+    else:
+        cursor.execute(
+            f"""
+            CREATE INDEX {idx_name}
+            ON {table_name}
+            ({column_tuple[0]})
+            """
+        )
 
 
 def check_existence(db_path):
