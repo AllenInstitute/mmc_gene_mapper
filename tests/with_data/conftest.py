@@ -1,5 +1,15 @@
 """
 tests/with_data contains tests that run off of a cartoon data model
+
+The structure of this cartoon data may be a little too complicated.
+I am leaving it here because, but the time I realized this, there
+wasn't a lot of time to refactor it and fix all the test cases
+built on top of it. I will create a more systematic set of test
+data in the arbitrary_conversion/ test module. It will be
+tech debt to migrate all the tests in with_data/ over to using
+that set of test data.
+
+Apologies.
 """
 import pytest
 
