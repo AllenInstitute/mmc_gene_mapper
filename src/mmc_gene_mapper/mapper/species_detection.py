@@ -35,11 +35,17 @@ def detect_species_and_authority(
 
     Notes
     -----
-    This function assumes that all genes in gene_list are from the same
-    species. As such, it will accept the first match it finds as the
-    truth. If it happens to find more than one species in the first chunk
-    of data it analyzes, it will raise an exception. If you pass it a list
-    of gene symbols, "species" and "species_taxon" will be None
+    This function will first try to match species from NCBI and ENSEMBL
+    identifiers. The function will assume that all genes in gene_list are
+    from the same species. As such, it will accept the first match it finds
+    as the truth. If it happens to find more than one species in the first
+    chunk of data it analyzes, it will raise an exception. If you pass it a
+    list of gene symbols, "species" and "species_taxon" will be None
+
+    If no species can be inferred from NCBI and ENSEMBL identifiers (or if
+    no NCBI or ENSEMBL identifiers are present), the function will attempt
+    to identify species using gene symbols by scanning all gene symbols and
+    selecting the species that corresponds to the plurality of them.
 
     If no species is matched, authority will be set to a 'symbol' for all genes
     """
@@ -129,6 +135,20 @@ def detect_species_and_authority(
         authority = np.array(
             ['symbol']*len(authority)
         )
+
+        # try to match a species by assuming all genes
+        # are gene symbols
+        symbol_species = _detect_species_from_symbols(
+            gene_list=gene_list,
+            db_path=db_path,
+            chunk_size=chunk_size
+        )
+
+        if symbol_species is not None:
+            species = metadata_classes.Species(
+                name=symbol_species['species'],
+                taxon=int(symbol_species['species_taxon'])
+            )
 
     return {
         "authority": authority,
@@ -252,6 +272,124 @@ def _detect_species_and_authority(
             }
 
     return bad_result
+
+
+def _detect_species_from_symbols(
+        db_path,
+        gene_list,
+        chunk_size):
+    """
+    Parameters
+    ----------
+    db_path:
+        path to the gene mapper database file to query
+    gene_list:
+        list of strings; the gene symbols whose
+        species are being determined
+    chunk_size:
+        The number of gene identifiers to query at a time
+        in a search for a match. Because of the ambiguity
+        in gene symbols, this function scans through all
+        of the provided symbols to make sure a consistent
+        species can be found.
+
+    Returns:
+    --------
+    A dict
+        {"species": the name of the matching species
+         "species_taxon": the taxon ID of the matching species}
+
+    Notes
+    -----
+    Most gene symbols will match to several species. This function
+    will query all of the provided symbols, finding all species that
+    have genes corresponding to those symbols. Whichever species
+    occurs most frequently will be the chosen species.
+
+    If no species match, this function will return None.
+
+    If more than one species match, this function will raise an
+    InconsistentSpeciesError
+    """
+    n_genes = len(gene_list)
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        raw_lookup = dict()
+        for i0 in range(0, n_genes, chunk_size):
+            chunk = gene_list[i0: i0+chunk_size]
+            query = """
+            SELECT
+                symbol,
+                species_taxon
+            FROM
+                gene
+            WHERE symbol in (
+            """
+            query += ",".join(["?"]*len(chunk))
+            query += ")"
+            raw_results = cursor.execute(query, chunk).fetchall()
+
+            # first create a mapping from gene symbol to
+            # a set of unique taxons, to guard against the
+            # same (symbol, taxon) pair being ingested more
+            # than once (perhaps, from multiple authorities or
+            # citations)
+            for row in raw_results:
+                symbol = row[0]
+                taxon = row[1]
+                if symbol not in raw_lookup:
+                    raw_lookup[symbol] = set()
+                raw_lookup[symbol].add(taxon)
+
+        if len(raw_lookup) == 0:
+            return None
+
+        # Now tally the votes
+        taxon_candidates = np.concat(
+            [sorted(raw_lookup[gene])
+             for gene in sorted(raw_lookup.keys())]
+        )
+        taxon_candidates, vote_counts = np.unique(
+            taxon_candidates,
+            return_counts=True
+        )
+
+        max_dex = np.argmax(vote_counts)
+        max_votes = vote_counts[max_dex]
+        chosen_max = (vote_counts == max_votes)
+        chosen_taxon = taxon_candidates[chosen_max]
+
+        chosen_taxon_name = []
+        for taxon_id in chosen_taxon:
+            species_name_query = """
+            SELECT
+                name
+            FROM NCBI_species
+            WHERE
+                id=?
+            LIMIT 1
+            """
+            name_result = cursor.execute(
+                species_name_query,
+                (int(taxon_id),)
+            ).fetchall()
+            chosen_taxon_name.append(name_result[0][0])
+
+    if len(chosen_taxon) > 1:
+        msg = (
+            "The gene symbols you gave are consistent with "
+            "more than one species: "
+        )
+        msg += ", ".join(
+            [f"{name}:{taxon}"
+             for name, taxon in zip(chosen_taxon_name, chosen_taxon)]
+        )
+        raise InconsistentSpeciesError(msg)
+
+    return {
+        "species": chosen_taxon_name[0],
+        "species_taxon": chosen_taxon[0]
+    }
 
 
 def detect_if_genes(
