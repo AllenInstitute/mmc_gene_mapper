@@ -105,6 +105,24 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "ENSG8888"],
       None,
       None),
+     # -> mouse, but error because more than on species
+     (["NCBIGene:112", "NCBIGene:124",
+       "NCBIGene:207", "NCBIGene:205"],
+      "mouse",
+      "ENSEMBL",
+      None,
+      species_detection.InconsistentSpeciesError,
+      "Multiple species inferred"
+      ),
+     # -> mouse, but error because more than on species
+     (["NCBIGene:112", "NCBIGene:124",
+       "ENSF207", "ENSF205"],
+      "mouse",
+      "ENSEMBL",
+      None,
+      species_detection.InconsistentSpeciesError,
+      "ENSEMBL genes gave species"
+      ),
     ]
 )
 def test_arbitrary_mapping(
