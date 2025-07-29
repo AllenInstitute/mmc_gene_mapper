@@ -38,6 +38,42 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       ["ENSG112", "ENSG124", "ENSG174"],
       None,
       None),
+     # mouse -> mouse; use presence of mouse NCBI gene in input to
+     # determine which species it is
+     (["symbol_12", "symbol_24", "symbol_74", "NCBIGene:5"],
+      "mouse",
+      "ENSEMBL",
+      ["ENSM12", "ENSM24", "ENSM74", "ENSM5"],
+      None,
+      None),
+     # mouse -> mouse; use presence of mouse NCBI gene in input to
+     # determine which species it is
+     (["symbol_12", "symbol_24", "symbol_74", "NCBIGene:5"],
+      "mouse",
+      "NCBI",
+      ["NCBIGene:12", "NCBIGene:24", "NCBIGene:74", "NCBIGene:5"],
+      None,
+      None),
+     # mouse -> human; use presence of mouse NCBI gene in input to
+     # determine which species it is
+     (["symbol_12", "symbol_24", "symbol_74", "NCBIGene:5"],
+      "human",
+      "ENSEMBL",
+      ["ENSG112", "ENSG124",
+       "ortholog:UNMAPPABLE_NO_MATCH_0",
+       "ortholog:UNMAPPABLE_NO_MATCH_1"],
+      None,
+      None),
+     # mouse -> human; use presence of mouse NCBI gene in input to
+     # determine which species it is
+     (["symbol_12", "symbol_24", "symbol_74", "NCBIGene:5"],
+      "human",
+      "NCBI",
+      ["NCBIGene:112", "NCBIGene:124",
+       "ortholog:UNMAPPABLE_NO_MATCH_0",
+       "ortholog:UNMAPPABLE_NO_MATCH_1"],
+      None,
+      None),
      # human -> mouse based just on symbols
      # recall can only ortholog through fish if i%2 == i%3 == 0
      (["NCBIGene:999999", "symbol_12", "symbol_24",
