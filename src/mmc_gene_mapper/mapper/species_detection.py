@@ -9,7 +9,8 @@ import mmc_gene_mapper.metadata.classes as metadata_classes
 def detect_species_and_authority(
         db_path,
         gene_list,
-        chunk_size=1000):
+        chunk_size=1000,
+        guess_taxon=None):
     """
     Find the species and authority for a list of gene
     identifiers. Genes can be from an inhomogeneous list of
@@ -24,6 +25,12 @@ def detect_species_and_authority(
     chunk_size:
         an int; the number of genes to match to a species/authority
         at once
+    guess_taxon:
+       an optional int. This only comes into play if we end up
+       having to choose a species based on gene symbols. If this
+       is not None and there is a tie among taxons that match
+       the provided gene symbols, this taxon will be chosen
+       if it is one of the taxons participating in the tie.
 
     Returns
     --------
@@ -141,7 +148,8 @@ def detect_species_and_authority(
         symbol_species = _detect_species_from_symbols(
             gene_list=gene_list,
             db_path=db_path,
-            chunk_size=chunk_size
+            chunk_size=chunk_size,
+            guess_taxon=guess_taxon
         )
 
         if symbol_species is not None:

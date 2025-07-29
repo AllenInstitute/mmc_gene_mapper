@@ -30,14 +30,14 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "NCBI:ENSEMBL:UNMAPPABLE_DEGENERATE_1_1"],
       None,
       None),
-     # within human, symbol -> ENSEMBL; will error because src could be mouse
+     # within human, symbol -> ENSEMBL; will not error. Could be mouse
+     # but the dst_species will be used to break the tie
      (["symbol_12", "symbol_24", "symbol_74"],
       "human",
       "ENSEMBL",
+      ["ENSG112", "ENSG124", "ENSG174"],
       None,
-      species_detection.InconsistentSpeciesError,
-      "The gene symbols you gave are consistent with "
-      "more than one species"),
+      None),
      # human -> mouse based just on symbols
      # recall can only ortholog through fish if i%2 == i%3 == 0
      (["NCBIGene:999999", "symbol_12", "symbol_24",
