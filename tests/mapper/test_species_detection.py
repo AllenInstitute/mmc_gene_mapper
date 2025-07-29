@@ -61,7 +61,9 @@ def symbol_to_species_db_fixture(
                 ('ccc', 999, 2),
                 ('ddd', 9606, 3),
                 ('eee', 10090, 0),
-                ('eee', 9606, 0)
+                ('eee', 9606, 0),
+                ('fff', 10090, 4),
+                ('fff', 9606, 4)
             """
         )
     return db_path
@@ -108,3 +110,31 @@ def test_species_from_symbols(
                 gene_list=gene_list,
                 chunk_size=2
             )
+
+
+@pytest.mark.parametrize(
+    "gene_list, guess_taxon, expected",
+    [(("aaa", "fff", "eee"),
+      9606,
+      {"species": "human", "species_taxon": 9606}),
+     (("aaa", "fff", "eee"),
+      10090,
+      {"species": "mouse", "species_taxon": 10090}),
+     ]
+)
+def test_species_from_symbols_with_guess(
+        symbol_to_species_db_fixture,
+        gene_list,
+        expected,
+        guess_taxon):
+    """
+    Test that guess_taxon can break a species degeneracy
+    in species.
+    """
+    actual = species_detection._detect_species_from_symbols(
+        db_path=symbol_to_species_db_fixture,
+        gene_list=gene_list,
+        chunk_size=2,
+        guess_taxon=guess_taxon)
+
+    assert actual == expected

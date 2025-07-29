@@ -277,7 +277,8 @@ def _detect_species_and_authority(
 def _detect_species_from_symbols(
         db_path,
         gene_list,
-        chunk_size):
+        chunk_size,
+        guess_taxon=None):
     """
     Parameters
     ----------
@@ -292,6 +293,9 @@ def _detect_species_from_symbols(
         in gene symbols, this function scans through all
         of the provided symbols to make sure a consistent
         species can be found.
+    guess_taxon:
+       an optional int. If not None and the symbols match
+       multiple species equally well, choose this one.
 
     Returns:
     --------
@@ -310,6 +314,9 @@ def _detect_species_from_symbols(
 
     If more than one species match, this function will raise an
     InconsistentSpeciesError
+
+    If guess_taxon is not None and another species is a better
+    match for the gene symbols, return that better match, anyway.
     """
     n_genes = len(gene_list)
     with sqlite3.connect(db_path) as conn:
@@ -358,6 +365,11 @@ def _detect_species_from_symbols(
         max_votes = vote_counts[max_dex]
         chosen_max = (vote_counts == max_votes)
         chosen_taxon = taxon_candidates[chosen_max]
+
+        if len(chosen_taxon) > 1:
+            if guess_taxon is not None:
+                if guess_taxon in chosen_taxon:
+                    chosen_taxon = [guess_taxon]
 
         chosen_taxon_name = []
         for taxon_id in chosen_taxon:
