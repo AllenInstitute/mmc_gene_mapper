@@ -2,8 +2,8 @@ import numpy as np
 import pathlib
 import sqlite3
 
-import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
+import mmc_gene_mapper.mapper.gene_characterization as gene_characterization
 
 
 def detect_species_and_authority(
@@ -68,8 +68,9 @@ def detect_species_and_authority(
     # symbols, which are ENSEMBL IDs and which are
     # NCBI IDs
 
-    authority = str_utils.characterize_gene_identifiers_by_re(
-        gene_list
+    authority = gene_characterization.characterize_gene_identifiers(
+        db_path=db_path,
+        gene_list=gene_list
     )
     authority = np.array(authority)
 
@@ -148,8 +149,7 @@ def detect_species_and_authority(
             )
 
     # if no species was identified, artificially set
-    # authority == 'symbol'; this can result from gene symbols
-    # that match the NCBI or ENSEMBL regex in str_utils
+    # authority == 'symbol'
     if species is None:
         authority = np.array(
             ['symbol']*len(authority)
