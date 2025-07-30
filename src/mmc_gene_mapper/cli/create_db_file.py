@@ -134,8 +134,8 @@ def create_db_file(
         tempfile.mkdtemp(dir=scratch_dir, prefix='ensembl')
     )
     try:
-        print("====SCRAPING ENSEMBL====")
         if ensembl_version > 0:
+            print("====SCRAPING ENSEMBL====")
             ensembl_files_spec = ensembl_scraper.scrape_ensembl(
                 default_ensembl_version=ensembl_version,
                 dst_dir=ensembl_download_dir,
