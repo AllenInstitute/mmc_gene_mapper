@@ -20,7 +20,7 @@ def test_int_from_identifier():
         str_utils.int_from_identifier('abc123def')
 
 
-def test_characterize_gene_identifiers():
+def test_characterize_gene_identifiers_by_re():
 
     values = [
        'a',
@@ -51,7 +51,7 @@ def test_characterize_gene_identifiers():
         'symbol'
     ]
 
-    actual = str_utils.characterize_gene_identifiers(
+    actual = str_utils.characterize_gene_identifiers_by_re(
         values
     )
 

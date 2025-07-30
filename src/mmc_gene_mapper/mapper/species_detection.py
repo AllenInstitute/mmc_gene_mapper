@@ -68,7 +68,7 @@ def detect_species_and_authority(
     # symbols, which are ENSEMBL IDs and which are
     # NCBI IDs
 
-    authority = str_utils.characterize_gene_identifiers(
+    authority = str_utils.characterize_gene_identifiers_by_re(
         gene_list
     )
     authority = np.array(authority)
