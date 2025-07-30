@@ -281,14 +281,31 @@ def _initialize_mapper(
        tmp_db_path
     )
 
+    pre_metadata_hash = file_utils.hash_from_path(
+        file_path=tmp_db_path
+    )
+
     # mark this as a valid mmc_gene_mapper database
     with sqlite3.connect(tmp_db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            'CREATE TABLE mmc_gene_mapper_metadata (validity STR)'
+            """
+            CREATE TABLE mmc_gene_mapper_metadata (
+                validity STR,
+                timestamp STR,
+                hash STR
+            )
+            """
         )
         cursor.execute(
-            'INSERT INTO mmc_gene_mapper_metadata (validity) VALUES("TRUE")'
+            """
+            INSERT INTO mmc_gene_mapper_metadata
+                (validity,
+                 timestamp,
+                 hash)
+             VALUES("TRUE", ?, ?)
+            """,
+            (timestamp.get_timestamp(), pre_metadata_hash)
         )
 
     print(f'=======COPYING TMP FILE TO {db_path}=======')
