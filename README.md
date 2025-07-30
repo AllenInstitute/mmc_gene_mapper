@@ -5,7 +5,7 @@
 This code provides a tool to map genes from one species/authority (where
 by "authority" we mean an institution like ENSEMBL or NCBI) to another
 species/authority using documented cross-authority and crosss-species
-(orthologous) equvialencies. This code was originally written to allow
+(orthologous) gene equvialencies. This code was originally written to allow
 users to map data collected from an arbitrary species to the species-specific
 cell type taxonomies supported by the Allen Institute's
 [MapMyCells](https://portal.brain-map.org/atlases-and-data/bkp/mapmycells)
@@ -36,8 +36,7 @@ where `{VERSION}` is one of the
 
 ## Use
 
-[This Jupyter notebook]
-(https://github.com/AllenInstitute/mmc_gene_mapper/blob/main/notebooks/gene_mapper_demo.ipynb)
+[This Jupyter notebook](https://github.com/AllenInstitute/mmc_gene_mapper/blob/main/notebooks/gene_mapper_demo.ipynb)
 demonstrates how to use the code in this repository.
 
 In broad strokes, you must first create a sqlite database file containing the valid gene mappings as determined from data published by NCBI and ENSEMBL. This can be done either programmatically, according to cell [5] the notebook
