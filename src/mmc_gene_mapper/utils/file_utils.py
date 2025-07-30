@@ -10,7 +10,7 @@ import tempfile
 
 def assert_is_file(file_path):
     """
-    Asserrt that file_path points to a file.
+    Assert that file_path points to a file.
     Raise a NotAFileError if not.
     """
     file_path = pathlib.Path(file_path)
