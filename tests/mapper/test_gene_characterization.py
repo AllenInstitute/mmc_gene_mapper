@@ -17,16 +17,6 @@ def gene_characterization_db_fixture(
     """
     Create a database against which to test gene
     characterization. Return the path to that database.
-
-    Genes in this database
-    ======================
-    identifier, symbol, authority
-
-    aaa, ENSAP, NCBI
-    ccc, ENSAP1, ENSEMBL
-    eee, ENSAP2, NCBI
-    ggg, NCBIG0, ENSEMBL
-    hhh, NCBIG1, ENSEMBL
     """
     db_path = file_utils.mkstemp_clean(
         dir=tmp_dir_fixture,
@@ -65,7 +55,9 @@ def gene_characterization_db_fixture(
                 ('ccc', 'ENSAP1', 1),
                 ('eee', 'ENSAP2', 0),
                 ('ggg', 'NCBIG0', 1),
-                ('hhh', 'NCBIG1', 1)
+                ('hhh', 'NCBIG1', 1),
+                ('ggg', 'iiii', 0),
+                ('jjj', 'aaa', 1)
             """
         )
 
@@ -83,6 +75,10 @@ def gene_characterization_db_fixture(
        'symbol', 'NCBI'],
       None,
       None),
+     (('aaa', 'ccc', 'ggg', 'NCBIG0'),
+      None,
+      gene_characterization.MultipleAuthorityError,
+      "genes mapped to more than one authority"),
     ]
 )
 def test_dummy(
@@ -106,5 +102,5 @@ def test_dummy(
         with pytest.raises(err_flavor, match=err_msg):
             gene_characterization.characterize_gene_identifiers(
                 db_path=gene_characterization_db_fixture,
-                geen_list=gene_list,
+                gene_list=gene_list,
                 chunk_size=4)

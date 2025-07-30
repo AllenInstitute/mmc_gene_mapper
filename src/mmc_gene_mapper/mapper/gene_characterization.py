@@ -113,7 +113,8 @@ def _get_authority_lookup(
         else:
             lookup[gene] = authority
     if len(err_msg) > 0:
-        msg = "The following genes mapped to more than one authority"
+        msg = "The following genes mapped to more than one authority\n"
+        msg += f"{err_msg}"
         raise MultipleAuthorityError(
             msg
         )
