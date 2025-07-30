@@ -132,18 +132,21 @@ def create_db_file(
     )
     try:
         print("====SCRAPING ENSEMBL====")
-        ensembl_files_spec = ensembl_scraper.scrape_ensembl(
-            default_ensembl_version=ensembl_version,
-            dst_dir=ensembl_download_dir,
-            failure_log_path=file_utils.mkstemp_clean(
-                dir=scratch_dir,
-                suffix='.txt'
-            ),
-            specific_files=bican_files,
-            tmp_dir=scratch_dir,
-            n_limit=None
-        )
-        print("====DONE SCRAPING ENSEMBL====")
+        if ensemb_version > 0:
+            ensembl_files_spec = ensembl_scraper.scrape_ensembl(
+                default_ensembl_version=ensembl_version,
+                dst_dir=ensembl_download_dir,
+                failure_log_path=file_utils.mkstemp_clean(
+                    dir=scratch_dir,
+                    suffix='.txt'
+                ),
+                specific_files=bican_files,
+                tmp_dir=scratch_dir,
+                n_limit=None
+            )
+            print("====DONE SCRAPING ENSEMBL====")
+        else:
+            ensembl_files_spec = None
 
         mapper_module.MMCGeneMapper.create_mapper(
             db_path=db_path,
