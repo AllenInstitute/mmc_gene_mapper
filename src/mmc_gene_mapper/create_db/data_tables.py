@@ -19,8 +19,8 @@ def create_gene_table(cursor):
             authority INTEGER,
             id INTEGER,
             species_taxon INTEGER,
-            symbol STRING,
-            identifier STRING,
+            symbol TEXT,
+            identifier TEXT,
             citation INTEGER
         )
         """

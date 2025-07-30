@@ -27,7 +27,7 @@ def gene_characterization_db_fixture(
         cursor = conn.cursor()
         cursor.execute(
             """
-            CREATE TABLE authority (id INT, name STRING)
+            CREATE TABLE authority (id INT, name TEXT)
             """
         )
         cursor.execute(
@@ -41,8 +41,8 @@ def gene_characterization_db_fixture(
         cursor.execute(
             """
             CREATE TABLE gene (
-                identifier STRING,
-                symbol STRING,
+                identifier TEXT,
+                symbol TEXT,
                 authority int
             )
             """

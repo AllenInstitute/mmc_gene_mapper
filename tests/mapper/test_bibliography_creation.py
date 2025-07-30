@@ -99,7 +99,7 @@ def gene_table_fixture(
             """
             CREATE TABLE species_bibliography (
                 id INTEGER,
-                name STRING
+                name TEXT
             )
             """
         )
@@ -116,7 +116,7 @@ def gene_table_fixture(
         cursor.execute(
             """
             CREATE TABLE authority (
-                name STRING,
+                name TEXT,
                 id INTEGER
             )
             """
@@ -135,9 +135,9 @@ def gene_table_fixture(
         cursor.execute(
             """
             CREATE TABLE citation (
-                name STRING,
+                name TEXT,
                 id INTEGER,
-                metadata STRING
+                metadata TEXT
             )
             """
         )

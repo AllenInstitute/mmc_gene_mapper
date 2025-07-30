@@ -291,9 +291,9 @@ def _initialize_mapper(
         cursor.execute(
             """
             CREATE TABLE mmc_gene_mapper_metadata (
-                validity STR,
-                timestamp STR,
-                hash STR
+                validity TEXT,
+                timestamp TEXT,
+                hash TEXT
             )
             """
         )

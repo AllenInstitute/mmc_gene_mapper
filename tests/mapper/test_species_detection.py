@@ -28,7 +28,7 @@ def symbol_to_species_db_fixture(
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "CREATE TABLE NCBI_species (name STRING, id INT)"
+            "CREATE TABLE NCBI_species (name TEXT, id INT)"
         )
         cursor.execute(
             """
@@ -44,7 +44,7 @@ def symbol_to_species_db_fixture(
         cursor.execute(
             """
             CREATE TABLE gene
-                (symbol STRING,
+                (symbol TEXT,
                  species_taxon INT,
                  authority INT)
             """

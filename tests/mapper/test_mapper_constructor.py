@@ -53,7 +53,7 @@ def test_mapper_from_db_with_wrong_validity(tmp_dir_fixture):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "CREATE TABLE mmc_gene_mapper_metadata (validity STR)"
+            "CREATE TABLE mmc_gene_mapper_metadata (validity TEXT)"
         )
         cursor.execute(
             """

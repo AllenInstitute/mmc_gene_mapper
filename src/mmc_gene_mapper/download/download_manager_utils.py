@@ -25,11 +25,11 @@ def create_download_db(db_path):
         cursor.execute(
             """
             CREATE TABLE downloads (
-                host STRING,
-                src_path STRING,
-                local_path STRING,
-                hash STRING,
-                downloaded_on STRING
+                host TEXT,
+                src_path TEXT,
+                local_path TEXT,
+                hash TEXT,
+                downloaded_on TEXT
             )
             """
         )

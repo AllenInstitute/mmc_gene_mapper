@@ -25,8 +25,8 @@ def create_data_tables(conn):
             authority INTEGER,
             id INTEGER,
             species_taxon INTEGER,
-            symbol STRING,
-            identifier STRING,
+            symbol TEXT,
+            identifier TEXT,
             citation INTEGER
         )
         """
@@ -109,9 +109,9 @@ def gene_data_fixture():
     )
     """
     return [
-        (0, 1, 11, 'ENS111', 111, 0),
-        (0, 2, 22, 'ENS222', 222, 0),
-        (1, 3, 33, 'ENS333', 333, 1)
+        (0, 1, 11, 'ENS111', '111', 0),
+        (0, 2, 22, 'ENS222', '222', 0),
+        (1, 3, 33, 'ENS333', '333', 1)
     ]
 
 
@@ -181,8 +181,8 @@ def metadata_table_fixture(
             """
             CREATE TABLE citation (
                 id INTEGER,
-                name STRING,
-                metadata STRING
+                name TEXT,
+                metadata TEXT
             )
             """
         )
@@ -205,7 +205,7 @@ def metadata_table_fixture(
             """
             CREATE TABLE authority (
                 id INTEGER,
-                name STRING
+                name TEXT
             )
             """
         )
