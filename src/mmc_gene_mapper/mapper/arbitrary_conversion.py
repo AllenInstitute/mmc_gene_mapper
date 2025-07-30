@@ -57,20 +57,14 @@ def arbitrary_mapping(
 
     db_path = pathlib.Path(db_path)
 
-    file_utils.assert_is_file(db_path)
-
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        metadata = cursor.execute(
-            "SELECT timestamp, hash FROM mmc_gene_mapper_metadata"
-        ).fetchall()
+    metadata = _get_db_metadata(db_path)
 
     msg = (
         f"Mapping input genes to '{dst_species} -- {dst_authority}' using\n"
         f"{mmc_gene_mapper.__repository__} version "
         f"{mmc_gene_mapper.__version__}\n"
         f"backed by database file: {db_path.name}\n"
-        f"created on: {metadata[0][0]}\nhash: {metadata[0][1]}"
+        f"created on: {metadata['timestamp']}\nhash: {metadata['hash']}"
     )
 
     if log is not None:
@@ -354,3 +348,22 @@ class StdoutLog(object):
     """
     def info(self, msg, to_stdout=True):
         print(f"===={msg}")
+
+
+def _get_db_metadata(db_path):
+    file_utils.assert_is_file(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        metadata = cursor.execute(
+            "SELECT timestamp, hash FROM mmc_gene_mapper_metadata"
+        ).fetchall()
+    if len(metadata) != 1:
+        raise RuntimeError(
+            f"Something is wrong with mmc_gene_mapper database {db_path}; "
+            f"metadata table had {len(metadata)} rows; expected only 1"
+        )
+    return {
+        "timestamp": metadata[0][0],
+        "hash": metadata[0][1]
+    }
