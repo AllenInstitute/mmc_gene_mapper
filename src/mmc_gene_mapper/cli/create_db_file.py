@@ -32,7 +32,10 @@ def main():
         "--ensembl_version",
         type=int,
         default=114,
-        help="Version of ENSEMBL to scrape (default=114)."
+        help=(
+            "Version of ENSEMBL to scrape (default=114). "
+            "If <= 0, do not scrape ENSEMBL."
+        )
     )
     parser.add_argument(
         "--suppress_stdout",
@@ -132,7 +135,7 @@ def create_db_file(
     )
     try:
         print("====SCRAPING ENSEMBL====")
-        if ensemb_version > 0:
+        if ensembl_version > 0:
             ensembl_files_spec = ensembl_scraper.scrape_ensembl(
                 default_ensembl_version=ensembl_version,
                 dst_dir=ensembl_download_dir,
