@@ -46,6 +46,19 @@ def test_determine_species_and_authority_from_data(
         np.array(['symbol', 'ENSEMBL', 'symbol', 'ENSEMBL'])
     )
 
+    # test case where ENS gives a species and NCBI gives None
+    jabberwock_genes = ["a0", "ENSX22", "a1", "ENSX26", "NCBIGene:1111111"]
+    actual = species_utils.detect_species_and_authority(
+        db_path=mapper_fixture.db_path,
+        gene_list=jabberwock_genes
+    )
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
+    np.testing.assert_array_equal(
+        actual['authority'],
+        np.array(['symbol', 'ENSEMBL', 'symbol', 'ENSEMBL', 'NCBI'])
+    )
+
     jabberwock_genes = ["NCBIGene:11", "NCBIGene:13"]
     actual = species_utils.detect_species_and_authority(
         db_path=mapper_fixture.db_path,
@@ -56,6 +69,19 @@ def test_determine_species_and_authority_from_data(
     np.testing.assert_array_equal(
         actual['authority'],
         np.array(['NCBI', 'NCBI'])
+    )
+
+    # test case where NCBI gives non-None and ENSEMBL gives None
+    jabberwock_genes = ["NCBIGene:11", "NCBIGene:13", "ENSX777777777"]
+    actual = species_utils.detect_species_and_authority(
+        db_path=mapper_fixture.db_path,
+        gene_list=jabberwock_genes
+    )
+    assert actual['species'].name == 'jabberwock'
+    assert actual['species'].taxon == 999
+    np.testing.assert_array_equal(
+        actual['authority'],
+        np.array(['NCBI', 'NCBI', 'ENSEMBL'])
     )
 
     jabberwock_genes = ["a0", "a1", "NCBIGene:11", "a2",

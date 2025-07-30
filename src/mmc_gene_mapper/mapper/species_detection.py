@@ -46,8 +46,13 @@ def detect_species_and_authority(
     identifiers. The function will assume that all genes in gene_list are
     from the same species. As such, it will accept the first match it finds
     as the truth. If it happens to find more than one species in the first
-    chunk of data it analyzes, it will raise an exception. If you pass it a
-    list of gene symbols, "species" and "species_taxon" will be None
+    chunk of data it analyzes, it will raise an exception.
+
+    If ENSEMBL and NCBI identifiers are present, the function will
+    try to match species to both. If one gives None and the other gives
+    a non-None species, the non-None species will be preferred. If both
+    give non-None answers and the answers differ, an exception will
+    be thrown.
 
     If no species can be inferred from NCBI and ENSEMBL identifiers (or if
     no NCBI or ENSEMBL identifiers are present), the function will attempt
@@ -116,7 +121,16 @@ def detect_species_and_authority(
         else:
             ens = ensembl_authority['species_taxon']
             ncbi = ncbi_authority['species_taxon']
-            if ens != ncbi:
+            if ens is None and ncbi is not None:
+                species_name = ncbi_authority['species']
+                species_taxon = ncbi_authority['species_taxon']
+            elif ncbi is None and ens is not None:
+                species_name = ensembl_authority['species']
+                species_taxon = ensembl_authority['species_taxon']
+            elif ens == ncbi:
+                species_name = ncbi_authority['species']
+                species_taxon = ncbi_authority['species_taxon']
+            else:
                 msg = (
                     "\nENSEMBL genes gave species "
                     f"'{ensembl_authority['species']}'"
@@ -124,8 +138,6 @@ def detect_species_and_authority(
                     f"'{ncbi_authority['species']}'"
                 )
                 raise InconsistentSpeciesError(msg)
-            species_name = ncbi_authority['species']
-            species_taxon = ncbi_authority['species_taxon']
 
         if species_name is None and species_taxon is None:
             species = None
