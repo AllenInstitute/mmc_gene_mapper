@@ -23,9 +23,6 @@ def create_mapper_database(
         force_download,
         data_file_spec=None):
 
-    print('data file spec')
-    print(data_file_spec)
-
     with sqlite3.connect(db_path) as conn:
         data_utils.create_data_tables(conn)
         metadata_utils.create_metadata_tables(conn)
@@ -44,12 +41,10 @@ def create_mapper_database(
         force_download=force_download
     )
 
-    print("TIME TO INGEST SPECIFIED FILES")
+    print("=====TIME TO INGEST FILES FROM ENSEMBL======")
     if data_file_spec is not None:
         for file_spec in data_file_spec:
             if file_spec['type'] == 'bkbit':
-                print("INGESTING")
-                print(file_spec)
                 bkbit_ingestion.ingest_bkbit_genes(
                     db_path=db_path,
                     bkbit_path=file_spec['path']
