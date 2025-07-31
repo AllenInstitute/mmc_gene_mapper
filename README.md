@@ -58,7 +58,7 @@ python -m mmc_gene_maper.cli.create_db_file \
 ```
 
 **Before you do this** you must download the model that
-(bkbit)[https://github.com/brain-bican/bkbit] (a data modelling package
+[bkbit](https://github.com/brain-bican/bkbit) (a data modelling package
 written for BICAN) uses to parse ENSEMBL genome annotations. Do this by running
 the command
 ```
