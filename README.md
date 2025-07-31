@@ -24,6 +24,8 @@ To install this library, either
 A) Clone the repository and run `pip install .` from the root directory of the
 repository
 
+or
+
 B) Run
 ```
 pip install mmc_gene_mapper @ git+https://github.com/AllenInstitute.mmc_gene_mapper
