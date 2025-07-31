@@ -15,6 +15,8 @@ tool and
 It can, in principle, be applied to other use cases where it would be useful
 to map genes from one identification scheme to another.
 
+This is a re-implementation in Python of the functionality available through the R [GeneOrthology](https://github.com/AllenInstitute/GeneOrthology) package.
+
 ## Installation
 
 To install this library, either
