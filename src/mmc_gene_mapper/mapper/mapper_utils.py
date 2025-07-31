@@ -43,12 +43,16 @@ def create_mapper_database(
 
     print("=====TIME TO INGEST FILES FROM ENSEMBL======")
     if data_file_spec is not None:
-        for file_spec in data_file_spec:
+        n_files = len(data_file_spec)
+        for ct, file_spec in enumerate(data_file_spec):
             if file_spec['type'] == 'bkbit':
                 bkbit_ingestion.ingest_bkbit_genes(
                     db_path=db_path,
                     bkbit_path=file_spec['path']
                 )
+            if ct % max(1, (n_files//10)) == 0:
+                print(f'    INGESTED {ct} of {n_files}')
+    print("=======DONE INGESTING FILES FROM ENSEMBL=======")
 
     if data_file_spec is not None:
         for file_spec in data_file_spec:
