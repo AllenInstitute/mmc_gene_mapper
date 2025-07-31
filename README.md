@@ -57,6 +57,15 @@ python -m mmc_gene_maper.cli.create_db_file \
 --ensembl_version 114
 ```
 
+**Before you do this** you must download the model that
+(bkbit)[https://github.com/brain-bican/bkbit] (a data modelling package
+written for BICAN) uses to parse ENSEMBL genome annotations. Do this by running
+the command
+```
+bkbit download-ncbi-taxonomy
+```
+(`bkbit` will already be installed as a part of installing this package)
+
 **Note:** This will produce a 15 GB file on disk.
 
 Once that file has been created, you can instantiate the class
