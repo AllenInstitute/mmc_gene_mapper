@@ -28,12 +28,12 @@ or
 
 B) Run
 ```
-pip install mmc_gene_mapper @ git+https://github.com/AllenInstitute.mmc_gene_mapper
+pip install "mmc_gene_mapper @ git+https://github.com/AllenInstitute/mmc_gene_mapper"
 ```
 
 To install a specific version, you can run
 ```
-pip install mmc_gene_mapper @ git+https://github.com/AllenInstitute.mmc_gene_mapper@{VERSION}
+pip install "mmc_gene_mapper @ git+https://github.com/AllenInstitute/mmc_gene_mapper@{VERSION}"
 ```
 where `{VERSION}` is one of the
 [valid tags listed in this repository.](https://github.com/AllenInstitute/mmc_gene_mapper/tags)
