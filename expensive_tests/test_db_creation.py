@@ -6,6 +6,7 @@ ENSEMBL and NCBI, we do not want to run it everytime we run py.test tests/
 """
 import pytest
 
+import sqlite3
 import tempfile
 
 import mmc_gene_mapper.utils.file_utils as file_utils
@@ -37,3 +38,32 @@ def test_db_creation(tmp_dir_fixture):
         suppress_download_stdout=False,
         n_ensembl=3
     )
+
+    query = """
+        SELECT
+            gene.identifier,
+            gene.symbol
+        FROM gene
+        WHERE
+            gene.authority = ?
+        AND
+            gene.symbol IS NOT NULL
+    """
+
+    # test that the database contains ENSEMBL and NCBI genes
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        for flavor in ("ENSEMBL", "NCBI"):
+            print(f"testing {flavor}")
+            authority_idx = conn.execute(
+                """
+                SELECT authority.id
+                FROM authority
+                WHERE authority.name = ?
+                """,
+                (flavor,)
+            ).fetchall()[0][0]
+
+            result = cursor.execute(query, (authority_idx,))
+            chunk = result.fetchmany(10)
+            assert len(chunk) > 0
