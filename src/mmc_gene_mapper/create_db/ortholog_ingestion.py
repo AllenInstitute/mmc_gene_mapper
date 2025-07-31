@@ -359,16 +359,10 @@ def _ingest_orthologs_from_species_lookup(
     genes that do not occur in gene_to_species will not be ingested
     """
 
-    print(f'gene0 {len(gene0_list)}')
-    print(f'gene1 {len(gene1_list)}')
-
     gene_to_ortholog = ortholog_utils.assign_ortholog_group(
         gene0_list=gene0_list,
         gene1_list=gene1_list
     )
-
-    print(f'gene_to_ortholog {len(gene_to_ortholog)}')
-    print(f'gene_to_species {len(gene_to_species)}')
 
     genes_without_species = []
     for gene in gene_to_ortholog:
