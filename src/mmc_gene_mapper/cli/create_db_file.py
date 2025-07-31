@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import tempfile
+import time
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.ensembl_download.scraper as ensembl_scraper
@@ -87,6 +88,8 @@ def create_db_file(
         boolean. If True, suppress stdout produced by file downloads
     """
 
+    t0 = time.time()
+
     local_dir = pathlib.Path(local_dir)
     if local_dir.exists():
         if not local_dir.is_dir():
@@ -147,7 +150,8 @@ def create_db_file(
                 tmp_dir=scratch_dir,
                 n_limit=None
             )
-            print("====DONE SCRAPING ENSEMBL====")
+            dur = (time.time()-t0)/60.0
+            print(f"====DONE SCRAPING ENSEMBL after {dur:.2e} minutes====")
         else:
             ensembl_files_spec = None
 
@@ -160,8 +164,9 @@ def create_db_file(
             suppress_download_stdout=suppress_download_stdout
         )
 
+        dur = (time.time()-t0)/60.0
         print(
-            "SUCCESS; wrote {str(db_path)}"
+            f"SUCCESS; wrote {str(db_path)} after {dur:.2e} minutes"
         )
 
     finally:
