@@ -70,7 +70,8 @@ def create_db_file(
         local_dir,
         ensembl_version,
         clobber,
-        suppress_download_stdout):
+        suppress_download_stdout,
+        n_ensembl=None):
     """
     Create sqlite db file for backing mmc_gene_mapper
 
@@ -86,6 +87,10 @@ def create_db_file(
         already exist at db_path
     suppress_download_stdout:
         boolean. If True, suppress stdout produced by file downloads
+    n_ensembl:
+        int. If not None, only process this many gff3 files from ENSEMBL.
+        This parameter is just here for smoketests. It should usually
+        be None.
     """
 
     t0 = time.time()
@@ -148,7 +153,7 @@ def create_db_file(
                 ),
                 specific_files=bican_files,
                 tmp_dir=scratch_dir,
-                n_limit=None
+                n_limit=n_ensembl
             )
             dur = (time.time()-t0)/60.0
             print(f"====DONE SCRAPING ENSEMBL after {dur:.2e} minutes====")
