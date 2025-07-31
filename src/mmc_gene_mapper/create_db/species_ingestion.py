@@ -122,7 +122,7 @@ def ingest_species_table(
             f"""
             CREATE TABLE {table_name} (
                 id INTEGER,
-                name STRING
+                name TEXT
             )
             """
         )

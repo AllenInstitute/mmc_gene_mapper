@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import tempfile
+import time
 
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.ensembl_download.scraper as ensembl_scraper
@@ -32,7 +33,10 @@ def main():
         "--ensembl_version",
         type=int,
         default=114,
-        help="Version of ENSEMBL to scrape (default=114)."
+        help=(
+            "Version of ENSEMBL to scrape (default=114). "
+            "If <= 0, do not scrape ENSEMBL."
+        )
     )
     parser.add_argument(
         "--suppress_stdout",
@@ -66,7 +70,8 @@ def create_db_file(
         local_dir,
         ensembl_version,
         clobber,
-        suppress_download_stdout):
+        suppress_download_stdout,
+        n_ensembl=None):
     """
     Create sqlite db file for backing mmc_gene_mapper
 
@@ -82,7 +87,13 @@ def create_db_file(
         already exist at db_path
     suppress_download_stdout:
         boolean. If True, suppress stdout produced by file downloads
+    n_ensembl:
+        int. If not None, only process this many gff3 files from ENSEMBL.
+        This parameter is just here for smoketests. It should usually
+        be None.
     """
+
+    t0 = time.time()
 
     local_dir = pathlib.Path(local_dir)
     if local_dir.exists():
@@ -131,19 +142,23 @@ def create_db_file(
         tempfile.mkdtemp(dir=scratch_dir, prefix='ensembl')
     )
     try:
-        print("====SCRAPING ENSEMBL====")
-        ensembl_files_spec = ensembl_scraper.scrape_ensembl(
-            default_ensembl_version=ensembl_version,
-            dst_dir=ensembl_download_dir,
-            failure_log_path=file_utils.mkstemp_clean(
-                dir=scratch_dir,
-                suffix='.txt'
-            ),
-            specific_files=bican_files,
-            tmp_dir=scratch_dir,
-            n_limit=None
-        )
-        print("====DONE SCRAPING ENSEMBL====")
+        if ensembl_version > 0:
+            print("====SCRAPING ENSEMBL====")
+            ensembl_files_spec = ensembl_scraper.scrape_ensembl(
+                default_ensembl_version=ensembl_version,
+                dst_dir=ensembl_download_dir,
+                failure_log_path=file_utils.mkstemp_clean(
+                    dir=scratch_dir,
+                    suffix='.txt'
+                ),
+                specific_files=bican_files,
+                tmp_dir=scratch_dir,
+                n_limit=n_ensembl
+            )
+            dur = (time.time()-t0)/60.0
+            print(f"====DONE SCRAPING ENSEMBL after {dur:.2e} minutes====")
+        else:
+            ensembl_files_spec = None
 
         mapper_module.MMCGeneMapper.create_mapper(
             db_path=db_path,
@@ -154,8 +169,9 @@ def create_db_file(
             suppress_download_stdout=suppress_download_stdout
         )
 
+        dur = (time.time()-t0)/60.0
         print(
-            "SUCCESS; wrote {str(db_path)}"
+            f"SUCCESS; wrote {str(db_path)} after {dur:.2e} minutes"
         )
 
     finally:

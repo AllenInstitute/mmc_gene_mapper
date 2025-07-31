@@ -19,8 +19,8 @@ def create_citation_table(cursor):
         """
         CREATE TABLE citation(
             id INTEGER,
-            name STR,
-            metadata STRING
+            name TEXT,
+            metadata TEXT
         )
         """
     )
@@ -31,7 +31,7 @@ def create_authority_table(cursor):
         """
         CREATE TABLE authority(
            id INTEGER,
-           name STR
+           name TEXT
         )
         """
     )

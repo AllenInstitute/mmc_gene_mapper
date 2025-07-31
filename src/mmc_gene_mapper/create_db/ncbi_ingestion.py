@@ -129,7 +129,10 @@ def ingest_gene_info(conn, data_path, authority_idx, citation_idx):
     with pd.read_csv(data_path,
                      delimiter='\t',
                      chunksize=chunk_size,
-                     usecols=['#tax_id', 'GeneID', 'Symbol']) as src:
+                     usecols=['#tax_id', 'GeneID', 'Symbol'],
+                     dtype={'#tax_id': int,
+                            'GeneID': int,
+                            'Symbol': str}) as src:
         for chunk in src:
             values = [
                 (authority_idx,

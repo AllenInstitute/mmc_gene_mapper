@@ -9,9 +9,11 @@ the mapper class into a function module
 
 import numpy as np
 import pathlib
+import sqlite3
 
 import mmc_gene_mapper
 
+import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
@@ -44,20 +46,28 @@ def arbitrary_mapping(
     ortholog_citation:
         citation to use for ortholog mapping, if necessary
     log:
-        a logger class that implements an ingo()
+        a logger class that implements an info()
         function (probably the CommandLog from cell_type_mapper)
     invalid_mapping_prefix:
         an optional string. If not None, this will be prepended
         to the placeholder names of all unmappable genes
     """
+    if log is None:
+        log = StdoutLog()
+
     db_path = pathlib.Path(db_path)
+
+    metadata = _get_db_metadata(db_path)
+
+    msg = (
+        f"Mapping input genes to '{dst_species} -- {dst_authority}' using\n"
+        f"{mmc_gene_mapper.__repository__} version "
+        f"{mmc_gene_mapper.__version__}\n"
+        f"backed by database file: {db_path.name}\n"
+        f"created on: {metadata['timestamp']}\nhash: {metadata['hash']}"
+    )
+
     if log is not None:
-        msg = (
-            f"Mapping input genes to {dst_species}:{dst_authority} using "
-            f"{mmc_gene_mapper.__repository__} version "
-            f"{mmc_gene_mapper.__version__} backed by database file "
-            f"{db_path.name}"
-        )
         log.info(
             msg,
             to_stdout=True
@@ -92,7 +102,7 @@ def arbitrary_mapping(
                 "Could not find a species for input genes. "
                 "This probably means you passed in gene symbols. "
                 "Assuming they are already consistent with "
-                f"{dst_species}",
+                f"'{dst_species}'",
                 to_stdout=True
             )
         src_gene_data['species'] = dst_species
@@ -100,7 +110,7 @@ def arbitrary_mapping(
         if log is not None:
             log.info(
                 "Input genes are from species "
-                f"{src_gene_data['species']}",
+                f"'{src_gene_data['species']}'",
                 to_stdout=True
             )
 
@@ -127,7 +137,7 @@ def arbitrary_mapping(
         if log is not None:
             msg = (
                 "Mapping genes from species "
-                f"{src_species} to {dst_species}"
+                f"'{src_species}' to '{dst_species}'"
             )
             log.info(msg, to_stdout=True)
 
@@ -328,4 +338,32 @@ def _convert_authority_in_bulk(
         'metadata': metadata,
         'failure_log': failure_log,
         'gene_list': list(result)
+    }
+
+
+class StdoutLog(object):
+    """
+    Class to mimic log interface that actually just
+    writes to stdout
+    """
+    def info(self, msg, to_stdout=True):
+        print(f"===={msg}")
+
+
+def _get_db_metadata(db_path):
+    file_utils.assert_is_file(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        metadata = cursor.execute(
+            "SELECT timestamp, hash FROM mmc_gene_mapper_metadata"
+        ).fetchall()
+    if len(metadata) != 1:
+        raise RuntimeError(
+            f"Something is wrong with mmc_gene_mapper database {db_path}; "
+            f"metadata table had {len(metadata)} rows; expected only 1"
+        )
+    return {
+        "timestamp": metadata[0][0],
+        "hash": metadata[0][1]
     }

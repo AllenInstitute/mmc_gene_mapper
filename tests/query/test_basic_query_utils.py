@@ -23,7 +23,7 @@ def species_db_fixture(tmp_dir_fixture):
         cursor.execute(
             """
             CREATE TABLE NCBI_species (
-                name STRING,
+                name TEXT,
                 id INTEGER
             )
             """

@@ -13,6 +13,7 @@ import warnings
 import mmc_gene_mapper.utils.file_utils as file_utils
 
 import bkbit.data_translators.genome_annotation_translator as gene_translator
+import bkbit.data_translators.error_classes as bkbit_errors
 
 
 def scrape_ensembl(
@@ -137,6 +138,8 @@ def scrape_ensembl(
                  "path": str(result_path.resolve().absolute())
                  }
             )
+        except bkbit_errors.MissingModelError:
+            raise
         except Exception:
             msg = traceback.format_exc()
             failed_file_lookup[entry['url']] = msg

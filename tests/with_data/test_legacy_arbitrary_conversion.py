@@ -355,12 +355,12 @@ def test_arbitrary_mapping_function_with_log_legacy(
         )
 
 
-def test_arbitrary_conversion_typing_legacy():
+def test_arbitrary_conversion_typing_legacy(mapper_fixture):
 
     msg = "dst_species must be of type"
     with pytest.raises(ValueError, match=msg):
         arbitrary_conversion.arbitrary_mapping(
-            db_path='not/a/file.db',
+            db_path=mapper_fixture.db_path,
             gene_list=[],
             dst_species='human',
             dst_authority=metadata_classes.Authority('NCBI')
@@ -369,7 +369,7 @@ def test_arbitrary_conversion_typing_legacy():
     msg = "dst_authority must be of type"
     with pytest.raises(ValueError, match=msg):
         arbitrary_conversion.arbitrary_mapping(
-            db_path='not/a/file.db',
+            db_path=mapper_fixture.db_path,
             gene_list=[],
             dst_species=metadata_classes.Species(name='blerg', taxon=1),
             dst_authority='NCBI'
