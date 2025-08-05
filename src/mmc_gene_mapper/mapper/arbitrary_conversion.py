@@ -260,7 +260,9 @@ def _convert_authority_in_bulk(
     if len(symbol_idx) > 0:
         if log is not None:
             log.info(
-                f"Mapping input genes from 'symbols' to '{dst_authority}'",
+                f"Mapping {len(symbol_idx)} input genes "
+                f"from 'symbols' to '{dst_authority}' "
+                f"(e.g. {gene_list[symbol_idx][:5]})",
                 to_stdout=True
             )
 
