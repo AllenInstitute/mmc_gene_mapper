@@ -2,6 +2,7 @@ import numpy as np
 import pathlib
 import sqlite3
 
+import mmc_gene_mapper.utils.log_class as log_class
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.mapper.gene_characterization as gene_characterization
 
@@ -10,7 +11,8 @@ def detect_species_and_authority(
         db_path,
         gene_list,
         chunk_size=1000,
-        guess_taxon=None):
+        guess_taxon=None,
+        log=None):
     """
     Find the species and authority for a list of gene
     identifiers. Genes can be from an inhomogeneous list of
@@ -31,6 +33,9 @@ def detect_species_and_authority(
        is not None and there is a tie among taxons that match
        the provided gene symbols, this taxon will be chosen
        if it is one of the taxons participating in the tie.
+    log:
+        a logger class that implements an info()
+        function (probably the CommandLog from cell_type_mapper)
 
     Returns
     --------
@@ -61,6 +66,9 @@ def detect_species_and_authority(
 
     If no species is matched, authority will be set to a 'symbol' for all genes
     """
+
+    if log is None:
+        log = log_class.StdoutLog()
 
     gene_list = np.array(gene_list)
 
@@ -161,7 +169,8 @@ def detect_species_and_authority(
             gene_list=gene_list,
             db_path=db_path,
             chunk_size=chunk_size,
-            guess_taxon=guess_taxon
+            guess_taxon=guess_taxon,
+            log=log
         )
 
         if symbol_species is not None:
@@ -298,7 +307,8 @@ def _detect_species_from_symbols(
         db_path,
         gene_list,
         chunk_size,
-        guess_taxon=None):
+        guess_taxon=None,
+        log=None):
     """
     Parameters
     ----------
@@ -316,6 +326,9 @@ def _detect_species_from_symbols(
     guess_taxon:
        an optional int. If not None and the symbols match
        multiple species equally well, choose this one.
+    log:
+        a logger class that implements an info()
+        function (probably the CommandLog from cell_type_mapper)
 
     Returns:
     --------
@@ -338,6 +351,9 @@ def _detect_species_from_symbols(
     If guess_taxon is not None and another species is a better
     match for the gene symbols, return that better match, anyway.
     """
+    if log is None:
+        log = log_class.StdoutLog()
+
     n_genes = len(gene_list)
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -389,6 +405,13 @@ def _detect_species_from_symbols(
         if len(chosen_taxon) > 1:
             if guess_taxon is not None:
                 if guess_taxon in chosen_taxon:
+                    msg = (
+                        "Input gene symbols are consistent "
+                        f"with several species taxons. Taxon {guess_taxon} "
+                        "is one of them. Will assume the genes are "
+                        "aligned to that taxon."
+                    )
+                    log.warn(msg)
                     chosen_taxon = [guess_taxon]
 
         chosen_taxon_name = []

@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import warnings
 
 import mmc_gene_mapper.mapper.species_detection as species_detection
 import mmc_gene_mapper.mapper.mapper as mapper_module
@@ -233,24 +234,10 @@ def test_arbitrary_mapping(
         db_path=mapper_db_path_fixture
     )
 
-    if err_flavor is None:
-        actual = mapper.map_genes(
-            gene_list=gene_list,
-            dst_species=dst_species,
-            dst_authority=dst_authority,
-            ortholog_citation='NCBI',
-            log=None,
-            invalid_mapping_prefix=None
-        )
-
-        np.testing.assert_array_equal(
-            actual=np.array(actual['gene_list']),
-            desired=np.array(expected)
-        )
-
-    else:
-        with pytest.raises(err_flavor, match=err_msg):
-            mapper.map_genes(
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        if err_flavor is None:
+            actual = mapper.map_genes(
                 gene_list=gene_list,
                 dst_species=dst_species,
                 dst_authority=dst_authority,
@@ -258,6 +245,22 @@ def test_arbitrary_mapping(
                 log=None,
                 invalid_mapping_prefix=None
             )
+
+            np.testing.assert_array_equal(
+                actual=np.array(actual['gene_list']),
+                desired=np.array(expected)
+            )
+
+        else:
+            with pytest.raises(err_flavor, match=err_msg):
+                mapper.map_genes(
+                    gene_list=gene_list,
+                    dst_species=dst_species,
+                    dst_authority=dst_authority,
+                    ortholog_citation='NCBI',
+                    log=None,
+                    invalid_mapping_prefix=None
+                )
 
 
 def test_warning_when_no_species(mapper_db_path_fixture):

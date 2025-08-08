@@ -131,10 +131,16 @@ def test_species_from_symbols_with_guess(
     Test that guess_taxon can break a species degeneracy
     in species.
     """
-    actual = species_detection._detect_species_from_symbols(
-        db_path=symbol_to_species_db_fixture,
-        gene_list=gene_list,
-        chunk_size=2,
-        guess_taxon=guess_taxon)
+    msg = (
+        "Input gene symbols are consistent with several "
+        f"species taxons. Taxon {guess_taxon} is one of them. "
+        "Will assume the genes are aligned to that taxon."
+    )
+    with pytest.warns(UserWarning, match=msg):
+        actual = species_detection._detect_species_from_symbols(
+            db_path=symbol_to_species_db_fixture,
+            gene_list=gene_list,
+            chunk_size=2,
+            guess_taxon=guess_taxon)
 
     assert actual == expected
