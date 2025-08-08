@@ -10,10 +10,10 @@ the mapper class into a function module
 import numpy as np
 import pathlib
 import sqlite3
-import warnings
 
 import mmc_gene_mapper
 
+import mmc_gene_mapper.utils.log_class as log_class
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
@@ -54,7 +54,7 @@ def arbitrary_mapping(
         to the placeholder names of all unmappable genes
     """
     if log is None:
-        log = StdoutLog()
+        log = log_class.StdoutLog()
 
     db_path = pathlib.Path(db_path)
 
@@ -346,18 +346,6 @@ def _convert_authority_in_bulk(
         'failure_log': failure_log,
         'gene_list': list(result)
     }
-
-
-class StdoutLog(object):
-    """
-    Class to mimic log interface that actually just
-    writes to stdout
-    """
-    def info(self, msg, to_stdout=True):
-        print(f"===={msg}")
-
-    def warn(self, msg):
-        warnings.warn(msg)
 
 
 def _get_db_metadata(db_path):
