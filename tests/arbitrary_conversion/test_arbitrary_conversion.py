@@ -258,3 +258,24 @@ def test_arbitrary_mapping(
                 log=None,
                 invalid_mapping_prefix=None
             )
+
+
+def test_warning_when_no_species(mapper_db_path_fixture):
+    mapper = mapper_module.MMCGeneMapper(db_path=mapper_db_path_fixture)
+    gene_list = ['a', 'b', 'c', 'd']
+    msg = (
+        "Could not find a species for input genes. "
+        "This probably means you passed in gene symbols. "
+        "Assuming they are already consistent with "
+        "'human:9606'. "
+        "Example input genes: [[]'a', 'b', 'c', 'd'[]]"
+    )
+    with pytest.warns(UserWarning, match=msg):
+        mapper.map_genes(
+            gene_list=gene_list,
+            dst_species='human',
+            dst_authority='NCBI',
+            ortholog_citation='NCBI',
+            log=None,
+            invalid_mapping_prefix=None
+        )

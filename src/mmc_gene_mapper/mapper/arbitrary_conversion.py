@@ -10,6 +10,7 @@ the mapper class into a function module
 import numpy as np
 import pathlib
 import sqlite3
+import warnings
 
 import mmc_gene_mapper
 
@@ -98,14 +99,18 @@ def arbitrary_mapping(
 
     if src_gene_data['species'] is None:
         if log is not None:
-            log.info(
+            msg = (
                 "Could not find a species for input genes. "
                 "This probably means you passed in gene symbols. "
                 "Assuming they are already consistent with "
-                f"'{dst_species}'",
-                to_stdout=True
+                f"'{dst_species}'. "
+                f"Example input genes: {gene_list[:5]}"
             )
+
+            log.warn(msg)
+
         src_gene_data['species'] = dst_species
+
     else:
         if log is not None:
             log.info(
@@ -350,6 +355,9 @@ class StdoutLog(object):
     """
     def info(self, msg, to_stdout=True):
         print(f"===={msg}")
+
+    def warn(self, msg):
+        warnings.warn(msg)
 
 
 def _get_db_metadata(db_path):
