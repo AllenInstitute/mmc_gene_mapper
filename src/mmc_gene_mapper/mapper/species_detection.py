@@ -1,5 +1,4 @@
 import numpy as np
-import pathlib
 import sqlite3
 
 import mmc_gene_mapper.utils.log_class as log_class
@@ -445,61 +444,6 @@ def _detect_species_from_symbols(
         "species": chosen_taxon_name[0],
         "species_taxon": chosen_taxon[0]
     }
-
-
-def detect_if_genes(
-        db_path,
-        gene_list,
-        chunk_size=1000):
-    """
-    Iterate over a list of genes. Return True if at least one
-    of the genes is a valid gene identifier or symbol. Return
-    False otherwise.
-    """
-    if db_path is None:
-        raise ValueError(
-            "you passed db_path = None to "
-            "mmc_gene_mapper.mapper.species_dection.detect_if_genes; "
-            "must specify a db_path"
-        )
-    db_path = pathlib.Path(db_path)
-    if not db_path.is_file():
-        raise ValueError(
-            f"{db_path} is not a file "
-            "(error in "
-            "mmc_gene_mapper.mapper.species_detection.detect_if_genes)"
-        )
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        for i0 in range(0, len(gene_list), chunk_size):
-            chunk = gene_list[i0:i0+chunk_size]
-            id_query = """
-            SELECT
-                COUNT(identifier)
-            FROM
-                gene
-            WHERE
-                identifier IN (
-            """
-            id_query += ",".join([f'"{g}"' for g in chunk])
-            id_query += ")"
-            result = cursor.execute(id_query).fetchall()
-            if result[0][0] > 0:
-                return True
-            symbol_query = """
-            SELECT
-                COUNT(symbol)
-            FROM
-                gene
-            WHERE
-                symbol IN (
-            """
-            symbol_query += ",".join([f'"{g}"' for g in chunk])
-            symbol_query += ")"
-            result = cursor.execute(symbol_query).fetchall()
-            if result[0][0] > 0:
-                return True
-    return False
 
 
 class InconsistentSpeciesError(Exception):
