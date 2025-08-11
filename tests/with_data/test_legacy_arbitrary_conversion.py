@@ -26,8 +26,8 @@ import mmc_gene_mapper.mapper.arbitrary_conversion as arbitrary_conversion
        ["NCBIGene:12", "NCBIGene:14", "NCBIGene:13", "NCBIGene:16",
         "NCBIGene:11",
         "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "NCBIGene:671321"]),
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_2"]),
       (["symbol:12", "symbol:14", "ENSX26", "NCBIGene:16", "symbol:13",
         "ENSX22"],
        "NCBI",
@@ -76,8 +76,8 @@ def test_convert_authority_in_bulk_legacy(
        ["NCBIGene:12", "NCBIGene:14", "NCBIGene:13", "NCBIGene:16",
         "NCBIGene:11",
         "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "NCBIGene:671321"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_2"],
        False),
       (["symbol:12", "symbol:14", "ENSX26", "NCBIGene:16", "symbol:13",
         "ENSX22"],
@@ -99,8 +99,8 @@ def test_convert_authority_in_bulk_legacy(
        ["NCBIGene:12", "NCBIGene:14", "NCBIGene:13", "NCBIGene:16",
         "NCBIGene:11",
         "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "NCBIGene:671321"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_2"],
        True),
       (["symbol:12", "symbol:14", "ENSX26", "NCBIGene:16", "symbol:13",
         "ENSX22"],
@@ -215,8 +215,8 @@ def test_arbitrary_mapping_function_no_ortholog_legacy(
         "ortholog:UNMAPPABLE_NO_MATCH_0",
         "ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        False),
       (["symbol:12",
         "symbol:14",
@@ -259,8 +259,8 @@ def test_arbitrary_mapping_function_no_ortholog_legacy(
         "ortholog:UNMAPPABLE_NO_MATCH_0",
         "ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        True),
     ]
 )
@@ -324,19 +324,13 @@ def test_arbitrary_mapping_function_with_log_legacy(
     else:
         dst_species_name = "jabberwock"
 
-    class DummyLog(object):
-        def info(self, msg, to_stdout=False):
-            if to_stdout:
-                print(msg)
-            pass
-
     if use_class:
         mapper_fixture.map_genes(
             gene_list=gene_list,
             dst_species=dst_species_name,
             dst_authority=dst_authority,
             ortholog_citation='NCBI',
-            log=DummyLog()
+            log=None
         )
     else:
         with sqlite3.connect(mapper_fixture.db_path) as conn:
@@ -351,7 +345,7 @@ def test_arbitrary_mapping_function_with_log_legacy(
             dst_species=dst_species,
             dst_authority=metadata_classes.Authority(dst_authority),
             ortholog_citation='NCBI',
-            log=DummyLog()
+            log=None
         )
 
 
@@ -385,8 +379,8 @@ def test_arbitrary_conversion_typing_legacy(mapper_fixture):
         "ortholog:UNMAPPABLE_NO_MATCH_0",
         "ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        True,
        None),
       (["wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
@@ -395,8 +389,8 @@ def test_arbitrary_conversion_typing_legacy(mapper_fixture):
         "wibble:ortholog:UNMAPPABLE_NO_MATCH_0",
         "wibble:ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "wibble:ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        True,
        "wibble"),
       (["NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
@@ -405,8 +399,8 @@ def test_arbitrary_conversion_typing_legacy(mapper_fixture):
         "ortholog:UNMAPPABLE_NO_MATCH_0",
         "ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        False,
        None),
       (["wibble:NCBI:ENSEMBL:UNMAPPABLE_NO_MATCH_0",
@@ -415,8 +409,8 @@ def test_arbitrary_conversion_typing_legacy(mapper_fixture):
         "wibble:ortholog:UNMAPPABLE_NO_MATCH_0",
         "wibble:ortholog:UNMAPPABLE_NO_MATCH_1",
         "ENSX14",
-        "wibble:ENSEMBL:NCBI:UNMAPPABLE_NO_MATCH_0",
-        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0"],
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+        "wibble:symbol:NCBI:UNMAPPABLE_NO_MATCH_1"],
        False,
        "wibble"),
     ]
@@ -468,6 +462,6 @@ def test_arbitrary_mapping_with_invalid_prefix_legacy(
         )
 
     np.testing.assert_array_equal(
-        np.array(result['gene_list']),
-        np.array(expected)
+        actual=np.array(result['gene_list']),
+        desired=np.array(expected)
     )
