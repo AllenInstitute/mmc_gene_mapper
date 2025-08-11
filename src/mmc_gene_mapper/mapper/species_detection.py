@@ -109,39 +109,48 @@ def detect_species_and_authority(
         chosen_dex = np.where(cts == chosen_cts)
         chosen_taxon = votes[chosen_dex]
 
+        chosen_species = None
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
+            species_lookup = {
+                ii: query_utils.get_species(
+                    cursor=cursor,
+                    species=int(ii)
+                )
+                for ii in chosen_taxon
+            }
+
             if len(chosen_taxon) > 1:
 
                 # try to break the species degeneracy with the
                 # guess_taxon
                 broke_degeneracy = False
+                msg = (
+                    f"{chosen_cts} of your genes were consistent with "
+                    "the following species:\n"
+                )
+                for val in species_lookup.values():
+                    msg += f"'{val}'\n"
+
                 if guess_taxon is not None:
                     if guess_taxon in chosen_taxon:
-                        chosen_taxon = [guess_taxon]
                         broke_degeneracy = True
+                        chosen_species = species_lookup[guess_taxon]
+                        msg += (
+                            "using guess to resolve degeneracy "
+                            "in favor of '{speces_lookup[guess_taxon]}'"
+                        )
+                        log.warn(msg)
 
                 if not broke_degeneracy:
-                    species_list = [
-                        query_utils.get_species(
-                            cursor=cursor,
-                            species=int(ii)
-                        )
-                        for ii in chosen_taxon
-                    ]
-                    msg = (
-                        f"{chosen_cts} of your genes were consistent with "
-                        "the following species:\n"
-                    )
-                    for sp in species_list:
-                        msg += f"'{sp}'\n"
                     msg += "Unable to break this degeneracy"
                     raise InconsistentSpeciesError(msg)
 
-            chosen_species = query_utils.get_species(
-                cursor=cursor,
-                species=int(chosen_taxon[0])
-            )
+            if chosen_species is None:
+                chosen_species = query_utils.get_species(
+                    cursor=cursor,
+                    species=int(chosen_taxon[0])
+                )
 
         log.info(
             f"Based on {chosen_cts} genes, your input data is from species "

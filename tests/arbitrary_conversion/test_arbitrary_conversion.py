@@ -282,3 +282,51 @@ def test_warning_when_no_species(mapper_db_path_fixture):
             log=None,
             invalid_mapping_prefix=None
         )
+
+
+def test_guess_warning_from_mapper(mapper_db_path_fixture):
+    """
+    Test that a warning is emitted when using the guess_taxon
+    to resolve species
+    """
+    mapper = mapper_module.MMCGeneMapper(
+        db_path=mapper_db_path_fixture
+    )
+    gene_list = [
+        "symbol_12", "symbol_24", "symbol_8"
+    ]
+    msg = "using guess to resolve degeneracy"
+    with pytest.warns(UserWarning, match=msg):
+        mapper.map_genes(
+            gene_list=gene_list,
+            dst_species='human',
+            dst_authority='ENSEMBL'
+        )
+
+
+def test_guess_warning_from_species_detection(mapper_db_path_fixture):
+    """
+    Test that a warning is emitted when using the guess_taxon
+    to resolve species
+    """
+    gene_list = [
+        "symbol_12", "bbb", "symbol_24", "uvw", "symbol_8", "xxx", "aaa"
+    ]
+    msg = "using guess to resolve degeneracy"
+    with pytest.warns(UserWarning, match=msg):
+        result = species_detection.detect_species_and_authority(
+            db_path=mapper_db_path_fixture,
+            gene_list=gene_list,
+            guess_taxon=9606,
+            chunk_size=2
+        )
+
+    assert result['species'].taxon == 9606
+
+    msg = "Unable to break this degeneracy"
+    with pytest.raises(species_detection.InconsistentSpeciesError, match=msg):
+        species_detection.detect_species_and_authority(
+            db_path=mapper_db_path_fixture,
+            gene_list=gene_list,
+            chunk_size=2
+        )
