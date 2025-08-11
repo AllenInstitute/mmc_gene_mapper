@@ -83,7 +83,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "symbol_74", "symbol_8888", "NCBIGene:136"],
       "mouse",
       "ENSEMBL",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "ENSM12",
        "ENSM24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -102,7 +102,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "NCBIGene:136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
        "NCBIGene:24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -116,7 +116,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "symbol_74", "symbol_8888", "ENSG136"],
       "mouse",
       "ENSEMBL",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "ENSM12",
        "ENSM24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -134,7 +134,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "ENSG136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
        "NCBIGene:24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -154,9 +154,9 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "NCBIGene:136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
-       "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+       "symbol:NCBI:UNMAPPABLE_NO_MATCH_1",
        "ortholog:UNMAPPABLE_NO_MATCH_2",
        "NCBIGene:6",
        "ortholog:UNMAPPABLE_NO_MATCH_3",
@@ -188,7 +188,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "Multiple species inferred"
+      "were consistent with the following species"
       ),
      # -> mouse, but error because more than on species
      (["NCBIGene:112", "NCBIGene:124",
@@ -197,28 +197,28 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "ENSEMBL genes gave species"
+      "were consistent with the following species"
       ),
      # again, more than one species inferred from the
      # gene identifiers that are present
      (["NCBIGene:999999", "symbol_12", "symbol_24",
        "symbol_74", "symbol_8888", "NCBIGene:136",
-       "ENSM4"],
-      "mouse",
+       "ENSM4", "ENSM11"],
+      "fish",
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "ENSEMBL genes gave species"),
+      "were consistent with the following species"),
      # again, more than one species inferred from the
      # gene identifiers that are present
      (["NCBIGene:999999", "symbol_12", "symbol_24",
        "symbol_74", "symbol_8888", "NCBIGene:136",
-       "NCBIGene:4"],
-      "mouse",
+       "NCBIGene:4", "NCBIGene:11"],
+      "fish",
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "Multiple species inferred"),
+      "were consistent with the following species"),
     ]
 )
 def test_arbitrary_mapping(
