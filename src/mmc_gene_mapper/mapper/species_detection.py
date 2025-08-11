@@ -1,4 +1,5 @@
 import numpy as np
+import pathlib
 import sqlite3
 
 import mmc_gene_mapper.utils.log_class as log_class
@@ -446,5 +447,104 @@ def _detect_species_from_symbols(
     }
 
 
+def species_from_identifier(
+        db_path,
+        gene_list,
+        chunk_size=10000,
+        log=None):
+    """
+    Return a dict mapping the gene_identifiers in gene_list
+    to (authority, species_taxon) pairs
+    """
+    return _species_from_column(
+        db_path=db_path,
+        gene_list=gene_list,
+        col_name="identifier",
+        chunk_size=chunk_size,
+        log=log
+    )
+
+
+def species_from_symbol(
+        db_path,
+        gene_list,
+        chunk_size=10000,
+        log=None):
+    """
+    Return a dict mapping the gene_identifiers in gene_list
+    to (authority, species_taxon) pairs
+    """
+    return _species_from_column(
+        db_path=db_path,
+        gene_list=gene_list,
+        col_name="symbol",
+        chunk_size=chunk_size,
+        log=log
+    )
+
+
+def _species_from_column(
+        db_path,
+        gene_list,
+        col_name,
+        chunk_size,
+        log=None):
+
+    if log is None:
+        log = log_class.StdoutLog()
+
+    if col_name not in ("identifier", "symbol"):
+        raise RuntimeError(
+            f"{col_name} is not a valid col_name; "
+            "must be either 'identifier' or 'symbol'"
+        )
+
+    db_path = pathlib.Path(db_path)
+    if not db_path.is_file():
+        raise RuntimeError(f"db_path {db_path} is not a file")
+
+    n_genes = len(gene_list)
+    mapping = dict()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        for i0 in range(0, n_genes, chunk_size):
+            chunk = gene_list[i0: i0+chunk_size]
+            query = f"""
+            SELECT
+                gene.{col_name},
+                gene.species_taxon,
+                authority.name
+            FROM
+                gene
+            JOIN authority on gene.authority = authority.id
+            WHERE
+                gene.{col_name} IN (
+            """
+            query += ",".join(["?"]*len(chunk))
+            query += ")"
+
+            # to prevent multiple citation entries from skewing the count
+            query += f"""
+                GROUP BY gene.{col_name}, gene.authority, gene.species_taxon
+            """
+
+            results = cursor.execute(
+                query,
+                chunk
+            ).fetchall()
+            for row in results:
+                if row[0] not in mapping:
+                    mapping[row[0]] = []
+                mapping[row[0]].append(
+                    {'authority': row[2],
+                     'species_taxon': row[1]}
+                )
+    return mapping
+
+
 class InconsistentSpeciesError(Exception):
+    pass
+
+
+class MultipleAuthorityError(Exception):
     pass
