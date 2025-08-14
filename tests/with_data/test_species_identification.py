@@ -1,3 +1,5 @@
+import pytest
+
 import numpy as np
 
 import mmc_gene_mapper.metadata.classes as metadata_classes
@@ -146,3 +148,34 @@ def test_species_from_odd_symbols(mapper_fixture):
         result['authority'],
         np.array(['symbol']*2)
     )
+
+
+@pytest.mark.parametrize(
+    "gene_list, expected",
+    [(('alice', 'bob', 'jake', 'fred', 'pirate', 'marshall', 'jenny'),
+      False),
+     (('alice', 'bob', 'jake', 'symbol:7', 'pirate', 'marshall'),
+      True),
+     (('alice', 'bob', 'jake', 'fred', 'pirate', 'NCBIGene:2'),
+      True),
+     (('alice', 'bob', 'jake', 'fred', 'pirate', 'ENSX22'),
+      True),
+     (('NCBI', 'ENSMSUG', 'symbol7', 'NCBIGene:', 'william'),
+      False)
+     ]
+)
+def test_detect_if_genes(
+        mapper_fixture,
+        gene_list,
+        expected):
+
+    if expected:
+        assert species_utils.detect_if_genes(
+            db_path=mapper_fixture.db_path,
+            gene_list=gene_list,
+            chunk_size=3)
+    else:
+        assert not species_utils.detect_if_genes(
+            db_path=mapper_fixture.db_path,
+            gene_list=gene_list,
+            chunk_size=3)
