@@ -13,6 +13,7 @@ import sqlite3
 
 import mmc_gene_mapper
 
+import mmc_gene_mapper.utils.log_class as log_class
 import mmc_gene_mapper.utils.file_utils as file_utils
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
@@ -53,7 +54,7 @@ def arbitrary_mapping(
         to the placeholder names of all unmappable genes
     """
     if log is None:
-        log = StdoutLog()
+        log = log_class.StdoutLog()
 
     db_path = pathlib.Path(db_path)
 
@@ -93,19 +94,24 @@ def arbitrary_mapping(
     src_gene_data = species_detection.detect_species_and_authority(
         db_path=db_path,
         gene_list=gene_list,
-        guess_taxon=dst_species.taxon
+        guess_taxon=dst_species.taxon,
+        log=log
     )
 
     if src_gene_data['species'] is None:
         if log is not None:
-            log.info(
+            msg = (
                 "Could not find a species for input genes. "
                 "This probably means you passed in gene symbols. "
                 "Assuming they are already consistent with "
-                f"'{dst_species}'",
-                to_stdout=True
+                f"'{dst_species}'. "
+                f"Example input genes: {gene_list[:5]}"
             )
+
+            log.warn(msg)
+
         src_gene_data['species'] = dst_species
+
     else:
         if log is not None:
             log.info(
@@ -185,6 +191,21 @@ def arbitrary_mapping(
         for auth_metadata in current['metadata']:
             metadata.append(auth_metadata)
 
+    # if no genes were successfully map, issue a warning
+    successfully_mapped = False
+    for gene in current['gene_list']:
+        if 'UNMAPPABLE' not in gene:
+            successfully_mapped = True
+            break
+
+    if not successfully_mapped:
+        msg = (
+            "None of your genes could be mapped to "
+            f"unique genes aligned to species '{dst_species}' "
+            f"and authority '{dst_authority}'"
+        )
+        log.warn(msg)
+
     return {
         'metadata': metadata,
         'gene_list': current['gene_list']
@@ -260,7 +281,9 @@ def _convert_authority_in_bulk(
     if len(symbol_idx) > 0:
         if log is not None:
             log.info(
-                f"Mapping input genes from 'symbols' to '{dst_authority}'",
+                f"Mapping {len(symbol_idx)} input genes "
+                f"from 'symbols' to '{dst_authority}' "
+                f"(e.g. {gene_list[symbol_idx][:5]})",
                 to_stdout=True
             )
 
@@ -339,15 +362,6 @@ def _convert_authority_in_bulk(
         'failure_log': failure_log,
         'gene_list': list(result)
     }
-
-
-class StdoutLog(object):
-    """
-    Class to mimic log interface that actually just
-    writes to stdout
-    """
-    def info(self, msg, to_stdout=True):
-        print(f"===={msg}")
 
 
 def _get_db_metadata(db_path):

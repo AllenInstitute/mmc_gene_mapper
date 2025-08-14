@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import warnings
 
 import mmc_gene_mapper.mapper.species_detection as species_detection
 import mmc_gene_mapper.mapper.mapper as mapper_module
@@ -82,7 +83,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "symbol_74", "symbol_8888", "NCBIGene:136"],
       "mouse",
       "ENSEMBL",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "ENSM12",
        "ENSM24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -101,7 +102,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "NCBIGene:136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
        "NCBIGene:24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -115,7 +116,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "symbol_74", "symbol_8888", "ENSG136"],
       "mouse",
       "ENSEMBL",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "ENSM12",
        "ENSM24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -133,7 +134,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "ENSG136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
        "NCBIGene:24",
        "ortholog:UNMAPPABLE_NO_MATCH_1",
@@ -153,9 +154,9 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
        "NCBIGene:136"],
       "mouse",
       "NCBI",
-      ["ortholog:UNMAPPABLE_NO_MATCH_0",
+      ["symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
        "NCBIGene:12",
-       "symbol:NCBI:UNMAPPABLE_NO_MATCH_0",
+       "symbol:NCBI:UNMAPPABLE_NO_MATCH_1",
        "ortholog:UNMAPPABLE_NO_MATCH_2",
        "NCBIGene:6",
        "ortholog:UNMAPPABLE_NO_MATCH_3",
@@ -187,7 +188,7 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "Multiple species inferred"
+      "were consistent with the following species"
       ),
      # -> mouse, but error because more than on species
      (["NCBIGene:112", "NCBIGene:124",
@@ -196,28 +197,28 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "ENSEMBL genes gave species"
+      "were consistent with the following species"
       ),
      # again, more than one species inferred from the
      # gene identifiers that are present
      (["NCBIGene:999999", "symbol_12", "symbol_24",
        "symbol_74", "symbol_8888", "NCBIGene:136",
-       "ENSM4"],
-      "mouse",
+       "ENSM4", "ENSM11"],
+      "fish",
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "ENSEMBL genes gave species"),
+      "were consistent with the following species"),
      # again, more than one species inferred from the
      # gene identifiers that are present
      (["NCBIGene:999999", "symbol_12", "symbol_24",
        "symbol_74", "symbol_8888", "NCBIGene:136",
-       "NCBIGene:4"],
-      "mouse",
+       "NCBIGene:4", "NCBIGene:11"],
+      "fish",
       "ENSEMBL",
       None,
       species_detection.InconsistentSpeciesError,
-      "Multiple species inferred"),
+      "were consistent with the following species"),
     ]
 )
 def test_arbitrary_mapping(
@@ -233,24 +234,10 @@ def test_arbitrary_mapping(
         db_path=mapper_db_path_fixture
     )
 
-    if err_flavor is None:
-        actual = mapper.map_genes(
-            gene_list=gene_list,
-            dst_species=dst_species,
-            dst_authority=dst_authority,
-            ortholog_citation='NCBI',
-            log=None,
-            invalid_mapping_prefix=None
-        )
-
-        np.testing.assert_array_equal(
-            actual=np.array(actual['gene_list']),
-            desired=np.array(expected)
-        )
-
-    else:
-        with pytest.raises(err_flavor, match=err_msg):
-            mapper.map_genes(
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        if err_flavor is None:
+            actual = mapper.map_genes(
                 gene_list=gene_list,
                 dst_species=dst_species,
                 dst_authority=dst_authority,
@@ -258,3 +245,107 @@ def test_arbitrary_mapping(
                 log=None,
                 invalid_mapping_prefix=None
             )
+
+            np.testing.assert_array_equal(
+                actual=np.array(actual['gene_list']),
+                desired=np.array(expected)
+            )
+
+        else:
+            with pytest.raises(err_flavor, match=err_msg):
+                mapper.map_genes(
+                    gene_list=gene_list,
+                    dst_species=dst_species,
+                    dst_authority=dst_authority,
+                    ortholog_citation='NCBI',
+                    log=None,
+                    invalid_mapping_prefix=None
+                )
+
+
+def test_warning_when_no_species(mapper_db_path_fixture):
+    mapper = mapper_module.MMCGeneMapper(db_path=mapper_db_path_fixture)
+    gene_list = ['a', 'b', 'c', 'd']
+    msg = (
+        "Could not find a species for input genes. "
+        "This probably means you passed in gene symbols. "
+        "Assuming they are already consistent with "
+        "'human:9606'. "
+        "Example input genes: [[]'a', 'b', 'c', 'd'[]]"
+    )
+    with pytest.warns(UserWarning, match=msg):
+        mapper.map_genes(
+            gene_list=gene_list,
+            dst_species='human',
+            dst_authority='NCBI',
+            ortholog_citation='NCBI',
+            log=None,
+            invalid_mapping_prefix=None
+        )
+
+
+def test_guess_warning_from_mapper(mapper_db_path_fixture):
+    """
+    Test that a warning is emitted when using the guess_taxon
+    to resolve species
+    """
+    mapper = mapper_module.MMCGeneMapper(
+        db_path=mapper_db_path_fixture
+    )
+    gene_list = [
+        "symbol_12", "symbol_24", "symbol_8"
+    ]
+    msg = "using guess to resolve degeneracy"
+    with pytest.warns(UserWarning, match=msg):
+        mapper.map_genes(
+            gene_list=gene_list,
+            dst_species='human',
+            dst_authority='ENSEMBL'
+        )
+
+
+def test_guess_warning_from_species_detection(mapper_db_path_fixture):
+    """
+    Test that a warning is emitted when using the guess_taxon
+    to resolve species
+    """
+    gene_list = [
+        "symbol_12", "bbb", "symbol_24", "uvw", "symbol_8", "xxx", "aaa"
+    ]
+    msg = "using guess to resolve degeneracy"
+    with pytest.warns(UserWarning, match=msg):
+        result = species_detection.detect_species_and_authority(
+            db_path=mapper_db_path_fixture,
+            gene_list=gene_list,
+            guess_taxon=9606,
+            chunk_size=2
+        )
+
+    assert result['species'].taxon == 9606
+
+    msg = "Unable to break this degeneracy"
+    with pytest.raises(species_detection.InconsistentSpeciesError, match=msg):
+        species_detection.detect_species_and_authority(
+            db_path=mapper_db_path_fixture,
+            gene_list=gene_list,
+            chunk_size=2
+        )
+
+
+def test_warning_if_no_mapping(
+        mapper_db_path_fixture):
+    """
+    Test that a warning is emitted if no genes had a successful
+    mapping
+    """
+    mapper = mapper_module.MMCGeneMapper(
+        db_path=mapper_db_path_fixture
+    )
+    gene_list = ["NCBIGene:1", "NCBIGene:5", "NCBIGene:7"]
+    msg = "None of your genes could be mapped to unique genes aligned"
+    with pytest.warns(UserWarning, match=msg):
+        _ = mapper.map_genes(
+            gene_list=gene_list,
+            dst_species="fish",
+            dst_authority="ENSEMBL"
+        )
