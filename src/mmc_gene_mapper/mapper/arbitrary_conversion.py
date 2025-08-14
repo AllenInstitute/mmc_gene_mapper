@@ -94,7 +94,8 @@ def arbitrary_mapping(
     src_gene_data = species_detection.detect_species_and_authority(
         db_path=db_path,
         gene_list=gene_list,
-        guess_taxon=dst_species.taxon
+        guess_taxon=dst_species.taxon,
+        log=log
     )
 
     if src_gene_data['species'] is None:
