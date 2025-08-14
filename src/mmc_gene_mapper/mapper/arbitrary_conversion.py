@@ -191,6 +191,21 @@ def arbitrary_mapping(
         for auth_metadata in current['metadata']:
             metadata.append(auth_metadata)
 
+    # if no genes were successfully map, issue a warning
+    successfully_mapped = False
+    for gene in current['gene_list']:
+        if 'UNMAPPABLE' not in gene:
+            successfully_mapped = True
+            break
+
+    if not successfully_mapped:
+        msg = (
+            "None of your genes could be mapped to "
+            f"unique genes aligned to species '{dst_species}' "
+            f"and authority '{dst_authority}'"
+        )
+        log.warn(msg)
+
     return {
         'metadata': metadata,
         'gene_list': current['gene_list']

@@ -330,3 +330,22 @@ def test_guess_warning_from_species_detection(mapper_db_path_fixture):
             gene_list=gene_list,
             chunk_size=2
         )
+
+
+def test_warning_if_no_mapping(
+        mapper_db_path_fixture):
+    """
+    Test that a warning is emitted if no genes had a successful
+    mapping
+    """
+    mapper = mapper_module.MMCGeneMapper(
+        db_path=mapper_db_path_fixture
+    )
+    gene_list = ["NCBIGene:1", "NCBIGene:5", "NCBIGene:7"]
+    msg = "None of your genes could be mapped to unique genes aligned"
+    with pytest.warns(UserWarning, match=msg):
+        _ = mapper.map_genes(
+            gene_list=gene_list,
+            dst_species="fish",
+            dst_authority="ENSEMBL"
+        )
