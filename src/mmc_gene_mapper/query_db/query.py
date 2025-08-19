@@ -866,9 +866,9 @@ def does_path_exist(db_path):
         )
 
 
-class MappingError(Exception):
-    pass
+#class MappingError(Exception):
+#    pass
 
 
-class UnclearCitationError(Exception):
-    pass
+#class UnclearCitationError(Exception):
+#    pass
