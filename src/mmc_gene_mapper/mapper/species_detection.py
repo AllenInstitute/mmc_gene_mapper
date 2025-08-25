@@ -9,7 +9,7 @@ import mmc_gene_mapper.query_db.query as query_utils
 def detect_species_and_authority(
         db_path,
         gene_list,
-        chunk_size=1000,
+        chunk_size=500,
         guess_taxon=None,
         log=None):
     """
@@ -190,7 +190,7 @@ def detect_species_and_authority(
 def species_from_identifier(
         db_path,
         gene_list,
-        chunk_size=10000,
+        chunk_size=500,
         log=None):
     """
     Return a dict mapping the gene_identifiers in gene_list
@@ -208,7 +208,7 @@ def species_from_identifier(
 def species_from_symbol(
         db_path,
         gene_list,
-        chunk_size=10000,
+        chunk_size=500,
         log=None):
     """
     Return a dict mapping the gene_identifiers in gene_list
@@ -285,7 +285,7 @@ def _species_from_column(
 def detect_if_genes(
         db_path,
         gene_list,
-        chunk_size=1000):
+        chunk_size=500):
     """
     Iterate over a list of genes. Return True if at least one
     of the genes is a valid gene identifier or symbol. Return
