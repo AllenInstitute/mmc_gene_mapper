@@ -50,5 +50,31 @@ def characterize_gene_identifiers_by_re(
     return result
 
 
+def remove_ensembl_versions(gene_list):
+    """
+    Take a list of gene identifiers. Any that match the form
+    'ENS*.*' will have the text after the '.' stripped out.
+
+    This is will allow the mapper to handle input data with versions
+    appended to their ENSEMBL IDs. Note that it is only a valid solution
+    so long as no valid identifiers or symbols match the relevant pattern.
+    """
+    pattern = re.compile('ENS[A-Za-z0-9]+\\.[0-9]+')
+    result = []
+    for gene in gene_list:
+        gene_match = pattern.match(gene)
+        needs_trimming = False
+        if gene_match is not None:
+            if gene_match.span()[0] == 0:
+                if gene_match.span()[1] == len(gene):
+                    needs_trimming = True
+
+        if needs_trimming:
+            result.append(gene.split('.')[0])
+        else:
+            result.append(gene)
+    return result
+
+
 class MalformedGeneIdentifierError(Exception):
     pass

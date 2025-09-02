@@ -3,6 +3,7 @@ import pathlib
 import sqlite3
 
 import mmc_gene_mapper.utils.log_class as log_class
+import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.query_db.query as query_utils
 
 
@@ -11,7 +12,8 @@ def detect_species_and_authority(
         gene_list,
         chunk_size=1000,
         guess_taxon=None,
-        log=None):
+        log=None,
+        clean_ensembl=True):
     """
     Find the species and authority for a list of gene
     identifiers. Genes can be from an inhomogeneous list of
@@ -35,6 +37,9 @@ def detect_species_and_authority(
     log:
         a logger class that implements an info()
         function (probably the CommandLog from cell_type_mapper)
+    clean_ensembl:
+        if True, loop over gene_list to remove version suffixes
+        from ENSEMBL IDs
 
     Returns
     --------
@@ -63,6 +68,9 @@ def detect_species_and_authority(
 
     if log is None:
         log = log_class.StdoutLog()
+
+    if clean_ensembl:
+        gene_list = str_utils.remove_ensembl_versions(gene_list)
 
     gene_list = np.array(gene_list)
     n_genes = len(gene_list)
