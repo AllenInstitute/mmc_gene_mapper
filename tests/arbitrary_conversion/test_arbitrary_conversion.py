@@ -219,6 +219,20 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       None,
       species_detection.InconsistentSpeciesError,
       "were consistent with the following species"),
+     # human -> mouse from ENSEMBL
+     (["ENSG106", "ENSG112", "ENSG124", "ENSG130"],
+      "mouse",
+      "ENSEMBL",
+      ["ENSM6", "ENSM12", "ENSM24", "ENSM30"],
+      None,
+      None),
+     # human -> mouse from ENSEMBL with ensembl versions
+     (["ENSG106.1", "ENSG112.4", "ENSG124.6", "ENSG130.9"],
+      "mouse",
+      "ENSEMBL",
+      ["ENSM6", "ENSM12", "ENSM24", "ENSM30"],
+      None,
+      None),
     ]
 )
 def test_arbitrary_mapping(

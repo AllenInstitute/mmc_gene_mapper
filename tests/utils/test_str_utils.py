@@ -59,3 +59,21 @@ def test_characterize_gene_identifiers_by_re():
         actual,
         expected
     )
+
+
+@pytest.mark.parametrize(
+    "input_list, expected",
+    [(['ENSM1', 'ENSM2', 'ENSM3'],
+      ['ENSM1', 'ENSM2', 'ENSM3']),
+     (['ENSM1.5', 'ENSM2', 'ENSM3.9', 'xybd.113', 'ENSG.123.456', 'ensg1.5'],
+      ['ENSM1', 'ENSM2', 'ENSM3', 'xybd.113', 'ENSG.123.456', 'ensg1.5']),
+    ]
+)
+def test_remove_ensembl_versions(input_list, expected):
+    actual = str_utils.remove_ensembl_versions(
+        input_list
+    )
+    np.testing.assert_array_equal(
+        np.array(expected),
+        np.array(actual)
+    )

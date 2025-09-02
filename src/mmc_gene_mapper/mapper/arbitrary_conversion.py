@@ -15,6 +15,7 @@ import mmc_gene_mapper
 
 import mmc_gene_mapper.utils.log_class as log_class
 import mmc_gene_mapper.utils.file_utils as file_utils
+import mmc_gene_mapper.utils.str_utils as str_utils
 import mmc_gene_mapper.utils.typing_utils as typing_utils
 import mmc_gene_mapper.metadata.classes as metadata_classes
 import mmc_gene_mapper.query_db.query as query_utils
@@ -56,6 +57,8 @@ def arbitrary_mapping(
     if log is None:
         log = log_class.StdoutLog()
 
+    gene_list = str_utils.remove_ensembl_versions(gene_list)
+
     db_path = pathlib.Path(db_path)
 
     metadata = _get_db_metadata(db_path)
@@ -95,7 +98,8 @@ def arbitrary_mapping(
         db_path=db_path,
         gene_list=gene_list,
         guess_taxon=dst_species.taxon,
-        log=log
+        log=log,
+        clean_ensembl=False
     )
 
     if src_gene_data['species'] is None:
