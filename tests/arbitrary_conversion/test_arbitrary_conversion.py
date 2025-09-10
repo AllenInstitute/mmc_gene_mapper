@@ -233,6 +233,14 @@ import mmc_gene_mapper.mapper.mapper as mapper_module
       ["ENSM6", "ENSM12", "ENSM24", "ENSM30"],
       None,
       None),
+     # Check that ENSEMBL versions get stripped out,
+     # even when no compicated mapping is performed
+     (["ENSG100.88", "ENSG112.55", "ENSG124.73"],
+      "human",
+      "ENSEMBL",
+      ["ENSG100", "ENSG112", "ENSG124"],
+      None,
+      None),
     ]
 )
 def test_arbitrary_mapping(
