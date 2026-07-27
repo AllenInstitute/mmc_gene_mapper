@@ -15,7 +15,7 @@ dependencies = [
     "pandas",
     "pytest",
     "pytest-xdist",
-    "scipy<1.15.0"
+    "scipy"
 ]
 requires-python = ">=3.10"
 authors = [
