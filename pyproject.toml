@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name="mmc_gene_mapper"
-version="0.2.1"
+version="0.2.2"
 dependencies = [
     "abc_atlas_access @ git+https://github.com/AllenInstitute/abc_atlas_access",
     "bkbit @ git+https://github.com/danielsf/bkbit@mmc.gene.mapper.v0.1.2",
@@ -15,7 +15,7 @@ dependencies = [
     "pandas",
     "pytest",
     "pytest-xdist",
-    "scipy<1.15.0"
+    "scipy"
 ]
 requires-python = ">=3.10"
 authors = [
